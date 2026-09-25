@@ -1584,7 +1584,7 @@ const player = {
 
     loadState() {
         try {
-            const rawState = localStorage.getItem('pulseterm_player') || localStorage.getItem('metrolist_player');
+            const rawState = localStorage.getItem('pulseterm_player');
             const saved = JSON.parse(rawState || '{}');
             if (!saved || typeof saved !== 'object') return;
             this.currentSongs = this._norm(saved.songs || []);

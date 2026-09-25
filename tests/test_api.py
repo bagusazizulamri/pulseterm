@@ -5,7 +5,7 @@ import unittest
 import httpx
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
-os.environ['DB_PATH'] = '/tmp/metrolist-api-test.sqlite'
+os.environ['DB_PATH'] = '/tmp/pulseterm-api-test.sqlite'
 from main import app
 from database import init_db
 

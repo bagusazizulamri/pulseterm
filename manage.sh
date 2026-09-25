@@ -2,7 +2,7 @@
 # PulseTerm - Minimalist TUI Audio Player Service Manager
 # Usage: ./manage.sh [start|stop|restart|status]
 
-APP_DIR="/home/b-ict/metrolist-reborn"
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PID_FILE="$APP_DIR/server.pid"
 LOG_FILE="/tmp/pulseterm.log"
 PORT="${APP_PORT:-3000}"

@@ -584,7 +584,7 @@ class TerminalEqualizer {
 
     loadState() {
         try {
-            const raw = localStorage.getItem('pulseterm_eq') || localStorage.getItem('metrolist_eq');
+            const raw = localStorage.getItem('pulseterm_eq');
             if (!raw) return;
             const data = JSON.parse(raw);
             if (typeof data.enabled === 'boolean') this.enabled = data.enabled;

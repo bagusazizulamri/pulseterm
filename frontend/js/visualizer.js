@@ -23,7 +23,7 @@ class TerminalVisualizer {
         this.peaks = new Array(32).fill(0);
         this.peakHold = new Array(32).fill(0);
         this.simPhase = 0;
-        this.crtEnabled = (localStorage.getItem('pulseterm_crt') || localStorage.getItem('metrolist_crt')) === 'true';
+        this.crtEnabled = localStorage.getItem('pulseterm_crt') === 'true';
     }
 
     init(audioElement) {

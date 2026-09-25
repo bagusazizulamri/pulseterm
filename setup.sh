@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=== Metrolist Reborn - Setup ==="
+echo "=== PulseTerm - Setup ==="
 echo ""
 
 # Check Python

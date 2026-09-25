@@ -595,7 +595,7 @@ async function init() {
         });
     }
 
-    const localTheme = localStorage.getItem('pulseterm_theme') || localStorage.getItem('metrolist_theme');
+    const localTheme = localStorage.getItem('pulseterm_theme');
     let themeToApply = localTheme || 'dark';
     try {
         const settings = await getSettings();
