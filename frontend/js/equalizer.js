@@ -202,14 +202,30 @@ class TerminalEqualizer {
     }
 
     resume() {
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume().catch(() => {});
+        if (!this.audioCtx) return;
+        if (this.audioCtx.state === 'suspended') {
+            const hasGesture = Boolean(navigator.userActivation?.hasBeenActive || window._pulseterm_interacted);
+            if (hasGesture) {
+                this.audioCtx.resume().catch(() => {});
+            } else {
+                const onGesture = () => {
+                    window._pulseterm_interacted = true;
+                    window.removeEventListener('pointerdown', onGesture, true);
+                    window.removeEventListener('keydown', onGesture, true);
+                    window.removeEventListener('touchstart', onGesture, true);
+                    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                        this.audioCtx.resume().catch(() => {});
+                    }
+                };
+                window.addEventListener('pointerdown', onGesture, { once: true, capture: true });
+                window.addEventListener('keydown', onGesture, { once: true, capture: true });
+                window.addEventListener('touchstart', onGesture, { once: true, capture: true });
+            }
         }
     }
 
     attachMediaElements(deckA, deckB) {
         if (!this.initAudioContext()) return;
-        this.resume();
 
         if (deckA && deckA !== this.attachedDeckA) {
             try {

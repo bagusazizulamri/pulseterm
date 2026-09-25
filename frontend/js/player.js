@@ -412,13 +412,15 @@ const player = {
             if (token !== this.playToken) return;
             this.isLoading = false;
             this.isPlaying = false;
-            console.error('Playback failed:', e);
             if (e.name === 'NotAllowedError' || options.resume) {
+                console.info('Auto-resume paused waiting for user gesture.');
                 this.setStatus('▶ SESSION RESTORED · PRESS SPACE TO RESUME');
                 this.updatePlayerUI();
                 const unlock = async () => {
-                    window.removeEventListener('pointerdown', unlock);
-                    window.removeEventListener('keydown', unlock);
+                    window._pulseterm_interacted = true;
+                    window.removeEventListener('pointerdown', unlock, true);
+                    window.removeEventListener('keydown', unlock, true);
+                    window.removeEventListener('touchstart', unlock, true);
                     if (this.currentSong?.videoId === song.videoId && !this.isPlaying) {
                         try {
                             equalizer.resume();
@@ -429,10 +431,12 @@ const player = {
                         } catch {}
                     }
                 };
-                window.addEventListener('pointerdown', unlock, { once: true });
-                window.addEventListener('keydown', unlock, { once: true });
+                window.addEventListener('pointerdown', unlock, { once: true, capture: true });
+                window.addEventListener('keydown', unlock, { once: true, capture: true });
+                window.addEventListener('touchstart', unlock, { once: true, capture: true });
                 return;
             }
+            console.error('Playback failed:', e);
             this.setStatus('Could not play this track. ' + (e?.message || 'Try again.'));
             this.updatePlayerUI();
         }
