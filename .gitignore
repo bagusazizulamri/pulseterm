@@ -1,0 +1,35 @@
+# Virtual Environment
+venv/
+env/
+.env
+.venv/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Databases & local state
+*.db
+*.sqlite
+*.sqlite3
+music.db
+backend/music.db
+server.pid
+session_cache.json
+backend/session_cache.json
+
+# Caches & uploads
+cache/
+backend/cache/
+uploads/
+backend/uploads/
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

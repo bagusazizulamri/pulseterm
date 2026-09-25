@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>PulseTerm // Minimalist TUI Audio Player</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="theme-dark">
+    <div id="crt-overlay" aria-hidden="true"></div>
+
+    <div id="app">
+        <aside id="sidebar" aria-label="Navigation">
+            <div class="tui-brand">
+                <div class="tui-logo-frame">
+                    <span class="tui-logo">┌── PULSETERM ──┐</span>
+                    <span class="tui-sub">│  TUI ENGINE   │</span>
+                    <span class="tui-logo">└─── v1.0.0 ────┘</span>
+                </div>
+            </div>
+
+            <nav class="rail-nav">
+                <button onclick="navigate('home')" class="nav-btn active" data-page="home" title="Press [1] for Home">
+                    <span class="key-badge">1</span><span class="nav-text">HOME</span>
+                </button>
+                <button onclick="navigate('search')" class="nav-btn" data-page="search" title="Press [2] for Search">
+                    <span class="key-badge">2</span><span class="nav-text">SEARCH</span>
+                </button>
+                <button onclick="navigate('library')" class="nav-btn" data-page="library" title="Press [3] for Library">
+                    <span class="key-badge">3</span><span class="nav-text">LIBRARY</span>
+                </button>
+                <button onclick="navigate('playlists')" class="nav-btn" data-page="playlists" title="Press [4] for Playlists">
+                    <span class="key-badge">4</span><span class="nav-text">PLAYLISTS</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="tui-telemetry">
+                    <div class="tui-stat"><span class="tui-dim">ENGINE</span><span class="tui-val">ALSA/PCM</span></div>
+                    <div class="tui-stat"><span class="tui-dim">RATE</span><span class="tui-val">48.0kHz</span></div>
+                    <div class="tui-stat">
+                        <span class="tui-dim">VOL</span>
+                        <button id="vol-mute-btn" onclick="player.toggleMute()" class="tui-mute-btn" title="Click to mute/unmute audio (M)">
+                            <span id="vol-readout" class="tui-val">80%</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="volume-wrap">
+                    <input type="range" id="volume-slider" min="0" max="100" value="80" aria-label="Volume">
+                </div>
+                <div class="tui-side-keys">
+                    <div><kbd>SPC</kbd> PLAY/PAUSE</div>
+                    <div><kbd>/</kbd> SEARCH</div>
+                    <div><kbd>V</kbd> VISUALIZER</div>
+                    <div><kbd>E</kbd> EQUALIZER</div>
+                    <div><kbd>Q</kbd> QUEUE</div>
+                </div>
+            </div>
+        </aside>
+
+        <main id="main-content">
+            <header id="top-bar">
+                <div class="tui-prompt-wrap">
+                    <span class="term-prompt">user@pulseterm:~$</span>
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="find track, artist, album... [/]" aria-label="Search YouTube Music" autocomplete="off" spellcheck="false">
+                        <button id="search-clear-btn" class="tui-clear-btn hidden" onclick="window.clearSearch()" aria-label="Clear search" title="Clear input">[✕]</button>
+                        <span class="term-cursor" aria-hidden="true"></span>
+                        <button class="tui-btn search-go" onclick="doSearch()" aria-label="Execute search">[EXEC]</button>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
+                    <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
+                    <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
+                    <button onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
+                    <button onclick="toggleSettings()" class="tui-badge" title="Open terminal configuration">[CONFIG]</button>
+                </div>
+            </header>
+
+            <div id="page-content"></div>
+        </main>
+
+        <div id="player-bar">
+            <!-- Expanded Seek Hit Target with Hover Time Tooltip -->
+            <div id="progress-bar" title="Click to seek position" role="slider" tabindex="0" aria-label="Track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="seek-tooltip" class="seek-tooltip hidden">0:00</div>
+                <div id="progress-buffered"></div>
+                <div id="progress-fill"></div>
+            </div>
+
+            <div class="player-inner">
+                <div class="player-info">
+                    <div class="cover-frame" onclick="toggleLyrics()" title="Click to view teletext lyrics and track artwork (L)" style="cursor: pointer;">
+                        <img id="player-cover" alt="" class="player-cover">
+                    </div>
+                    <div class="player-meta">
+                        <div class="title-row">
+                            <span id="player-state-badge" class="tui-state-badge">[IDLE]</span>
+                            <span id="player-title" onclick="toggleLyrics()" title="Click to view teletext lyrics">Nothing playing</span>
+                        </div>
+                        <span id="player-artist" class="player-subtitle">Press [/] to search or select a track</span>
+                        <span id="player-status" class="player-status"></span>
+                    </div>
+                    <button onclick="toggleLike()" class="tui-icon-btn like-btn" id="like-btn" aria-label="Save to liked" title="Favorite track">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19.4S4.6 14.7 4.6 9.9A4.15 4.15 0 0 1 12 7.5a4.15 4.15 0 0 1 7.4 2.4c0 4.8-7.4 9.5-7.4 9.5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    </button>
+                    <button onclick="toggleLyrics()" class="tui-btn lyrics-toggle" id="lyrics-toggle" title="View synchronized teletext lyrics (L)">[LYRICS]</button>
+                </div>
+
+                <div class="player-controls">
+                    <button onclick="cycleRepeat()" class="tui-btn toggle-btn" id="repeat-btn" data-state="none" aria-label="Repeat" title="Cycle repeat mode (R)">
+                        [REP: OFF]
+                    </button>
+                    <button onclick="prevSong()" class="tui-btn" aria-label="Previous track" title="Previous track (P / Shift + Left)">[◀◀]</button>
+                    <button onclick="togglePlay()" class="tui-btn play-btn" id="play-btn" data-state="paused" aria-label="Play or pause" title="Play / Pause (Space)">
+                        <span class="glyph-play">[▶ PLAY]</span>
+                        <span class="glyph-pause">[❚❚ PAUSE]</span>
+                    </button>
+                    <button onclick="nextSong()" class="tui-btn" aria-label="Next track" title="Next track (N / Shift + Right)">[▶▶]</button>
+                    <button onclick="toggleShuffle()" class="tui-btn toggle-btn" id="shuffle-btn" aria-label="Shuffle" title="Shuffle queue (S)">
+                        [SHUF]
+                    </button>
+                    <button onclick="toggleContinue()" class="tui-btn toggle-btn on" id="continue-btn" aria-label="Continuing playlist" title="Auto-recommendations on queue end" aria-pressed="true">
+                        [AUTOPLAY]
+                    </button>
+                </div>
+
+                <div class="player-right">
+                    <div class="player-clock">
+                        <span id="current-time">0:00</span><span class="clock-sep">/</span><span id="total-time">0:00</span>
+                    </div>
+                    <span class="tui-bitrate-badge">[256k AAC]</span>
+                    <button id="player-mini-viz" class="tui-mini-viz" onclick="toggleVisualizer()" title="Click to toggle audio visualizer HUD (V)">[ ░░░░░░░░ ]</button>
+                    <button onclick="toggleQueue()" class="tui-btn queue-btn" title="View queue buffer (Q)">[QUEUE]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TUI Audio Visualizer Drawer (Collapsible & Expandable) -->
+    <div id="visualizer-drawer" class="hidden">
+        <div class="drawer-head">
+            <div class="viz-head-title">
+                <h3>┌── [VIZ] AUDIO SPECTRUM ANALYZER</h3>
+                <span id="viz-now-playing" class="viz-track-label"></span>
+            </div>
+            <div class="viz-actions">
+                <button id="viz-expand-btn" onclick="window.toggleVisualizerExpand()" class="tui-btn" title="Toggle compact/expanded height">[EXPAND ▲]</button>
+                <button onclick="cycleVisualizerMode()" class="tui-btn" title="Switch visualizer algorithm">[MODE: <span id="viz-mode-label">CAVA</span>]</button>
+                <button onclick="toggleVisualizer()" class="tui-btn" title="Close visualizer (Esc)">[CLOSE ×]</button>
+            </div>
+        </div>
+        <div class="viz-body">
+            <canvas id="visualizer-canvas"></canvas>
+            <div class="viz-telemetry">
+                <span>BAND: 32Hz-16kHz</span>
+                <span>DSP: 256-PT FFT</span>
+                <span>WINDOW: HANNING</span>
+                <span>PEAK DECAY: -2.5dB/s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TUI Settings Drawer -->
+    <div id="settings-panel" class="hidden">
+        <div class="settings-content">
+            <div class="drawer-head">
+                <h2>┌── CONFIG // SYSTEM PREFERENCES ────────────────────┐</h2>
+                <button onclick="toggleSettings()" class="tui-btn" aria-label="Close settings">[CLOSE ×]</button>
+            </div>
+            <div class="setting-group">
+                <label>Terminal Color Palette (T to cycle)</label>
+                <div class="theme-options">
+                    <button onclick="setTheme('dark', this)" class="theme-btn active" data-theme="dark" title="Matrix Phosphor Green"><span class="theme-swatch dark"></span>[MATRIX GREEN]</button>
+                    <button onclick="setTheme('amber', this)" class="theme-btn" data-theme="amber" title="Vintage VT100 Amber CRT"><span class="theme-swatch amber"></span>[AMBER CRT]</button>
+                    <button onclick="setTheme('oled', this)" class="theme-btn" data-theme="oled" title="Pure Pitch Black & White Monolith"><span class="theme-swatch oled"></span>[OLED MONO]</button>
+                    <button onclick="setTheme('cyberpunk', this)" class="theme-btn" data-theme="cyberpunk" title="Night City Cyan & Magenta"><span class="theme-swatch cyberpunk"></span>[CYBERPUNK]</button>
+                    <button onclick="setTheme('nordic', this)" class="theme-btn" data-theme="nordic" title="Tokyo Night Dark Slate"><span class="theme-swatch nordic"></span>[TOKYO SLATE]</button>
+                    <button onclick="setTheme('light', this)" class="theme-btn" data-theme="light" title="Solarized Retro Terminal"><span class="theme-swatch light"></span>[SOLARIZED]</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Master Output Gain</label>
+                <input type="range" id="settings-volume" min="0" max="100" value="80">
+            </div>
+            <div class="setting-group">
+                <label>Playback Subsystem</label>
+                <div class="toggle-group">
+                    <label class="check"><input type="checkbox" id="settings-shuffle" onchange="savePlayerSettings()"> [x] Shuffle playback order</label>
+                    <label class="check">Repeat behavior:
+                        <select id="settings-repeat" onchange="savePlayerSettings()">
+                            <option value="none">[NONE] Off</option>
+                            <option value="all">[ALL] Repeat queue</option>
+                            <option value="one">[ONE] Repeat single track</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label for="settings-crossfade">DSP Crossfade Buffer: <span id="crossfade-value">0s</span></label>
+                <input type="range" id="settings-crossfade" min="0" max="12" step="1" value="0" oninput="document.getElementById('crossfade-value').textContent=this.value+'s';savePlayerSettings()">
+            </div>
+            <div class="setting-group">
+                <label for="settings-speed">DSP Resampler Speed</label>
+                <select id="settings-speed" onchange="savePlayerSettings()">
+                    <option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1.00× (Bit-perfect)</option><option value="1.1">1.10×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label for="settings-sleep">Shutdown / Sleep Timer</label>
+                <select id="settings-sleep" onchange="setSleepTimer(this.value)">
+                    <option value="0">Disabled</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>
+                </select>
+            </div>
+            <button onclick="savePlayerSettings()" class="save-btn">[COMMIT CONFIG TO FLASH]</button>
+            <p class="keys">ASCII & Unicode terminal music client powered by FastAPI, SQLite-WAL & Web Audio.</p>
+        </div>
+    </div>
+
+    <!-- TUI Queue Drawer -->
+    <div id="queue-panel" class="hidden">
+        <div class="drawer-head">
+            <h3>┌── PLAYBACK QUEUE BUFFER ─────────────────────────────┐</h3>
+            <div class="drawer-head-actions">
+                <button onclick="clearQueue()" class="tui-btn">[PURGE]</button>
+                <button onclick="toggleQueue()" class="tui-btn">[CLOSE ×]</button>
+            </div>
+        </div>
+        <ul id="queue-list"></ul>
+    </div>
+
+    <!-- TUI DSP Equalizer Drawer -->
+    <div id="equalizer-panel" class="hidden">
+        <div class="drawer-head">
+            <div class="eq-head-title">
+                <h3>┌── [DSP] 10-BAND PARAMETRIC EQUALIZER ────────────────┐</h3>
+            </div>
+            <div class="drawer-head-actions">
+                <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">[EQ: ENABLED]</button>
+                <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
+                <button onclick="toggleEqualizer()" class="tui-btn" title="Close equalizer panel (Esc)">[CLOSE ×]</button>
+            </div>
+        </div>
+        <div id="equalizer-container"></div>
+    </div>
+
+    <!-- TUI Now Playing / Lyrics Overlay -->
+    <section id="now-playing" class="hidden" aria-label="Now playing terminal teletext">
+        <div class="now-playing-head">
+            <div>
+                <span class="eyebrow-label">┌─ TELETEXT AUDIO STREAM ─┐</span>
+                <h2 id="now-title">Nothing playing</h2>
+                <p id="now-artist"></p>
+            </div>
+            <button onclick="closeNowPlaying()" class="tui-btn">[RETURN ESC]</button>
+        </div>
+        <div class="now-playing-body">
+            <div class="now-cover-frame">
+                <img id="now-cover" alt="" />
+                <div class="cover-telemetry">
+                    <span>CODEC: OPUS/AAC</span>
+                    <span>BUFFER: SYNCHRONIZED</span>
+                </div>
+            </div>
+            <div id="lyrics-lines" aria-live="polite">
+                <p class="lyrics-empty">Waiting for synchronized teletext stream…</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="context-menu" class="hidden" role="menu"></div>
+    <div id="toast" role="status" aria-live="polite" class="hidden">
+        <span class="tui-prompt-char">❯</span>
+        <span id="toast-message"></span>
+        <button id="toast-action" class="tui-btn hidden">[UNDO]</button>
+    </div>
+
+    <!-- TUI Keybind Help Dialog -->
+    <dialog id="shortcut-help">
+        <div class="drawer-head">
+            <h2>┌── COMMAND KEYMAP ───────────────────────────────────┐</h2>
+            <button onclick="document.getElementById('shortcut-help').close()" class="tui-btn">[CLOSE ×]</button>
+        </div>
+        <dl>
+            <dt>Space</dt><dd>Toggle play / pause</dd>
+            <dt>1, 2, 3, 4</dt><dd>Quick jump: Home, Search, Library, Playlists</dd>
+            <dt>/ (Slash)</dt><dd>Focus search command prompt</dd>
+            <dt>n / p</dt><dd>Next track / Previous track</dd>
+            <dt>← / →</dt><dd>Seek backward / forward 5 seconds</dd>
+            <dt>v</dt><dd>Toggle CAVA audio spectrum visualizer</dd>
+            <dt>e</dt><dd>Toggle 10-band DSP equalizer & genre presets</dd>
+            <dt>c</dt><dd>Toggle CRT scanline raster effect</dd>
+            <dt>t</dt><dd>Cycle terminal color palette</dd>
+            <dt>q</dt><dd>Toggle playback queue drawer</dd>
+            <dt>l</dt><dd>Toggle synchronized teletext lyrics</dd>
+            <dt>m</dt><dd>Toggle audio mute</dd>
+            <dt>s</dt><dd>Toggle shuffle mode</dd>
+            <dt>r</dt><dd>Cycle repeat mode (none / all / one)</dd>
+            <dt>Esc</dt><dd>Dismiss active drawer or modal</dd>
+            <dt>?</dt><dd>Show this keymap reference</dd>
+        </dl>
+    </dialog>
+
+    <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/equalizer.js"></script>
+    <script type="module" src="/js/visualizer.js"></script>
+    <script type="module" src="/js/player.js"></script>
+    <script type="module" src="/js/router.js"></script>
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
