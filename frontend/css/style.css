@@ -1169,17 +1169,19 @@ body.playing .tui-state-badge {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
   user-select: none;
 }
 
-.viz-head-title {
+.viz-head-title, .eq-head-title {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .viz-track-label {
@@ -1200,7 +1202,10 @@ body.playing .tui-state-badge {
 
 .viz-actions, .drawer-head-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .viz-body {
@@ -1227,7 +1232,7 @@ body.playing .tui-state-badge {
 }
 
 /* ============ DRAWERS (SETTINGS, QUEUE & EQUALIZER) ============ */
-#settings-panel, #queue-panel, #equalizer-panel {
+#settings-panel, #queue-panel {
   position: fixed;
   top: 0;
   right: 0;
@@ -1240,18 +1245,40 @@ body.playing .tui-state-badge {
   padding: 20px;
   overflow-y: auto;
   box-shadow: -4px 0 20px rgba(0,0,0,0.5);
-}
-
-#settings-panel, #queue-panel {
   width: min(440px, 92vw);
 }
 
 #equalizer-panel {
-  width: min(540px, 95vw);
-  z-index: 96;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: var(--player);
+  background: var(--paper-2);
+  border-left: 1px solid var(--line);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 44px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: -6px 0 28px rgba(0,0,0,0.6);
+  width: min(680px, 98vw);
 }
 
 #settings-panel.hidden, #queue-panel.hidden, #equalizer-panel.hidden { display: none; }
+
+#equalizer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.eq-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-bottom: 20px;
+}
 
 /* ============ TUI EQUALIZER (10-BAND DSP) ============ */
 .eq-head-title h3 {
@@ -1365,10 +1392,20 @@ body.playing .tui-state-badge {
 
 .eq-rack {
   display: flex;
-  gap: 10px;
-  padding: 20px 0 10px;
+  gap: 12px;
+  padding: 16px 0 16px;
   align-items: stretch;
-  min-height: 240px;
+  min-height: 250px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eq-rack::-webkit-scrollbar {
+  height: 6px;
+}
+
+.eq-rack::-webkit-scrollbar-thumb {
+  background: var(--line-2);
 }
 
 .eq-scale {
@@ -1378,17 +1415,18 @@ body.playing .tui-state-badge {
   font-size: 9.5px;
   color: var(--ink-3);
   font-weight: 600;
-  padding: 18px 0 24px;
+  padding: 16px 8px 24px 0;
   border-right: 1px dotted var(--line);
-  padding-right: 8px;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .eq-faders {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(10, minmax(46px, 1fr));
+  gap: 6px;
+  min-width: 480px;
 }
 
 .eq-fader-channel {
@@ -1396,40 +1434,48 @@ body.playing .tui-state-badge {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  min-width: 44px;
 }
 
 .eq-fader-val {
-  font-size: 9px;
+  font-size: 9.5px;
   color: var(--seal);
-  font-weight: 600;
-  height: 14px;
+  font-weight: 700;
+  height: 16px;
+  line-height: 16px;
+  white-space: nowrap;
 }
 
 .eq-fader-track {
-  flex: 1;
+  height: 154px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0;
+  padding: 4px 0;
   position: relative;
 }
 
 .eq-slider-vertical {
+  -webkit-appearance: slider-vertical;
   writing-mode: vertical-lr;
   direction: rtl;
-  -webkit-appearance: slider-vertical;
-  width: 20px;
-  height: 140px;
+  width: 24px;
+  height: 144px;
   cursor: ns-resize;
   accent-color: var(--seal);
   background: transparent;
+  padding: 0 4px;
+  margin: 0;
 }
 
 .eq-fader-freq {
-  font-size: 9px;
+  font-size: 9.5px;
   color: var(--ink-3);
   font-weight: 700;
   text-align: center;
+  white-space: nowrap;
+  height: 16px;
+  line-height: 16px;
 }
 
 .setting-group {
@@ -1906,6 +1952,49 @@ select {
   #toast {
     bottom: calc(var(--player) + 54px);
   }
+
+  /* Fullscreen Modal Drawers on Small Screens & Tablets */
+  #settings-panel, #queue-panel, #equalizer-panel {
+    position: fixed;
+    inset: 0 0 0 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    z-index: 200;
+    border-left: none;
+    padding: 16px 16px 80px;
+    box-shadow: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .drawer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .drawer-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .eq-head-title {
+    min-width: 0;
+  }
+
+  .drawer-head h2, .drawer-head h3 {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* 5. Mobile Handhelds (max-width: 640px) */
@@ -1949,55 +2038,22 @@ select {
     font-size: 10px;
   }
 
-  /* Fullscreen Modal Drawers on Small Screens */
   #settings-panel, #queue-panel, #equalizer-panel {
-    position: fixed;
-    inset: 0 0 0 0;
-    width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
-    z-index: 150;
-    border-left: none;
-    padding: 14px;
-    box-shadow: none;
-  }
-
-  .drawer-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .drawer-head-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .eq-head-title {
-    min-width: 0;
-  }
-
-  .drawer-head h2, .drawer-head h3 {
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding: 14px 14px 76px;
   }
 
   /* Equalizer Rack responsive adjustment */
   .eq-rack {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 14px 0 8px;
+    padding: 14px 0 16px;
   }
 
   .eq-faders {
-    min-width: 320px;
+    display: grid;
+    grid-template-columns: repeat(10, minmax(44px, 1fr));
+    gap: 6px;
+    min-width: 460px;
   }
 
   .eq-sliders-macro {
