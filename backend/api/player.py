@@ -189,7 +189,8 @@ class PlayerManager:
     def set_order(self, order, pos=None):
         clean = [i for i in (order or []) if isinstance(i, int) and 0 <= i < len(self._context)]
         if clean:
-            self._order = clean
+            missing = [i for i in range(len(self._context)) if i not in clean]
+            self._order = clean + missing
             try:
                 p = int(pos) if pos is not None else self._order_pos
             except (TypeError, ValueError):

@@ -378,7 +378,7 @@ def _cache_get(video_id, limit, exclude=None):
         tracks = hit[1]
         if exclude:
             tracks = [t for t in tracks if t.get("videoId") not in exclude]
-        if tracks:
+        if len(tracks) >= 5 or (tracks and not exclude):
             return tracks[:limit]
     return None
 

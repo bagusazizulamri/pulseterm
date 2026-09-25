@@ -231,36 +231,75 @@ const player = {
     },
 
     _adoptContinueSeed(seed) {
-        if (!seed?.videoId) return;
-        this.continueSeed = { ...seed };
+        const vid = seed?.videoId || seed?.video_id;
+        if (!vid) return;
+        this.continueSeed = {
+            videoId: vid,
+            title: seed.title || '',
+            artist: seed.artist || '',
+            album: seed.album || '',
+            thumbnail: seed.thumbnail || '',
+            duration: Number(seed.duration) || 0,
+            isVideo: Boolean(seed.isVideo || seed.is_video),
+            is_video: Boolean(seed.isVideo || seed.is_video),
+            reason: seed.reason || '',
+        };
     },
 
     _scheduleContinue(seed) {
-        if (!this.autoContinue || !seed?.videoId) return;
+        if (!this.autoContinue) return;
         clearTimeout(this.continueTimer);
-        this.continueTimer = setTimeout(() => this._extendContinuing(seed), 900);
+        const tailSeed = seed || (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.continueSeed || this.currentSong;
+        if (!tailSeed) return;
+        this.continueTimer = setTimeout(() => this._extendContinuing(tailSeed), 600);
     },
 
     async _extendContinuing(seed) {
-        if (!this.autoContinue || this.continueBusy || !seed?.videoId) return;
-        // Only top up when the tail is short so a long album/playlist is untouched.
+        if (!this.autoContinue || this.continueBusy) return;
         const remaining = Math.max(0, this.playOrder.length - (this.orderPos + 1));
         if (remaining > 3) return;
+
+        const tailTrack = (this.currentSongs && this.currentSongs.length > 0) ? this.currentSongs[this.currentSongs.length - 1] : null;
+        const candidateSeed = seed || tailTrack || this.continueSeed || this.currentSong;
+        const vid = candidateSeed?.videoId || candidateSeed?.video_id;
+        if (!vid) return;
+
+        const effectiveSeed = {
+            videoId: vid,
+            title: candidateSeed.title || '',
+            artist: candidateSeed.artist || '',
+            album: candidateSeed.album || '',
+            thumbnail: candidateSeed.thumbnail || '',
+            duration: Number(candidateSeed.duration) || 0,
+            isVideo: Boolean(candidateSeed.isVideo || candidateSeed.is_video),
+            is_video: Boolean(candidateSeed.isVideo || candidateSeed.is_video),
+        };
+
         this.continueBusy = true;
         try {
-            const isVid = Boolean(seed.isVideo || seed.is_video);
-            const res = await extendQueue({
-                videoId: seed.videoId, title: seed.title, artist: seed.artist,
-                album: seed.album || '', thumbnail: seed.thumbnail || '',
-                duration: seed.duration || 0,
-                isVideo: isVid,
-                is_video: isVid,
-            }, 20);
-            const added = res?.success ? (res.data?.added || []) : [];
-            if (added.length) this._mergeContinuing(res.data?.status || null, added);
-            else if (res?.success) this._noteContinueEmpty();
-        } catch {
-            // Quiet failure: the lane simply ends instead of interrupting playback.
+            const res = await extendQueue(effectiveSeed, 20);
+            let added = res?.success ? (res.data?.added || []) : [];
+            // If candidates for this seed were exhausted, try fallback with current song if different
+            if (!added.length && this.currentSong && this.currentSong.videoId && this.currentSong.videoId !== vid) {
+                const fallbackRes = await extendQueue({
+                    videoId: this.currentSong.videoId,
+                    title: this.currentSong.title || '',
+                    artist: this.currentSong.artist || '',
+                    album: this.currentSong.album || '',
+                    thumbnail: this.currentSong.thumbnail || '',
+                    duration: Number(this.currentSong.duration) || 0,
+                }, 20);
+                if (fallbackRes?.success && fallbackRes.data?.added?.length) {
+                    added = fallbackRes.data.added;
+                }
+            }
+            if (added.length) {
+                this._mergeContinuing(res?.data?.status || null, added);
+            } else if (res?.success) {
+                this._noteContinueEmpty();
+            }
+        } catch (err) {
+            console.debug('Continuing playlist fetch error:', err);
         } finally {
             this.continueBusy = false;
         }
@@ -269,6 +308,7 @@ const player = {
     _mergeContinuing(status, added) {
         const normed = this._norm(added);
         if (!normed.length && !(status && typeof status === 'object')) return;
+        let newCount = 0;
         for (const song of normed) {
             song.autoAdded = true;
             if (this.currentSongs.some(s => s.videoId === song.videoId)) continue;
@@ -278,8 +318,15 @@ const player = {
             this.playOrder.push(this.currentSongs.length - 1);
             this.autoIds.add(song.videoId);
             if (song.reason) this.recReasons[song.videoId] = song.reason;
+            newCount++;
         }
-        if (status && typeof status === 'object') this._applyServerQueue(status);
+        if (newCount > 0) {
+            const newestTail = this.currentSongs[this.currentSongs.length - 1];
+            if (newestTail) {
+                this._adoptContinueSeed(newestTail);
+            }
+            setQueueOrder(this.playOrder, this.orderPos).catch(() => {});
+        }
         this.continueNotice = 'Continuing the ' + (this._laneLabel(this.continueSeed) || 'lane');
         this.saveState();
         this.updatePlayerUI();
@@ -309,6 +356,12 @@ const player = {
             const cleanOrder = Array.isArray(status.order)
                 ? status.order.filter(i => Number.isInteger(i) && i >= 0 && i < ctx.length)
                 : [];
+            if (cleanOrder.length < ctx.length) {
+                const existing = new Set(cleanOrder);
+                for (let i = 0; i < ctx.length; i++) {
+                    if (!existing.has(i)) cleanOrder.push(i);
+                }
+            }
             this.playOrder = cleanOrder.length ? cleanOrder : ctx.map((_, i) => i);
             if (posId) {
                 const idx = ctx.findIndex(s => s.videoId === posId);
@@ -344,7 +397,8 @@ const player = {
             this.continueNotice = '';
         } else if (this.currentSong) {
             this._adoptContinueSeed(this.currentSong);
-            this._scheduleContinue(this.currentSong);
+            const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong;
+            this._scheduleContinue(tailSeed);
         }
         this.saveState();
         this.updateContinueUI();
@@ -415,8 +469,9 @@ const player = {
                 this.prepareNext();
                 this.scheduleCrossfade();
 
-                if (this.autoContinue && (this.currentSong || this.continueSeed) && this.playOrder.length - (this.orderPos + 1) <= 3) {
-                    this._scheduleContinue(this.currentSong || this.continueSeed);
+                if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
+                    const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
+                    this._scheduleContinue(tailSeed);
                 }
                 return;
             } catch (e) {
@@ -478,8 +533,9 @@ const player = {
             this.scheduleCrossfade();
             // Top up the auto-continue lane after the stream actually starts, so
             // the orderPos is settled and the remaining count is accurate.
-            if (this.autoContinue && (this.currentSong || this.continueSeed) && this.playOrder.length - (this.orderPos + 1) <= 3) {
-                this._scheduleContinue(this.currentSong || this.continueSeed);
+            if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
+                const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
+                this._scheduleContinue(tailSeed);
             }
         } catch (e) {
             if (token !== this.playToken) return;
@@ -732,9 +788,12 @@ const player = {
         if (!this.playOrder.length) return;
         let pos = this.orderPos + 1;
         if (pos >= this.playOrder.length) {
-            if (this.autoContinue && this.continueSeed && !manual) {
-                await this._extendContinuing(this.continueSeed);
-                if (this.orderPos + 1 < this.playOrder.length) pos = this.orderPos + 1;
+            if (this.autoContinue) {
+                const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.continueSeed || this.currentSong;
+                if (tailSeed) {
+                    await this._extendContinuing(tailSeed);
+                    if (this.orderPos + 1 < this.playOrder.length) pos = this.orderPos + 1;
+                }
             }
             if (pos >= this.playOrder.length) {
                 if (this.repeatMode !== 'all') { this.isPlaying = false; this.updatePlayerUI(); return; }
@@ -753,7 +812,8 @@ const player = {
         if (song) this._adoptContinueSeed(song);
         await this._start(song);
         if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
-            this._scheduleContinue(song || this.continueSeed);
+            const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || song || this.continueSeed;
+            this._scheduleContinue(tailSeed);
         }
     },
 
@@ -922,12 +982,17 @@ const player = {
                     if (!this.history.length || this.history[this.history.length - 1].videoId !== this.currentSong.videoId) this.history = [...this.history, this.currentSong].slice(-50);
                     setCurrentSong(this.currentSong).catch(() => {});
                     this._saveHistory(this.currentSong);
+                    this._adoptContinueSeed(this.currentSong);
                 }
                 this.preloadAudio.pause(); this.preloadAudio.removeAttribute('src'); delete this.preloadAudio.dataset.videoId; this.preloadAudio.load();
                 equalizer.resetGains();
                 this.crossfadeStarted = false;
                 this.isPlaying = true;
                 this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); this.prepareNext();
+                if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
+                    const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
+                    this._scheduleContinue(tailSeed);
+                }
             }, this.crossfade * 1000);
         } catch (e) {
             console.debug('Crossfade unavailable; continuing without it', e);
@@ -986,6 +1051,14 @@ const player = {
                 this.saveState();
                 fetch('/api/player/position', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ position: Math.floor(this.audio?.currentTime || 0) }) }).catch(() => {});
             }, 5000);
+        }
+        if (this.autoContinue && !this.continueBusy && this.playOrder.length - (this.orderPos + 1) <= 3) {
+            const now = Date.now();
+            if (!this._lastContinueCheck || now - this._lastContinueCheck > 8000) {
+                this._lastContinueCheck = now;
+                const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
+                this._scheduleContinue(tailSeed);
+            }
         }
     },
 
@@ -1285,7 +1358,8 @@ const player = {
                 this.saveState();
                 await this._start(song);
                 if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
-                    this._scheduleContinue(song || this.continueSeed);
+                    const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || song || this.continueSeed;
+                    this._scheduleContinue(tailSeed);
                 }
             }
         }

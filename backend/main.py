@@ -556,9 +556,14 @@ async def extend_context(body: dict = None):
     seed = body.get("seed") if isinstance(body.get("seed"), dict) else {}
     seed_vid = seed.get("videoId") or seed.get("video_id") or ""
     current = player_mgr.current_song
-    if not seed_vid and current:
-        seed_vid = current.video_id
-        seed = _seed_dict(current)
+    if not seed_vid:
+        if player_mgr.context:
+            tail = player_mgr.context[-1]
+            seed_vid = tail.video_id
+            seed = _seed_dict(tail)
+        elif current:
+            seed_vid = current.video_id
+            seed = _seed_dict(current)
     if not seed_vid:
         return {"success": False, "error": "No seed track"}
     exclude = {s.video_id for s in player_mgr.context}
@@ -569,6 +574,24 @@ async def extend_context(body: dict = None):
         exclude.add(item.video_id)
     tracks = await recommend.get_recommendations(seed_vid, seed=seed, limit=limit,
                                                  exclude=exclude)
+    # If the provided seed returned no tracks because all candidates are exhausted,
+    # fallback to the tail track of the context or the current song
+    if not tracks and player_mgr.context:
+        tail = player_mgr.context[-1]
+        if tail.video_id != seed_vid:
+            tail_seed = _seed_dict(tail)
+            tracks = await recommend.get_recommendations(tail.video_id, seed=tail_seed,
+                                                         limit=limit, exclude=exclude)
+            if tracks:
+                seed = tail_seed
+                seed_vid = tail.video_id
+    if not tracks and current and current.video_id != seed_vid:
+        cur_seed = _seed_dict(current)
+        tracks = await recommend.get_recommendations(current.video_id, seed=cur_seed,
+                                                     limit=limit, exclude=exclude)
+        if tracks:
+            seed = cur_seed
+            seed_vid = current.video_id
     added = player_mgr.append_recommendations([_norm_recommend_input(t) for t in tracks])
     return {"success": True, "data": {
         "added": [s.__dict__ for s in added],
