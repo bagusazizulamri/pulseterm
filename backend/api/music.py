@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from typing import Optional
 from ytmusicapi import YTMusic
 from config import YTMUSIC_HEADER, CACHE_DIR
@@ -53,13 +54,24 @@ def _anames(artists) -> str:
             out.append(a)
     return ", ".join([x for x in out if x])
 
+def _hd_url(url: str) -> str:
+    if not url or not isinstance(url, str):
+        return ""
+    if "googleusercontent.com" in url or "ggpht.com" in url:
+        if "=w" in url or "=s" in url:
+            url = re.sub(r'=w\d+-h\d+[^?]*', '=w800-h800-l90-rj', url)
+            url = re.sub(r'=s\d+[^?]*', '=s800', url)
+        else:
+            url += "=w800-h800-l90-rj"
+    return url
+
 def _thumb(item) -> str:
     try:
         th = item.get("thumbnails") if isinstance(item, dict) else None
         if th and isinstance(th, list):
             for t in reversed(th):
                 if isinstance(t, dict) and t.get("url"):
-                    return t["url"]
+                    return _hd_url(t["url"])
     except Exception:
         pass
     return ""

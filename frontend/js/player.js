@@ -1606,6 +1606,36 @@ const player = {
         }
     },
 
+    getHdCoverUrl(url, videoId, size = 800) {
+        if (!url || typeof url !== 'string') return '';
+        if (url.includes('googleusercontent.com') || url.includes('ggpht.com')) {
+            if (url.includes('=w') || url.includes('=s')) {
+                return url.replace(/=w\d+-h\d+[^?]*/, `=w${size}-h${size}-l90-rj`)
+                          .replace(/=s\d+[^?]*/, `=s${size}`);
+            }
+            return `${url}=w${size}-h${size}-l90-rj`;
+        }
+        if (url.includes('ytimg.com') && videoId) {
+            return `https://i.ytimg.com/vi/${videoId}/hq720.jpg`;
+        }
+        return url;
+    },
+
+    openArtworkModal() {
+        if (!this.currentSong || !this.currentSong.thumbnail) return;
+        const modal = document.getElementById('artwork-modal');
+        const img = document.getElementById('artwork-modal-img');
+        const title = document.getElementById('artwork-title-label');
+        if (!modal || !img) return;
+        const ultraHdSrc = this.getHdCoverUrl(this.currentSong.thumbnail, this.currentSong.videoId, 1200);
+        img.src = ultraHdSrc;
+        img.onerror = () => {
+            img.src = this.currentSong.thumbnail;
+        };
+        if (title) title.textContent = `${this.currentSong.title} — ${this.currentSong.artist}`;
+        try { modal.showModal(); } catch { modal.classList.remove('hidden'); }
+    },
+
     updatePlayerUI() {
         const title = document.getElementById('player-title');
         const artist = document.getElementById('player-artist');
@@ -1619,7 +1649,22 @@ const player = {
             document.body.classList.toggle('playing', this.isPlaying);
             const nTitle = document.getElementById('now-title'); if (nTitle) nTitle.textContent = this.currentSong.title;
             const nArtist = document.getElementById('now-artist'); if (nArtist) nArtist.textContent = this.currentSong.artist || '';
-            const nCover = document.getElementById('now-cover'); if (nCover && this.currentSong.thumbnail) nCover.src = this.currentSong.thumbnail;
+            const nCover = document.getElementById('now-cover');
+            if (nCover) {
+                if (this.currentSong.thumbnail) {
+                    const hdSrc = this.getHdCoverUrl(this.currentSong.thumbnail, this.currentSong.videoId, 800);
+                    nCover.src = hdSrc;
+                    nCover.onerror = () => {
+                        if (nCover.src !== this.currentSong.thumbnail) {
+                            nCover.src = this.currentSong.thumbnail;
+                        }
+                    };
+                    nCover.style.display = 'block';
+                } else {
+                    nCover.removeAttribute('src');
+                    nCover.style.display = 'none';
+                }
+            }
         } else {
             if (title) title.textContent = 'Nothing playing';
             if (artist) artist.textContent = '';

@@ -1724,6 +1724,7 @@ body.playing .tui-state-badge {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  cursor: zoom-in;
 }
 
 #now-cover {
@@ -1731,13 +1732,71 @@ body.playing .tui-state-badge {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border: 1px solid var(--line);
+  box-shadow: 0 0 20px var(--seal-glow);
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.now-cover-frame:hover #now-cover {
+  border-color: var(--seal);
+  transform: scale(1.02);
+  box-shadow: 0 0 30px var(--seal-glow);
 }
 
 .cover-telemetry {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 10px;
-  color: var(--ink-3);
+  font-family: var(--font-term);
+  color: var(--ink-light);
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+}
+
+.cover-zoom-prompt {
+  color: var(--seal);
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* ============ ARTWORK LIGHTBOX MODAL ============ */
+dialog.artwork-modal {
+  max-width: 90vw;
+  width: 540px;
+  background: var(--paper-2);
+  border: 1px solid var(--seal);
+  box-shadow: 0 0 40px var(--seal-glow);
+  padding: 16px;
+  color: var(--ink);
+}
+
+dialog.artwork-modal::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.artwork-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+#artwork-modal-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.artwork-meta-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-family: var(--font-term);
+  color: var(--ink-light);
 }
 
 .lyrics-head-actions {

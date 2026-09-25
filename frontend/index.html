@@ -277,11 +277,11 @@
             </div>
         </div>
         <div class="now-playing-body">
-            <div class="now-cover-frame">
-                <img id="now-cover" alt="" />
+            <div class="now-cover-frame" onclick="player.openArtworkModal()" title="Click to view master artwork in Full Ultra-HD">
+                <img id="now-cover" alt="" class="now-cover-img" />
                 <div class="cover-telemetry">
-                    <span>CODEC: OPUS/AAC</span>
-                    <span>BUFFER: SYNCHRONIZED</span>
+                    <span id="cover-res-badge">RES: 800×800 HD</span>
+                    <span class="cover-zoom-prompt">[ZOOM 🔍]</span>
                 </div>
             </div>
             <div id="lyrics-lines" aria-live="polite">
@@ -289,6 +289,21 @@
             </div>
         </div>
     </section>
+
+    <!-- Master Artwork Full-Resolution Lightbox Modal -->
+    <dialog id="artwork-modal" class="tui-modal artwork-modal">
+        <div class="modal-head">
+            <span class="eyebrow-label">[ MASTER ALBUM ARTWORK · ULTRA HD ]</span>
+            <button onclick="document.getElementById('artwork-modal').close()" class="tui-btn">[CLOSE ESC]</button>
+        </div>
+        <div class="artwork-modal-body">
+            <img id="artwork-modal-img" alt="Master Album Art" />
+            <div class="artwork-meta-footer">
+                <span id="artwork-title-label"></span>
+                <span id="artwork-spec-label">[ 1200 × 1200 · MASTER RES ]</span>
+            </div>
+        </div>
+    </dialog>
 
     <div id="context-menu" class="hidden" role="menu"></div>
     <div id="toast" role="status" aria-live="polite" class="hidden">
