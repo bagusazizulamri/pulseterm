@@ -170,6 +170,16 @@ async function doSearch() {
     const input = document.getElementById('search-input');
     const q = input ? input.value.trim() : '';
     if (!q) return;
+
+    // TUI Built-in commands
+    const lowerQ = q.toLowerCase();
+    if (lowerQ === ':reload' || lowerQ === ':refresh' || lowerQ === 'reload' || lowerQ === 'refresh') {
+        if (input) { input.value = ''; input.blur(); }
+        showToast('>> BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
+        await navigate(currentPage);
+        return;
+    }
+
     if (currentPage !== 'search') await navigate('search');
     const container = document.getElementById('search-suggestions-container');
     if (container) container.innerHTML = '<div class="empty-state"><span class="label">[QUERY: IN-PROGRESS]</span><p>Scanning YouTube Music frequency indices…</p></div>';
@@ -736,6 +746,15 @@ document.addEventListener('keydown', (e) => {
             doSearch();
             target.blur();
         }
+        return;
+    }
+
+    // In-App Soft Reload: F5 or Ctrl+R (without Shift)
+    const isReload = (e.key === 'F5') || ((e.key === 'r' || e.key === 'R') && (e.ctrlKey || e.metaKey) && !e.shiftKey);
+    if (isReload) {
+        e.preventDefault();
+        showToast('>> VIEW BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
+        navigate(currentPage);
         return;
     }
 

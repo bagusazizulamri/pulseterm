@@ -80,6 +80,7 @@ const player = {
         this.updatePlayerUI();
         this.refreshLiked();
         this.refreshOffline();
+        this.checkAutoResume();
     },
 
     _norm(list) {
@@ -106,8 +107,17 @@ const player = {
             ended: () => this.onEnded(),
             loadedmetadata: () => this.onMetaLoaded(),
             waiting: () => this.setStatus('Buffering…'),
-            playing: () => { this.setStatus(''); this.isPlaying = true; this.updatePlayerUI(); },
-            pause: () => { this.isPlaying = false; this.updatePlayerUI(); },
+            playing: () => {
+                this.setStatus('');
+                this.isPlaying = true;
+                this.updatePlayerUI();
+                this.savePlaybackSession();
+            },
+            pause: () => {
+                this.isPlaying = false;
+                this.updatePlayerUI();
+                if (!this.isLoading) this.clearPlaybackSession();
+            },
             error: () => this.onError(),
         };
         for (const [event, handler] of Object.entries(this.boundHandlers)) this.audio.addEventListener(event, handler);
@@ -403,6 +413,26 @@ const player = {
             this.isLoading = false;
             this.isPlaying = false;
             console.error('Playback failed:', e);
+            if (e.name === 'NotAllowedError' || options.resume) {
+                this.setStatus('▶ SESSION RESTORED · PRESS SPACE TO RESUME');
+                this.updatePlayerUI();
+                const unlock = async () => {
+                    window.removeEventListener('pointerdown', unlock);
+                    window.removeEventListener('keydown', unlock);
+                    if (this.currentSong?.videoId === song.videoId && !this.isPlaying) {
+                        try {
+                            equalizer.resume();
+                            await this.audio.play();
+                            this.isPlaying = true;
+                            this.setStatus('');
+                            this.updatePlayerUI();
+                        } catch {}
+                    }
+                };
+                window.addEventListener('pointerdown', unlock, { once: true });
+                window.addEventListener('keydown', unlock, { once: true });
+                return;
+            }
             this.setStatus('Could not play this track. ' + (e?.message || 'Try again.'));
             this.updatePlayerUI();
         }
@@ -445,6 +475,70 @@ const player = {
             this.updateContinueUI();
             this.updateQueueUI();
         } catch (e) { console.debug('No server playback state', e); }
+    },
+
+    savePlaybackSession() {
+        if (!this.currentSong?.videoId || !this.isPlaying) return;
+        try {
+            const session = {
+                videoId: this.currentSong.videoId,
+                title: this.currentSong.title || '',
+                artist: this.currentSong.artist || '',
+                thumbnail: this.currentSong.thumbnail || '',
+                duration: Number(this.currentSong.duration) || 0,
+                position: Number(this.audio?.currentTime) || Number(this.savedPosition) || 0,
+                isPlaying: true,
+                savedAt: Date.now()
+            };
+            sessionStorage.setItem('pulseterm_resume_session', JSON.stringify(session));
+        } catch {}
+    },
+
+    clearPlaybackSession() {
+        try {
+            sessionStorage.removeItem('pulseterm_resume_session');
+        } catch {}
+    },
+
+    async checkAutoResume() {
+        try {
+            const raw = sessionStorage.getItem('pulseterm_resume_session');
+            if (!raw) return;
+            sessionStorage.removeItem('pulseterm_resume_session');
+            const session = JSON.parse(raw);
+            if (!session || !session.videoId || !session.isPlaying) return;
+
+            const now = Date.now();
+            const elapsed = (now - Number(session.savedAt || now)) / 1000;
+            // Only auto-resume if page reloaded within the last 60 seconds
+            if (elapsed < 0 || elapsed > 60) return;
+
+            let songToPlay = (this.currentSong && this.currentSong.videoId === session.videoId) ? this.currentSong : null;
+            if (!songToPlay) {
+                songToPlay = this.currentSongs.find(s => s.videoId === session.videoId);
+            }
+            if (!songToPlay) {
+                songToPlay = {
+                    videoId: session.videoId,
+                    title: session.title || 'Audio Stream',
+                    artist: session.artist || '',
+                    thumbnail: session.thumbnail || '',
+                    duration: session.duration || 0
+                };
+            }
+
+            // Compensate for reload duration (e.g. 0.5s - 3s)
+            const resumePos = Math.max(0, Number(session.position || 0) + (elapsed < 6 ? elapsed : 0));
+            this.savedPosition = resumePos;
+            this.currentSong = songToPlay;
+            this.updatePlayerUI();
+            this.setStatus('Restoring audio session…');
+
+            await this._start(songToPlay, { position: resumePos, fromHistory: true, resume: true });
+            this.showToast('Audio session restored');
+        } catch (e) {
+            console.debug('Auto-resume failed:', e);
+        }
     },
 
     applyRemoteStatus(status) {
@@ -786,6 +880,13 @@ const player = {
             this.updateActiveLyric(current * 1000);
         }
         this.savedPosition = current;
+        if (this.isPlaying && this.currentSong) {
+            const now = Date.now();
+            if (!this._lastSessionSave || now - this._lastSessionSave > 600) {
+                this._lastSessionSave = now;
+                this.savePlaybackSession();
+            }
+        }
         if (!this.positionSaveTimer) {
             this.positionSaveTimer = setTimeout(() => {
                 this.positionSaveTimer = null;
@@ -1371,7 +1472,13 @@ const player = {
             e.preventDefault();
             this.showContextMenu({ videoId: el.dataset.videoId, title: el.dataset.title, artist: el.dataset.artist, thumbnail: el.dataset.thumbnail, duration: Number(el.dataset.duration) || 0 }, e.clientX, e.clientY);
         });
-        window.addEventListener('beforeunload', () => this.saveState());
+        const onUnload = () => {
+            this.saveState();
+            if (this.isPlaying && this.currentSong) this.savePlaybackSession();
+            else this.clearPlaybackSession();
+        };
+        window.addEventListener('beforeunload', onUnload);
+        window.addEventListener('pagehide', onUnload);
     },
 };
 
