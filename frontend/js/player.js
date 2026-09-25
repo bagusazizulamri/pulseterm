@@ -299,7 +299,8 @@ const player = {
         const shouldExtendHistory = !options.fromHistory && (!this.history.length || this.history[this.history.length - 1].videoId !== song.videoId);
         this.currentSong = song;
         equalizer.attachMediaElements(this.audio, this.preloadAudio);
-        equalizer.resume();
+        equalizer.resetGains();
+        await equalizer.resume();
 
         // INSTANT DECK SWAP: If preloadAudio already buffered this track, play immediately with zero delay
         const isPreloadReady = this.preloadAudio &&
@@ -322,6 +323,9 @@ const player = {
 
                 this.audio.volume = this.muted ? 0 : this.volume;
                 this.audio.playbackRate = Number(this.playbackRate) || 1;
+
+                equalizer.resetGains();
+                await equalizer.resume();
 
                 await this.audio.play();
                 if (token !== this.playToken) { this.audio.pause(); return; }
@@ -412,28 +416,33 @@ const player = {
             if (token !== this.playToken) return;
             this.isLoading = false;
             this.isPlaying = false;
-            if (e.name === 'NotAllowedError' || options.resume) {
+            if (e.name === 'NotAllowedError') {
                 console.info('Auto-resume paused waiting for user gesture.');
                 this.setStatus('▶ SESSION RESTORED · PRESS SPACE TO RESUME');
                 this.updatePlayerUI();
-                const unlock = async () => {
+                const unlock = async (evt) => {
                     window._pulseterm_interacted = true;
-                    window.removeEventListener('pointerdown', unlock, true);
-                    window.removeEventListener('keydown', unlock, true);
-                    window.removeEventListener('touchstart', unlock, true);
+                    cleanupUnlock();
+                    // If user pressed Space or clicked an interactive button, let the regular handler deal with it
+                    if (evt?.type === 'keydown' && (evt.code === 'Space' || evt.key === ' ' || evt.key === 'Spacebar')) {
+                        return;
+                    }
+                    if (evt?.target && evt.target.closest && evt.target.closest('#play-btn, .play-btn, input, textarea, button, a, .list-item')) {
+                        return;
+                    }
+                    // For background clicks, resume session
                     if (this.currentSong?.videoId === song.videoId && !this.isPlaying) {
-                        try {
-                            equalizer.resume();
-                            await this.audio.play();
-                            this.isPlaying = true;
-                            this.setStatus('');
-                            this.updatePlayerUI();
-                        } catch {}
+                        await this.resume();
                     }
                 };
-                window.addEventListener('pointerdown', unlock, { once: true, capture: true });
-                window.addEventListener('keydown', unlock, { once: true, capture: true });
-                window.addEventListener('touchstart', unlock, { once: true, capture: true });
+                const cleanupUnlock = () => {
+                    ['pointerdown', 'keydown', 'touchstart'].forEach(type => {
+                        window.removeEventListener(type, unlock, true);
+                    });
+                };
+                ['pointerdown', 'keydown', 'touchstart'].forEach(type => {
+                    window.addEventListener(type, unlock, { capture: true, passive: true });
+                });
                 return;
             }
             console.error('Playback failed:', e);
@@ -566,15 +575,28 @@ const player = {
     },
 
     async resume() {
-        if (this.currentSong && this.audio?.src && this.audio.paused && this.audio.currentTime > 0) {
+        await equalizer.resume();
+        equalizer.resetGains();
+        if (this.currentSong && this.audio?.src && this.audio.paused) {
             try {
                 await this.audio.play();
-                this.isPlaying = true; this.setStatus(''); this.updatePlayerUI(); return;
-            } catch {}
+                this.isPlaying = true;
+                this.setStatus('');
+                this.updatePlayerUI();
+                return;
+            } catch (e) {
+                console.debug('Direct audio.play() in resume failed:', e);
+            }
         }
-        if (this.currentSong && this.audio.src) {
-            try { await this.audio.play(); this.isPlaying = true; this.setStatus(''); this.updatePlayerUI(); }
-            catch { await this._start(this.currentSong, { position: this.audio.currentTime || 0 }); }
+        if (this.currentSong && this.audio?.src) {
+            try {
+                await this.audio.play();
+                this.isPlaying = true;
+                this.setStatus('');
+                this.updatePlayerUI();
+            } catch {
+                await this._start(this.currentSong, { position: this.audio.currentTime || 0 });
+            }
         } else if (this.currentSong) {
             const saved = Number(this.savedPosition) || 0;
             if (saved > 0) await this._start(this.currentSong, { position: saved, fromHistory: true });
@@ -584,6 +606,9 @@ const player = {
 
     async toggle() {
         this.lastUserActionTime = Date.now();
+        await equalizer.resume();
+        equalizer.resetGains();
+
         if (!this.currentSong) {
             if (this.currentSongs && this.currentSongs.length) {
                 await this.play(this.currentSongs, 0);
@@ -790,11 +815,9 @@ const player = {
         }
         if (!targetUrl || !this.audioContextClass()) { this.crossfadeStarted = false; return; }
         try {
-            if (!this.deckA) { this.deckA = this.audio; this.deckB = this.preloadAudio; }
-            equalizer.attachMediaElements(this.deckA, this.deckB);
-            const activeIsA = this.audio === this.deckA;
-            const outgoingGain = activeIsA ? equalizer.deckGainA : equalizer.deckGainB;
-            const incomingGain = activeIsA ? equalizer.deckGainB : equalizer.deckGainA;
+            equalizer.attachMediaElements(this.audio, this.preloadAudio);
+            const outgoingGain = equalizer.getGainForElement(this.audio);
+            const incomingGain = equalizer.getGainForElement(this.preloadAudio);
             if (!outgoingGain || !incomingGain) { this.crossfadeStarted = false; return; }
             this.activeCrossfadeGain = incomingGain;
             if (this.preloadAudio.src !== targetUrl) this.preloadAudio.src = targetUrl;
@@ -811,8 +834,6 @@ const player = {
                 const old = this.audio;
                 this.audio = this.preloadAudio;
                 this.preloadAudio = old;
-                [this.deckA, this.deckB] = [this.deckB, this.deckA];
-                [equalizer.deckGainA, equalizer.deckGainB] = [equalizer.deckGainB, equalizer.deckGainA];
                 this._bindActiveAudio();
                 if (this.userQueue.length) {
                     this.currentSong = this.userQueue.shift();
@@ -834,8 +855,7 @@ const player = {
                     this._saveHistory(this.currentSong);
                 }
                 this.preloadAudio.pause(); this.preloadAudio.removeAttribute('src'); delete this.preloadAudio.dataset.videoId; this.preloadAudio.load();
-                if (equalizer.deckGainA) equalizer.deckGainA.gain.value = 1;
-                if (equalizer.deckGainB) equalizer.deckGainB.gain.value = 0;
+                equalizer.resetGains();
                 this.crossfadeStarted = false;
                 this.isPlaying = true;
                 this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); this.prepareNext();

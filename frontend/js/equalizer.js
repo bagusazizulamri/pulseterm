@@ -201,25 +201,37 @@ class TerminalEqualizer {
         return Math.max(-12, Math.min(12, base));
     }
 
-    resume() {
+    _listenForUserGesture() {
+        if (this._gestureListenerAttached) return;
+        this._gestureListenerAttached = true;
+        const onGesture = async () => {
+            window._pulseterm_interacted = true;
+            ['pointerdown', 'keydown', 'touchstart'].forEach(evt => {
+                window.removeEventListener(evt, onGesture, true);
+            });
+            this._gestureListenerAttached = false;
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                try { await this.audioCtx.resume(); } catch {}
+            }
+        };
+        ['pointerdown', 'keydown', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, onGesture, { capture: true, passive: true });
+        });
+    }
+
+    async resume() {
+        if (!this.audioCtx) this.initAudioContext();
         if (!this.audioCtx) return;
         if (this.audioCtx.state === 'suspended') {
-            const hasGesture = Boolean(navigator.userActivation?.hasBeenActive || window._pulseterm_interacted);
+            const hasGesture = Boolean(window._pulseterm_interacted || navigator.userActivation?.hasBeenActive || navigator.userActivation?.isActive);
             if (hasGesture) {
-                this.audioCtx.resume().catch(() => {});
+                try {
+                    await this.audioCtx.resume();
+                } catch (e) {
+                    this._listenForUserGesture();
+                }
             } else {
-                const onGesture = () => {
-                    window._pulseterm_interacted = true;
-                    window.removeEventListener('pointerdown', onGesture, true);
-                    window.removeEventListener('keydown', onGesture, true);
-                    window.removeEventListener('touchstart', onGesture, true);
-                    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-                        this.audioCtx.resume().catch(() => {});
-                    }
-                };
-                window.addEventListener('pointerdown', onGesture, { once: true, capture: true });
-                window.addEventListener('keydown', onGesture, { once: true, capture: true });
-                window.addEventListener('touchstart', onGesture, { once: true, capture: true });
+                this._listenForUserGesture();
             }
         }
     }
@@ -255,6 +267,30 @@ class TerminalEqualizer {
             } catch (e) {
                 console.debug('Equalizer deckB connect notice:', e);
             }
+        }
+    }
+
+    getGainForElement(el) {
+        if (!el) return null;
+        if (el === this.attachedDeckA) return this.deckGainA;
+        if (el === this.attachedDeckB) return this.deckGainB;
+        return null;
+    }
+
+    resetGains() {
+        if (!this.audioCtx) return;
+        const now = this.audioCtx.currentTime;
+        if (this.deckGainA) {
+            try {
+                this.deckGainA.gain.cancelScheduledValues(now);
+                this.deckGainA.gain.setValueAtTime(1, now);
+            } catch {}
+        }
+        if (this.deckGainB) {
+            try {
+                this.deckGainB.gain.cancelScheduledValues(now);
+                this.deckGainB.gain.setValueAtTime(1, now);
+            } catch {}
         }
     }
 
