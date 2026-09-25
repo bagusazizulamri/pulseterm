@@ -668,7 +668,9 @@ window.closeNowPlaying = closeNowPlaying;
 window.toggleVisualizer = () => visualizer.togglePanel();
 window.cycleVisualizerMode = () => visualizer.cycleMode();
 window.toggleCrt = () => visualizer.toggleCrt();
+window.cycleCrt = () => visualizer.toggleCrt();
 window.cycleTheme = cycleTheme;
+window.player = player;
 
 window.clearSearch = () => {
     const sInput = document.getElementById('search-input');

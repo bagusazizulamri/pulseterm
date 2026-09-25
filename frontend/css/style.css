@@ -1067,9 +1067,9 @@ body.crt-active #crt-overlay {
 
 .player-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr);
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   height: 100%;
   padding: 0 var(--pad);
 }
@@ -1174,8 +1174,10 @@ body.playing .tui-state-badge {
 .player-controls {
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .player-controls .tui-btn {
@@ -1212,8 +1214,9 @@ body.playing .tui-state-badge {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .player-clock {
