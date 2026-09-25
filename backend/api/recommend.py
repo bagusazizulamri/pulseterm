@@ -498,9 +498,9 @@ async def get_recommendations(video_id: str, seed: dict = None, limit: int = 15,
     if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
         return []
     try:
-        limit = max(1, min(30, int(limit or 15)))
+        limit = max(1, min(50, int(limit or 20)))
     except (TypeError, ValueError):
-        limit = 15
+        limit = 20
     exclude = set(exclude or [])
     cached = _cache_get(video_id, limit, exclude)
     if cached is not None:

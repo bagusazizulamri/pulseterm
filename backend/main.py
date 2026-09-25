@@ -141,7 +141,7 @@ async def get_album(album_id: str):
 @app.get("/api/playlist/{playlist_id}")
 async def get_playlist(playlist_id: str):
     res = await music.get_playlist(playlist_id)
-    return {"success": True, "data": {"results": _ser(res.results), "query": playlist_id}}
+    return {"success": True, "data": {"results": _ser(res.results), "query": playlist_id, "name": getattr(res, "name", "") or getattr(res, "title", "") or playlist_id}}
 
 @app.get("/api/lyrics/{video_id}")
 async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0):
@@ -550,9 +550,9 @@ async def extend_context(body: dict = None):
     """Append genre/vibe-matched recommendations after the context tail."""
     body = body if isinstance(body, dict) else {}
     try:
-        limit = max(1, min(25, int(body.get("limit", 15) or 15)))
+        limit = max(1, min(50, int(body.get("limit", 20) or 20)))
     except (TypeError, ValueError):
-        limit = 15
+        limit = 20
     seed = body.get("seed") if isinstance(body.get("seed"), dict) else {}
     seed_vid = seed.get("videoId") or seed.get("video_id") or ""
     current = player_mgr.current_song

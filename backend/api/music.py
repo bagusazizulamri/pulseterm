@@ -222,13 +222,24 @@ async def get_playlist(playlist_id: str) -> SearchResult:
     try:
         yt = get_ytmusic()
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, lambda: yt.get_playlist(playlist_id))
+        try:
+            res = await loop.run_in_executor(None, lambda: yt.get_playlist(playlist_id, limit=None))
+        except Exception:
+            res = await loop.run_in_executor(None, lambda: yt.get_playlist(playlist_id, limit=300))
         songs = []
         for t in (res or {}).get("tracks", []) or []:
             if not isinstance(t, dict) or not t.get("videoId"):
                 continue
-            songs.append(Song(video_id=t.get("videoId", ""), title=t.get("title", ""), artist=_anames(t.get("artists")), thumbnail=_thumb(t), duration=_dur(t)))
-        return SearchResult(results=songs, query=playlist_id)
+            songs.append(Song(
+                video_id=t.get("videoId", ""),
+                title=t.get("title", ""),
+                artist=_anames(t.get("artists")),
+                album=(res or {}).get("title", "") or "",
+                thumbnail=_thumb(t),
+                duration=_dur(t)
+            ))
+        title = (res or {}).get("title") or playlist_id
+        return SearchResult(results=songs, query=playlist_id, name=title)
     except Exception:
         return SearchResult(results=[], query=playlist_id)
 

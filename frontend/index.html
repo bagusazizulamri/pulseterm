@@ -213,6 +213,17 @@
                 </select>
             </div>
             <div class="setting-group">
+                <label for="settings-queue-limit">Dynamic Radio Queue Limit (Single Song)</label>
+                <select id="settings-queue-limit" onchange="savePlayerSettings()">
+                    <option value="10">10 tracks</option>
+                    <option value="15">15 tracks</option>
+                    <option value="20" selected>20 tracks (Standard)</option>
+                    <option value="25">25 tracks</option>
+                    <option value="30">30 tracks</option>
+                    <option value="50">50 tracks (Extended)</option>
+                </select>
+            </div>
+            <div class="setting-group">
                 <label for="settings-sleep">Shutdown / Sleep Timer</label>
                 <select id="settings-sleep" onchange="setSleepTimer(this.value)">
                     <option value="0">Disabled</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>

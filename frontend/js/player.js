@@ -48,6 +48,9 @@ const player = {
     continueSeed: null,
     continueBusy: false,
     continueNotice: '',
+    queueLimit: 20,
+    fillToken: 0,
+    isPlaylistContext: false,
     toastTimer: null,
     pendingUndo: null,
 
@@ -138,27 +141,93 @@ const player = {
         try { index = Number(index) || 0; } catch { index = 0; }
         if (!songs.length || !Number.isInteger(index) || index < 0 || index >= songs.length) return;
         const seed = songs[index] || null;
+        const isPlaylist = Boolean(options.isPlaylist || songs.length > 1 || (options.contextName && options.contextName !== 'Single Song'));
+        this.isPlaylistContext = isPlaylist;
+
         if (options.preserveContext && this.currentSongs.length) {
             this.currentSong = songs[index];
             this.currentKind = options.kind || 'user';
             if (options.kind === 'user' || this.currentKind === 'user') this._adoptContinueSeed(seed);
-            // A manual "play next / add" starts a user-lane detour; continuing
-            // recommendations still follow the last clicked context track.
         } else {
             this.currentSongs = songs;
-            this.contextName = options.contextName || '';
+            this.contextName = options.contextName || (isPlaylist ? 'Playlist' : '');
             this.currentIndex = index;
             this.playOrder = this.shuffleMode ? this._shuffleOrder(songs.length, index) : songs.map((_, i) => i);
             this.orderPos = this.playOrder.indexOf(index);
             this.currentKind = 'context';
-            // The clicked track must become current BEFORE _start(): otherwise
-            // `this.currentSong || songs[index]` keeps resolving to the
-            // previous track (e.g. MAMA) and every click replays the old song.
             this.currentSong = songs[index];
             this._adoptContinueSeed(seed);
-            this._scheduleContinue(seed);
+
+            // Update UI immediately so the user sees the complete queue with zero delay
+            this.updatePlayerUI();
+            this.updateQueueUI();
+            this.saveState();
+
+            if (!isPlaylist) {
+                // SINGLE SONG: dynamically add additional songs until the queue meets the limit!
+                this.fillDynamicQueue(seed);
+            } else if (this.autoContinue) {
+                // PLAYLIST: full-load all songs in the playlist into the queue, do NOT inject single-song recommendations.
+                // auto-continue only schedules if/when remaining tracks <= 3
+                this._scheduleContinue(seed);
+            }
         }
         return this._start(this.currentSong, options);
+    },
+
+    setQueueLimit(limit) {
+        this.queueLimit = Math.max(5, Math.min(50, Number(limit) || 20));
+        this.saveState();
+    },
+
+    async fillDynamicQueue(seed) {
+        if (!seed?.videoId || this.isPlaylistContext) return;
+        const targetLimit = Number(this.queueLimit) || 20;
+        let attempts = 0;
+        let currentSeed = seed;
+        const fillToken = ++this.fillToken;
+
+        while (this.currentSongs.length < targetLimit && attempts < 5) {
+            if (fillToken !== this.fillToken || this.isPlaylistContext) break;
+            attempts++;
+            const needed = targetLimit - this.currentSongs.length;
+            if (needed <= 0) break;
+
+            try {
+                const isVid = Boolean(currentSeed.isVideo || currentSeed.is_video);
+                const res = await extendQueue({
+                    videoId: currentSeed.videoId,
+                    title: currentSeed.title,
+                    artist: currentSeed.artist,
+                    album: currentSeed.album || '',
+                    thumbnail: currentSeed.thumbnail || '',
+                    duration: currentSeed.duration || 0,
+                    isVideo: isVid,
+                    is_video: isVid,
+                }, Math.max(15, Math.min(30, needed + 5)));
+
+                if (fillToken !== this.fillToken || this.isPlaylistContext) break;
+
+                const added = res?.success ? (res.data?.added || []) : [];
+                if (!added.length) {
+                    break;
+                }
+
+                const prevCount = this.currentSongs.length;
+                this._mergeContinuing(res.data?.status || null, added);
+                const newCount = this.currentSongs.length;
+
+                // Stop if no new tracks were added to prevent infinite loop
+                if (newCount <= prevCount) {
+                    break;
+                }
+
+                currentSeed = this.currentSongs[this.currentSongs.length - 1];
+            } catch (err) {
+                console.debug('Dynamic queue fill notice:', err);
+                break;
+            }
+        }
     },
 
     _adoptContinueSeed(seed) {
@@ -186,7 +255,7 @@ const player = {
                 duration: seed.duration || 0,
                 isVideo: isVid,
                 is_video: isVid,
-            }, 15);
+            }, 20);
             const added = res?.success ? (res.data?.added || []) : [];
             if (added.length) this._mergeContinuing(res.data?.status || null, added);
             else if (res?.success) this._noteContinueEmpty();
@@ -1466,11 +1535,12 @@ const player = {
             this.autoIds = new Set(Array.isArray(saved.autoIds) ? saved.autoIds : []);
             this.recReasons = (saved.recReasons && typeof saved.recReasons === 'object') ? saved.recReasons : {};
             this.continueSeed = (saved.continueSeed && saved.continueSeed.videoId) ? saved.continueSeed : null;
+            this.queueLimit = Math.max(5, Math.min(50, Number(saved.queueLimit) || 20));
         } catch {}
     },
 
     saveState() {
-        try { localStorage.setItem('pulseterm_player', JSON.stringify({ songs: this.currentSongs, index: this.currentIndex, order: this.playOrder, orderPos: this.orderPos, userQueue: this.userQueue, history: this.history.slice(-50), currentSong: this.currentSong, contextName: this.contextName, volume: this.volume, muted: this.muted, lastVolume: this.lastVolume, repeat: this.repeatMode, shuffle: this.shuffleMode, position: this.audio?.currentTime || this.savedPosition || 0, crossfade: this.crossfade, playbackRate: this.playbackRate || 1, autoContinue: this.autoContinue, autoIds: [...this.autoIds], recReasons: this.recReasons, continueSeed: this.continueSeed })); } catch {}
+        try { localStorage.setItem('pulseterm_player', JSON.stringify({ songs: this.currentSongs, index: this.currentIndex, order: this.playOrder, orderPos: this.orderPos, userQueue: this.userQueue, history: this.history.slice(-50), currentSong: this.currentSong, contextName: this.contextName, volume: this.volume, muted: this.muted, lastVolume: this.lastVolume, repeat: this.repeatMode, shuffle: this.shuffleMode, position: this.audio?.currentTime || this.savedPosition || 0, crossfade: this.crossfade, playbackRate: this.playbackRate || 1, autoContinue: this.autoContinue, autoIds: [...this.autoIds], recReasons: this.recReasons, continueSeed: this.continueSeed, queueLimit: this.queueLimit })); } catch {}
     },
 
     async _saveHistory(song) {

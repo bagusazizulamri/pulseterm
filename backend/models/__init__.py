@@ -29,6 +29,7 @@ class Playlist:
 class SearchResult:
     results: list = field(default_factory=list)
     query: str = ""
+    name: str = ""
 
 @dataclass
 class PlayerState:

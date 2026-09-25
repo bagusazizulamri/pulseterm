@@ -40,7 +40,7 @@ async function openRemoteItem(item) {
             (r.data.description ? '<p class="search-results-info">INFO: ' + esc(r.data.description) + '</p>' : '') +
             '<div class="list" id="detail-list"></div>';
         document.getElementById('detail-back')?.addEventListener('click', () => { detailContext = null; renderSearch(content); renderSearchResults(); });
-        document.getElementById('detail-play')?.addEventListener('click', () => player.play(songs, 0, { contextName: r.data.name || item.title }));
+        document.getElementById('detail-play')?.addEventListener('click', () => player.play(songs, 0, { contextName: r.data.name || item.title, isPlaylist: true }));
         const list = document.getElementById('detail-list');
         songs.forEach((song, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === song.videoId;
@@ -57,7 +57,7 @@ async function openRemoteItem(item) {
                     const rank = item.querySelector('.rank');
                     if (rank) rank.textContent = active ? '▶' : '[' + String(idx + 1).padStart(2, '0') + ']';
                 });
-                await player.play(songs, i, { contextName: r.data.name || item.title });
+                await player.play(songs, i, { contextName: r.data.name || item.title, isPlaylist: true });
             });
             list.appendChild(row);
         });
@@ -300,7 +300,7 @@ function bindCardClicks() {
             const vid = card.dataset.videoId;
             if (vid && vid.length === 11) prepareStreams([vid]).catch(() => {});
         }, { once: true });
-        card.addEventListener('click', async () => {
+        card.addEventListener('click', async (e) => {
             const vid = card.dataset.videoId;
             if (!vid) return;
 
@@ -312,6 +312,27 @@ function bindCardClicks() {
                     kind = 'artist';
                 } else if (vid.startsWith('MPREb_')) {
                     kind = 'album';
+                }
+            }
+
+            // Direct play when clicking the play icon overlay on a playlist or album card
+            if (kind === 'playlist' && e.target.closest('.card-play-overlay')) {
+                try {
+                    const r = await fetch('/api/playlist/' + encodeURIComponent(vid)).then(x => x.json());
+                    if (r?.success && r.data?.results?.length) {
+                        const songs = r.data.results.map(s => ({
+                            videoId: s.videoId || s.video_id,
+                            title: s.title,
+                            artist: s.artist || '',
+                            album: s.album || '',
+                            thumbnail: s.thumbnail || '',
+                            duration: s.duration || 0
+                        }));
+                        await player.play(songs, 0, { contextName: r.data.name || card.dataset.title, isPlaylist: true });
+                        return;
+                    }
+                } catch (err) {
+                    console.debug('Direct playlist play error:', err);
                 }
             }
 
@@ -338,7 +359,7 @@ function bindCardClicks() {
                 isVideo: isVid,
                 is_video: isVid,
             };
-            await player.play([song], 0);
+            await player.play([song], 0, { isSingleSong: true });
         });
         card.addEventListener('contextmenu', e => {
             e.preventDefault();
@@ -361,7 +382,7 @@ async function playFromHistory(index) {
     const history = hres.success ? hres.data : [];
     if (history[index]) {
         const item = history[index];
-        await player.play([{ videoId: item.video_id, title: item.title, artist: item.artist }], 0);
+        await player.play([{ videoId: item.video_id, title: item.title, artist: item.artist }], 0, { isSingleSong: true });
     }
 }
 
@@ -415,7 +436,7 @@ async function openPlaylist(id) {
         }
     });
     document.getElementById('pl-detail-play')?.addEventListener('click', () => {
-        if (songs.length > 0) player.play(songs, 0, { contextName: pl.name });
+        if (songs.length > 0) player.play(songs, 0, { contextName: pl.name, isPlaylist: true });
     });
 
     const list = document.getElementById('pl-track-list');
@@ -460,7 +481,7 @@ async function openPlaylist(id) {
                     const rank = item.querySelector('.rank');
                     if (rank) rank.textContent = active ? '▶' : '[' + String(idx + 1).padStart(2, '0') + ']';
                 });
-                await player.play(songs, i, { contextName: pl.name });
+                await player.play(songs, i, { contextName: pl.name, isPlaylist: true });
             });
 
             list.appendChild(row);
@@ -569,6 +590,7 @@ async function init() {
             const cf = document.getElementById('settings-crossfade'); if (cf) cf.value = player.crossfade;
             const sp = document.getElementById('settings-speed'); if (sp) sp.value = player.audio.playbackRate;
             const sl = document.getElementById('settings-sleep'); if (sl) sl.value = String(d.sleepMinutes || 0);
+            const ql = document.getElementById('settings-queue-limit'); if (ql) ql.value = String(player.queueLimit || 20);
             const cfLabel = document.getElementById('crossfade-value'); if (cfLabel) cfLabel.textContent = player.crossfade + 's';
         }
     } catch {}
@@ -680,6 +702,7 @@ window.savePlayerSettings = async function() {
     const crossfade = Number(document.getElementById('settings-crossfade')?.value || 0);
     const speed = Number(document.getElementById('settings-speed')?.value || 1);
     const sleepMinutes = Number(document.getElementById('settings-sleep')?.value || 0);
+    const queueLimit = Number(document.getElementById('settings-queue-limit')?.value || 20);
     localStorage.setItem('pulseterm_theme', theme);
     await saveSettings({ theme, volume: vol, shuffle, repeat, crossfade, speed, sleepMinutes });
     player.setVolume(vol);
@@ -688,6 +711,7 @@ window.savePlayerSettings = async function() {
     player.crossfade = crossfade;
     player.setPlaybackSpeed(speed);
     player.setSleepTimer(sleepMinutes);
+    player.setQueueLimit(queueLimit);
     player.saveState();
     document.getElementById('settings-panel').classList.add('hidden');
 };
