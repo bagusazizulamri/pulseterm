@@ -1740,6 +1740,12 @@ body.playing .tui-state-badge {
   color: var(--ink-3);
 }
 
+.lyrics-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 #lyrics-lines {
   max-height: calc(100vh - 280px);
   overflow-y: auto;
@@ -1748,7 +1754,7 @@ body.playing .tui-state-badge {
 
 .lyric-line {
   font-size: clamp(15px, 2vw, 22px);
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--ink-3);
   margin-bottom: 14px;
   transition: color 0.15s, transform 0.15s;
@@ -1764,6 +1770,41 @@ body.playing .tui-state-badge {
 .lyric-line.active::before {
   content: '>>> ';
   color: var(--seal);
+}
+
+.lyric-orig {
+  display: inline;
+}
+
+.lyric-roman {
+  display: block;
+  font-size: clamp(11.5px, 1.4vw, 15px);
+  line-height: 1.4;
+  color: var(--ink-light);
+  opacity: 0.85;
+  font-family: var(--font-term);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-top: 3px;
+}
+
+.lyric-line.active .lyric-roman {
+  color: var(--seal);
+  opacity: 0.95;
+  text-shadow: 0 0 6px var(--seal-glow);
+}
+
+/* Romanization display modes */
+#lyrics-lines.mode-roman .lyric-orig {
+  display: none;
+}
+#lyrics-lines.mode-roman .lyric-roman {
+  font-size: clamp(15px, 2vw, 22px);
+  margin-top: 0;
+  display: inline;
+}
+#lyrics-lines.mode-native .lyric-roman {
+  display: none;
 }
 
 /* ============ FORM INPUTS & RANGE ============ */

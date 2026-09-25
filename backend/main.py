@@ -145,7 +145,7 @@ async def get_playlist(playlist_id: str):
 
 @app.get("/api/lyrics/{video_id}")
 async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0):
-    """Lyrics from cache when possible; `timed=1` adds per-line timings."""
+    """Lyrics from cache when possible; `timed=1` adds per-line timings and romanization."""
     import json as _json
     cached = None if refresh else await get_cached_lyrics(video_id)
     if cached is None:
@@ -156,7 +156,32 @@ async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0):
         synced = _json.loads(cached.get("synced") or "[]")
     except Exception:
         synced = []
-    out = {"lyrics": cached.get("plain", "")}
+
+    # Upgrade old cached lyrics without romanization
+    if synced and not any("roman" in x for x in synced if isinstance(x, dict)):
+        try:
+            from api.translit import enrich_lyrics
+            enriched = enrich_lyrics({"plain": cached.get("plain", ""), "synced": synced})
+            synced = enriched.get("synced", synced)
+            has_roman = enriched.get("has_roman", False)
+            script = enriched.get("script", "latin")
+            script_label = enriched.get("script_label", "Latin")
+            await cache_lyrics(video_id, cached.get("plain", ""), _json.dumps(synced))
+        except Exception:
+            has_roman = False
+            script = "latin"
+            script_label = "Latin"
+    else:
+        has_roman = any(bool(x.get("roman")) for x in synced if isinstance(x, dict))
+        script = next((x.get("script") for x in synced if isinstance(x, dict) and x.get("roman")), "latin")
+        script_label = "Romaja" if script == "korean" else ("Romaji" if script == "japanese" else ("Pinyin" if script == "chinese" else ("Translit" if script == "cyrillic" else "Latin")))
+
+    out = {
+        "lyrics": cached.get("plain", ""),
+        "hasRoman": has_roman,
+        "script": script,
+        "scriptLabel": script_label
+    }
     if timed:
         out["synced"] = synced
     return {"success": True, "data": out}

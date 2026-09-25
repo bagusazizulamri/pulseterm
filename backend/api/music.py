@@ -406,6 +406,11 @@ async def get_song_lyrics_full(video_id: str) -> dict:
                     plain = ""
             return {"plain": plain or "", "synced": synced}
 
-        return await loop.run_in_executor(None, _fetch)
+        raw = await loop.run_in_executor(None, _fetch)
+        try:
+            from api.translit import enrich_lyrics
+            return enrich_lyrics(raw)
+        except Exception:
+            return raw
     except Exception:
         return {"plain": "", "synced": []}

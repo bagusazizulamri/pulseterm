@@ -271,7 +271,10 @@
                 <h2 id="now-title">Nothing playing</h2>
                 <p id="now-artist"></p>
             </div>
-            <button onclick="closeNowPlaying()" class="tui-btn">[RETURN ESC]</button>
+            <div class="lyrics-head-actions">
+                <button id="lyrics-roman-btn" onclick="player.cycleRomanMode()" class="tui-btn hidden" title="Toggle Romanization script mode (R)">[SCRIPT: DUAL]</button>
+                <button onclick="closeNowPlaying()" class="tui-btn">[RETURN ESC]</button>
+            </div>
         </div>
         <div class="now-playing-body">
             <div class="now-cover-frame">

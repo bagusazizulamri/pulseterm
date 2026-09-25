@@ -1167,30 +1167,72 @@ const player = {
     async loadLyrics(song) {
         this.lyrics = [];
         this.activeLyric = -1;
+        this.lyricsData = null;
         const box = document.getElementById('lyrics-lines');
         if (box) box.innerHTML = '<p class="lyrics-empty">Looking for lyrics…</p>';
+        const rBtn = document.getElementById('lyrics-roman-btn');
+        if (rBtn) rBtn.classList.add('hidden');
         if (!song?.videoId) return;
         try {
             const res = await getLyrics(song.videoId, true);
             if (this.currentSong?.videoId !== song.videoId) return;
+            this.lyricsData = res?.data || null;
             this.lyrics = res?.success ? (res.data?.synced || []) : [];
             if (!this.lyrics.length && res?.data?.lyrics) this.plainLyrics = res.data.lyrics.split('\n');
             else this.plainLyrics = [];
+
+            if (rBtn && res?.data?.hasRoman) {
+                rBtn.classList.remove('hidden');
+                this.updateRomanButtonUI();
+            }
             this.renderLyrics();
         } catch { if (box) box.innerHTML = '<p class="lyrics-empty">Lyrics are unavailable for this track.</p>'; }
+    },
+
+    cycleRomanMode() {
+        const modes = ['dual', 'roman', 'native'];
+        const currentIdx = modes.indexOf(this.romanMode || 'dual');
+        this.romanMode = modes[(currentIdx + 1) % modes.length];
+        try { localStorage.setItem('pulseterm_roman_mode', this.romanMode); } catch {}
+        this.updateRomanButtonUI();
+        this.renderLyrics();
+    },
+
+    updateRomanButtonUI() {
+        const rBtn = document.getElementById('lyrics-roman-btn');
+        if (!rBtn) return;
+        const scriptName = this.lyricsData?.scriptLabel || 'ROMAN';
+        const mode = this.romanMode || 'dual';
+        const modeLabel = mode === 'dual' ? `[${scriptName.toUpperCase()}: DUAL]` :
+                          (mode === 'roman' ? `[${scriptName.toUpperCase()}: ONLY]` : `[${scriptName.toUpperCase()}: OFF]`);
+        rBtn.textContent = modeLabel;
+        rBtn.title = `Toggle ${scriptName} romanization display mode (R) - Currently: ${mode.toUpperCase()}`;
     },
 
     renderLyrics() {
         const box = document.getElementById('lyrics-lines');
         if (!box) return;
+        box.className = 'mode-' + (this.romanMode || 'dual');
         if (!this.lyrics.length && this.plainLyrics?.length) {
             box.innerHTML = this.plainLyrics.map(() => '<p class="lyric-line plain-lyric"></p>').join('');
             box.querySelectorAll('.plain-lyric').forEach((el, i) => { el.textContent = this.plainLyrics[i] || ''; });
             return;
         }
         if (!this.lyrics.length) { box.innerHTML = '<p class="lyrics-empty">Lyrics are not available for this track.</p>'; return; }
-        box.innerHTML = this.lyrics.map((l, i) => '<p class="lyric-line" data-lyric="' + i + '"></p>').join('');
-        box.querySelectorAll('.lyric-line').forEach((el, i) => { el.textContent = this.lyrics[i].text || ''; });
+        box.innerHTML = this.lyrics.map((l, i) => {
+            const hasRoman = Boolean(l.roman);
+            return '<div class="lyric-line" data-lyric="' + i + '">' +
+                '<span class="lyric-orig"></span>' +
+                (hasRoman ? '<span class="lyric-roman"></span>' : '') +
+            '</div>';
+        }).join('');
+        box.querySelectorAll('.lyric-line').forEach((el, i) => {
+            const l = this.lyrics[i];
+            const orig = el.querySelector('.lyric-orig');
+            if (orig) orig.textContent = l.text || '';
+            const rom = el.querySelector('.lyric-roman');
+            if (rom && l.roman) rom.textContent = l.roman;
+        });
         this.updateActiveLyric(this.audio?.currentTime * 1000 || 0);
     },
 

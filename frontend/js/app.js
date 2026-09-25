@@ -917,7 +917,15 @@ document.addEventListener('keydown', (e) => {
         if (btn) btn.classList.toggle('on', player.shuffleMode);
         return;
     }
-    if (key === 'r') { e.preventDefault(); cycleRepeat(); return; }
+    if (key === 'r') {
+        e.preventDefault();
+        if (player.nowPlayingVisible && player.lyricsData?.hasRoman) {
+            player.cycleRomanMode();
+        } else {
+            cycleRepeat();
+        }
+        return;
+    }
     if (key === 'v') { e.preventDefault(); visualizer.togglePanel(); return; }
     if (key === 'e') { e.preventDefault(); equalizer.togglePanel(); return; }
     if (key === 'c') { e.preventDefault(); visualizer.toggleCrt(); return; }
