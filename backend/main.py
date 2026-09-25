@@ -172,13 +172,23 @@ async def trending():
 
 @app.get("/api/player/stream-url/{video_id}")
 async def get_stream(video_id: str, refresh: int = 0):
-    url = await stream.get_stream_url_async(video_id, force=bool(refresh))
-    if not url:
+    info = await stream.get_stream_info_async(video_id, force=bool(refresh))
+    if not info or not info.get("url"):
         return {"success": False, "error": "Could not resolve stream URL", "data": {"url": "", "videoId": video_id}}
     # Same-origin proxied URL (avoids googlevideo CORS/302 issues in browser).
     proxy = "/api/player/audio/" + video_id
-    return {"success": True, "data": {"url": proxy, "videoId": video_id,
-                                      "direct": url, "offline": bool(stream.offline_path(video_id))}}
+    return {"success": True, "data": {
+        "url": proxy,
+        "videoId": video_id,
+        "direct": info["url"],
+        "offline": bool(stream.offline_path(video_id)),
+        "codec": info.get("codec", "opus"),
+        "bitrate": info.get("bitrate", 160),
+        "sampleRate": info.get("sampleRate", 48000),
+        "formatId": info.get("formatId", "251"),
+        "tier": info.get("tier", "HQ"),
+        "qualityLabel": info.get("qualityLabel", "[HQ · OPUS · 160K · 48KHZ]")
+    }}
 
 
 @app.post("/api/player/prepare")

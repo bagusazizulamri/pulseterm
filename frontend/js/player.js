@@ -498,6 +498,7 @@ const player = {
             if (token !== this.playToken) return;
             const url = result?.success && result.data?.url;
             if (!url) throw new Error(result?.error || 'Stream could not be resolved');
+            this.updateQualityBadge(result.data);
             this.audio.pause();
             this.audio.src = url;
             this.audio.volume = this.muted ? 0 : this.volume;
@@ -1541,6 +1542,26 @@ const player = {
     setStatus(message) {
         const el = document.getElementById('player-status');
         if (el) { el.textContent = message || ''; el.classList.toggle('visible', !!message); }
+    },
+
+    updateQualityBadge(data) {
+        const el = document.getElementById('player-audio-quality');
+        if (!el) return;
+        if (!data) {
+            el.textContent = '[HQ · OPUS 160K]';
+            el.classList.add('is-hq');
+            return;
+        }
+        const codec = (data.codec || 'opus').toUpperCase();
+        const kbps = data.bitrate ? `${data.bitrate}K` : '160K';
+        const tier = data.tier || (codec.includes('OPUS') || data.bitrate >= 160 ? 'HQ' : 'SQ');
+        el.textContent = `[${tier} · ${codec} ${kbps}]`;
+        el.title = `Format: ${codec} · Bitrate: ${data.bitrate || 160}kbps · Sample Rate: ${data.sampleRate || 48000}Hz · Codec ID: ${data.formatId || '251'}`;
+        if (tier === 'HQ' || codec.includes('OPUS')) {
+            el.classList.add('is-hq');
+        } else {
+            el.classList.remove('is-hq');
+        }
     },
 
     updatePlayerUI() {

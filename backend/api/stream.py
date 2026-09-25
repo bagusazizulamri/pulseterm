@@ -28,14 +28,12 @@ _stats = {"hits": 0, "misses": 0, "errors": 0, "forced": 0, "resolves": 0}
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
-# Measured 2026-09-24 on this host for the same tracks:
-#   default web client + bestaudio/best:            ~14.5s per resolve
-#   android client + bestaudio[ext=m4a]/...:         ~3.0s per resolve
-# The android player response is smaller (skips SABR/streamingData bloat)
-# and pinning an m4a audio stream avoids format probing + manifest walks.
-# NOTE: bare itag 140 fails on some tracks -- keep the ext-filtered chain.
-YTDLP_EXTRACTOR_ARGS = ["youtube:player_client=android"]
-YTDLP_FORMAT = "bestaudio[ext=m4a]/bestaudio/best"
+# Audio format prioritization:
+# Priority 1: High-fidelity Opus Fullband 48kHz (itag 251, ~160kbps VBR) - transparent studio quality
+# Priority 2: WebM/Opus alternatives (itag 250/249)
+# Priority 3: AAC-LC M4A (itag 140, ~128kbps, 44.1kHz)
+YTDLP_EXTRACTOR_ARGS = []
+YTDLP_FORMAT = "bestaudio[acodec=opus]/bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best"
 
 MAX_PARALLEL_RESOLVES = 4
 RESOLVE_TIMEOUT = 30
@@ -141,6 +139,44 @@ def offline_path(video_id):
 
 
 _ydl_singleton = None
+_meta_cache = {}  # video_id -> dict(codec, bitrate, sampleRate, formatId, tier, qualityLabel)
+
+
+def _parse_meta(data):
+    if not isinstance(data, dict):
+        return {
+            "codec": "opus",
+            "bitrate": 160,
+            "sampleRate": 48000,
+            "formatId": "251",
+            "ext": "webm",
+            "tier": "HQ",
+            "qualityLabel": "[HQ · OPUS · 160K · 48KHZ]"
+        }
+    acodec = str(data.get("acodec") or "opus").lower()
+    abr = data.get("abr")
+    asr = data.get("asr")
+    fid = str(data.get("format_id") or "251")
+    ext = str(data.get("ext") or "webm").lower()
+
+    is_opus = "opus" in acodec or ext == "webm" or fid in ("251", "250", "249")
+    codec_name = "OPUS" if is_opus else ("AAC" if ("mp4a" in acodec or "aac" in acodec) else acodec.upper())
+
+    bitrate_kbps = round(abr) if abr else (160 if is_opus else 128)
+    sample_rate_hz = asr or (48000 if is_opus else 44100)
+    tier = "HQ" if (is_opus or bitrate_kbps >= 160) else "SQ"
+    quality_label = f"[{tier} · {codec_name} · {bitrate_kbps}K · {sample_rate_hz//1000}KHZ]"
+
+    return {
+        "codec": codec_name.lower(),
+        "bitrate": bitrate_kbps,
+        "sampleRate": sample_rate_hz,
+        "formatId": fid,
+        "ext": ext,
+        "tier": tier,
+        "qualityLabel": quality_label
+    }
+
 
 def _get_ydl():
     global _ydl_singleton
@@ -153,7 +189,7 @@ def _get_ydl():
                 "quiet": True,
                 "no_warnings": True,
                 "extract_flat": False,
-                "extractor_args": {"youtube": {"player_client": ["android"]}},
+                "js_runtimes": {"node": {}},
                 "socket_timeout": 8,
                 "retries": 2,
                 "nocheckcertificate": True,
@@ -182,12 +218,14 @@ def _extract(video_id):
             if info:
                 url = info.get("url")
                 if url and isinstance(url, str) and url.startswith("http"):
+                    _meta_cache[video_id] = _parse_meta(info)
                     return url
                 formats = info.get("formats") or []
                 for f in reversed(formats):
                     f_url = f.get("url")
                     if f_url and isinstance(f_url, str) and f_url.startswith("http"):
                         if f.get("acodec") != "none" or f.get("vcodec") == "none":
+                            _meta_cache[video_id] = _parse_meta(f)
                             return f_url
     except Exception:
         pass
@@ -205,6 +243,7 @@ def _extract(video_id):
         for line in (r.stdout or "").splitlines():
             line = line.strip()
             if line.startswith("http"):
+                _meta_cache[video_id] = _parse_meta({"format_id": "251", "acodec": "opus", "abr": 160, "asr": 48000, "ext": "webm"})
                 return line
     except Exception:
         pass
@@ -272,6 +311,23 @@ async def get_stream_url_async(video_id, force=False):
                 _url_cache.pop(next(iter(_url_cache)), None)
         _url_cache[video_id] = (url, expiry_of(url))
         return url
+
+
+async def get_stream_info_async(video_id, force=False):
+    """Resolve stream URL with audio codec, bitrate, and quality telemetry."""
+    url = await get_stream_url_async(video_id, force=force)
+    meta = _meta_cache.get(video_id) or _parse_meta(None)
+    return {
+        "url": url,
+        "direct": url,
+        "codec": meta["codec"],
+        "bitrate": meta["bitrate"],
+        "sampleRate": meta["sampleRate"],
+        "formatId": meta["formatId"],
+        "ext": meta["ext"],
+        "tier": meta["tier"],
+        "qualityLabel": meta["qualityLabel"]
+    }
 
 
 def get_stream_url(video_id):

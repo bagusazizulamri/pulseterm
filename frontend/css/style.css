@@ -1227,10 +1227,22 @@ body.playing .tui-state-badge {
 
 .tui-bitrate-badge {
   font-size: 10px;
-  padding: 1px 6px;
+  font-family: var(--font-term);
+  padding: 2px 6px;
   background: var(--paper-3);
   border: 1px solid var(--line);
-  color: var(--ink-3);
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s var(--ease);
+}
+
+.tui-bitrate-badge.is-hq {
+  border-color: var(--seal);
+  background: var(--wash);
+  color: var(--seal);
+  box-shadow: 0 0 6px var(--seal-glow);
 }
 
 .tui-mini-viz {

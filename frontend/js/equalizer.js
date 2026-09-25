@@ -124,7 +124,11 @@ class TerminalEqualizer {
         try {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (!AudioContextClass) return false;
-            this.audioCtx = new AudioContextClass();
+            try {
+                this.audioCtx = new AudioContextClass({ latencyHint: 'playback', sampleRate: 48000 });
+            } catch {
+                this.audioCtx = new AudioContextClass();
+            }
 
             // Input bus
             this.inputNode = this.audioCtx.createGain();
