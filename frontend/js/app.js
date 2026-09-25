@@ -81,23 +81,55 @@ async function renderPage(page) {
 }
 
 async function renderHome(content) {
-    content.innerHTML = '<div class="page-header"><h1>┌─ PULSETERM AUDIO ARCHIVE ─┐</h1></div><div class="empty-state"><span class="label">[BUFFER: FETCHING]</span><p>Polling telemetry, trending tracks and recent plays…</p></div>';
+    content.innerHTML = '<div class="page-header"><h1>┌─ PULSETERM AUDIO ARCHIVE ─┐</h1></div><div class="empty-state"><span class="label">[BUFFER: FETCHING]</span><p>Polling telemetry, trending tracks and recommended playlists…</p></div>';
     let trending = [];
-    try {
-        const t = await fetch('/api/trending').then(r => r.json());
-        if (t.success) trending = t.data || [];
-    } catch {}
-    const hres = await getHistory();
-    const history = hres.success ? hres.data : [];
+    let recPlaylists = { lanes: [] };
+
+    // Parallel fetch for snappy UI loading
+    const [tRes, pRes, hres] = await Promise.all([
+        fetch('/api/trending').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/recommended/playlists').then(r => r.json()).catch(() => ({ success: false })),
+        getHistory().catch(() => ({ success: false, data: [] }))
+    ]);
+
+    if (tRes && tRes.success) trending = tRes.data || [];
+    if (pRes && pRes.success && pRes.data) recPlaylists = pRes.data;
+    const history = hres && hres.success ? hres.data : [];
+
+    let secIndex = 1;
     let html = '<div class="page-header"><h1>┌─ PULSETERM AUDIO ARCHIVE ─┐</h1></div>';
+
+    // 01: Trending Tracks
     if (trending.length > 0) {
-        html += '<div class="eyebrow">[ 01 // TRENDING TRACKS · YOUTUBE MUSIC ]</div><div class="item-grid">';
+        const secStr = String(secIndex++).padStart(2, '0');
+        html += '<div class="eyebrow">[ ' + secStr + ' // TRENDING TRACKS · YOUTUBE MUSIC ]</div><div class="item-grid">';
         trending.slice(0, 14).forEach(item => { html += renderCard(item); });
         html += '</div>';
     }
+
+    // 02: Recommended Playlists (Smart taste telemetry based on top played songs & genres)
+    if (recPlaylists.lanes && recPlaylists.lanes.length > 0) {
+        const secStr = String(secIndex++).padStart(2, '0');
+        html += '<div class="eyebrow">[ ' + secStr + ' // RECOMMENDED PLAYLISTS · TASTE PROFILE TELEMETRY ]</div>';
+        html += '<div class="recommend-lanes-container">';
+        recPlaylists.lanes.forEach(lane => {
+            if (!lane.playlists || !lane.playlists.length) return;
+            html += '<div class="recommend-lane" data-genre="' + esc(lane.genre) + '">' +
+                '<div class="lane-header">' +
+                    '<div class="lane-title">◈ ' + esc(lane.label || lane.displayName) + '</div>' +
+                    (lane.reason ? '<div class="lane-reason">' + esc(lane.reason) + '</div>' : '') +
+                '</div>' +
+                '<div class="item-grid">';
+            lane.playlists.forEach(pl => { html += renderCard(pl); });
+            html += '</div></div>';
+        });
+        html += '</div>';
+    }
+
+    // 03: Recent Playback Buffer
     if (history && history.length > 0) {
-        const secNum = trending.length > 0 ? '02' : '01';
-        html += '<div class="eyebrow">[ ' + secNum + ' // RECENT PLAYBACK BUFFER ]</div><div class="list">';
+        const secStr = String(secIndex++).padStart(2, '0');
+        html += '<div class="eyebrow">[ ' + secStr + ' // RECENT PLAYBACK BUFFER ]</div><div class="list">';
         history.slice(0, 8).forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
             html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
@@ -106,9 +138,11 @@ async function renderHome(content) {
         });
         html += '</div>';
     }
-    if (!history.length && !trending.length) {
+
+    if (!history.length && !trending.length && (!recPlaylists.lanes || !recPlaylists.lanes.length)) {
         html += '<div class="empty-state"><span class="label">[PULSETERM AUDIO ENGINE]</span><h3>BUFFER EMPTY</h3><p>Type a song, artist, or album in the field above [/], then press Enter.</p></div>';
     }
+
     content.innerHTML = html;
     content.querySelectorAll('[data-hist]').forEach(el => el.addEventListener('click', () => playFromHistory(parseInt(el.dataset.hist))));
     bindCardClicks();

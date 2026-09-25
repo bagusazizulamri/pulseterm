@@ -632,6 +632,48 @@ body.crt-active #crt-overlay {
   background: var(--line);
 }
 
+/* ============ RECOMMENDED PLAYLIST LANES ============ */
+.recommend-lanes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+
+.recommend-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lane-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+  margin-bottom: 4px;
+}
+
+.lane-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--seal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lane-reason {
+  font-size: 10.5px;
+  font-family: var(--font-term);
+  color: var(--ink-light);
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+
 /* ============ TUI ITEM GRID ============ */
 .item-grid {
   display: grid;

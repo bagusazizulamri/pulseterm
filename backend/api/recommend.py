@@ -10,34 +10,37 @@ strictly filtered so every returned track matches the seed on genre or vibe.
 import re
 
 GENRE_KEYWORDS = {
-    "dangdut": ["dangdut", "koplo", "campursari", "keroncong", "pop jawa", "tarling"],
+    "dangdut": ["dangdut", "koplo", "campursari", "keroncong", "pop jawa", "tarling", "denny caknan", "happy asmara", "didik kempot", "didi kempot", "rhoma irama", "via vallen", "nella kharisma", "ndx aka", "guyon waton", "gilga sahid"],
     "k-pop": ["k-pop", "kpop", "korean", "exo", "bts", "blackpink", "twice", "seventeen",
               "stray kids", "nct", "aespa", "itzy", "txt", "enhypen", "bigbang",
               "girls generation", "snsd", "super junior", "shinee", "tvxq", "2pm",
-              "ikon", "got7", "boa", "psy"],
+              "ikon", "got7", "boa", "psy", "teentop", "teen top", "newjeans", "le sserafim",
+              "red velvet", "monsta x", "ateez", "stayc", "ive", "nmixx", "iu", "taeyeon",
+              "gd", "g-dragon", "taeyang", "cl", "2ne1", "day6", "the boyz", "treasure"],
     "j-pop": ["j-pop", "jpop", "anime", "city pop", "vocaloid", "japan", "japanese",
-              "yoasobi", "kenshi yonezu", "sakanaction"],
-    "pop": ["pop"],
-    "rock": ["rock", "grunge"],
-    "indie": ["indie", "bedroom pop"],
-    "alternative": ["alternative"],
-    "metal": ["metal", "metalcore", "deathcore", "hardcore", "screamo"],
-    "punk": ["punk", "pop punk", "emo"],
+              "yoasobi", "kenshi yonezu", "sakanaction", "ado", "eve", "king gnu", "official hige dandism", "one ok rock", "radwimps", "aimer", "lisa"],
+    "pop": ["pop", "taylor swift", "ariana grande", "billie eilish", "dua lipa", "ed sheeran", "justin bieber", "bruno mars", "the weeknd", "shawn mendes", "olivia rodrigo", "katy perry", "lady gaga", "bunga citra lestari", "bcl", "tulus", "raisa", "tiara andini", "mahalini", "judika", "afgan", "rossa", "zivilia"],
+    "rock": ["rock", "grunge", "nirvana", "muse", "radiohead", "red hot chili peppers", "rhcp", "foo fighters", "linkin park", "green day", "arctic monkeys", "queen", "oasis", "blur", "the cranberries", "the strokes", "the killers", "led zeppelin", "pink floyd", "ac/dc", "guns n roses", "the beatles", "the rolling stones", "u2", "the rasmus", "my chemical romance", "paramore", "weezer", "coldplay", "imagine dragons", "the clash"],
+    "indie": ["indie", "bedroom pop", "boy pablo", "clairo", "rex orange county", "phum viphurit", "mac demarco", "cuco", "men i trust", "tame impala", "hindia", "feast", "fiersa besari", "fourtwnty", "pamungkas", "nadin amizah", "danilla"],
+    "alternative": ["alternative", "alt rock", "shoegaze", "dream pop"],
+    "metal": ["metal", "metalcore", "deathcore", "hardcore", "screamo", "metallica", "iron maiden", "slipknot", "system of a down", "soad", "avenged sevenfold", "a7x", "megadeth", "slayer", "judas priest", "pantera", "black sabbath", "rammstein", "falling in reverse", "bring me the horizon", "bmth", "korn", "deftones", "disturbed", "architects", "bullet for my valentine", "slaughter to prevail", "lorna shore", "bad omens", "ghost", "gojira", "trivium", "parkway drive", "lamb of god", "cannibal corpse", "opeth", "meshuggah", "sepultura", "anthrax", "killswitch engage", "evanescence"],
+    "punk": ["punk", "pop punk", "emo", "blink 182", "sum 41", "offspring", "simple plan", "neck deep"],
     "hip-hop": ["hip hop", "hip-hop", "rap", "trap", "drill", "boom bap", "phonk",
+                "eminem", "drake", "kendrick lamar", "kanye", "travis scott", "j cole", "2pac", "notorious big", "snoop dogg", "jay-z", "post malone", "rich brian",
                 "gd x taeyang", "g-dragon", "taeyang"],
-    "r&b": ["r&b", "rnb", "soul", "neo soul", "slow jam"],
-    "jazz": ["jazz", "bossa", "swing", "bebop", "fusion"],
-    "blues": ["blues"],
-    "funk": ["funk", "disco", "boogie"],
+    "r&b": ["r&b", "rnb", "soul", "neo soul", "slow jam", "sza", "frank ocean", "daniel caesar", "giveon", "brent faiyaz"],
+    "jazz": ["jazz", "bossa", "swing", "bebop", "fusion", "miles davis", "coltrane", "bill evans"],
+    "blues": ["blues", "b.b. king", "muddy waters", "stevie ray vaughan", "clapton"],
+    "funk": ["funk", "disco", "boogie", "earth wind and fire", "kool and the gang"],
     "edm": ["edm", "house", "techno", "trance", "dubstep", "drum and bass", "dnb",
-            "hardstyle", "big room", "future bass", "tropical house", "deep house"],
+            "hardstyle", "big room", "future bass", "tropical house", "deep house", "avicii", "martin garrix", "alan walker", "marshmello", "david guetta", "skrillex", "zedd", "tiesto"],
     "lofi": ["lo-fi", "lofi", "chillhop", "chill beats", "study beats"],
     "ambient": ["ambient", "drone", "soundscape", "new age"],
-    "classical": ["classical", "klasik", "orchestra", "symphony", "opera", "baroque"],
+    "classical": ["classical", "klasik", "orchestra", "symphony", "opera", "baroque", "bach", "beethoven", "mozart", "chopin"],
     "acoustic": ["acoustic", "akustik", "unplugged", "folk", "singer-songwriter", "country"],
-    "reggae": ["reggae", "ska", "dub", "dancehall"],
-    "latin": ["latin", "reggaeton", "salsa", "bachata"],
-    "soundtrack": ["ost", "soundtrack", "score", "theme song", "opening", "ending"],
+    "reggae": ["reggae", "ska", "dub", "dancehall", "bob marley"],
+    "latin": ["latin", "reggaeton", "salsa", "bachata", "bad bunny", "j balvin", "rosalia"],
+    "soundtrack": ["ost", "soundtrack", "score", "theme song", "opening", "ending", "hans zimmer"],
     "gospel": ["gospel", "rohani", "worship", "pujian", "qasidah", "nasyid", "sholawat"],
 }
 
@@ -543,3 +546,139 @@ async def get_recommendations(video_id: str, seed: dict = None, limit: int = 15,
                              seed_is_video=seed_is_video)
     _cache_put(video_id, tracks)
     return tracks
+
+
+_PLAYLIST_REC_CACHE = {"expires_at": 0, "key": "", "data": None}
+
+
+async def get_recommended_playlists():
+    """Smart recommended playlists based on user's most played songs and genres."""
+    from database import get_db
+    from collections import Counter
+    from api import music as music_api
+    import time
+
+    genre_weights = Counter()
+    artist_counts = Counter()
+    most_played_track = None
+    most_played_count = 0
+    total_listens = 0
+
+    try:
+        async with get_db() as db:
+            async with db.execute(
+                "SELECT video_id, title, artist, count(*) as cnt FROM history GROUP BY video_id ORDER BY cnt DESC, played_at DESC LIMIT 100"
+            ) as cur:
+                rows = await cur.fetchall()
+                for i, r in enumerate(rows):
+                    title = r["title"] or ""
+                    artist = r["artist"] or ""
+                    cnt = int(r["cnt"] or 1)
+                    total_listens += cnt
+                    if i == 0:
+                        most_played_track = {"title": title, "artist": artist, "cnt": cnt}
+                        most_played_count = cnt
+                    p = profile(f"{title} {artist}")
+                    for g in p.get("genres", []):
+                        genre_weights[g] += cnt
+                    if artist and artist.lower() not in ("various", "various artists", "unknown"):
+                        artist_counts[artist] += cnt
+
+            async with db.execute("SELECT video_id, title, artist FROM liked ORDER BY liked_at DESC LIMIT 50") as cur:
+                liked_rows = await cur.fetchall()
+                for r in liked_rows:
+                    title = r["title"] or ""
+                    artist = r["artist"] or ""
+                    p = profile(f"{title} {artist}")
+                    for g in p.get("genres", []):
+                        genre_weights[g] += 3  # Higher affinity for liked tracks
+                    if artist:
+                        artist_counts[artist] += 3
+    except Exception as e:
+        print("Telemetry query error:", e)
+
+    # Cache key based on top genres & most played track
+    cache_key = f"{genre_weights.most_common(4)}_{most_played_track.get('title') if most_played_track else ''}"
+    now = time.time()
+    if _PLAYLIST_REC_CACHE["data"] and _PLAYLIST_REC_CACHE["expires_at"] > now and _PLAYLIST_REC_CACHE["key"] == cache_key:
+        return _PLAYLIST_REC_CACHE["data"]
+
+    # Select top dominant genres (e.g. k-pop and metal, etc.)
+    top_genres = [g for g, _ in genre_weights.most_common(3)]
+
+    # Fallback if no history or only 1 genre detected
+    if not top_genres:
+        top_genres = ["k-pop", "metal", "rock"]
+    elif len(top_genres) == 1:
+        for fb in ["k-pop", "metal", "rock", "pop", "indie"]:
+            if fb not in top_genres:
+                top_genres.append(fb)
+                break
+
+    lanes = []
+
+    # Spotlight Mix: If there is a strong most-played track / artist
+    if most_played_track and most_played_count >= 2 and most_played_track.get("artist"):
+        top_art = most_played_track["artist"].split(",")[0].split("&")[0].split("feat")[0].strip()
+        if top_art and len(top_art) > 1:
+            try:
+                art_res = await music_api.search(f"{top_art} playlist", filter_type="playlists", limit=6)
+                art_playlists = []
+                for p in (art_res.results if art_res else [])[:6]:
+                    art_playlists.append({
+                        "videoId": p.video_id,
+                        "title": p.title,
+                        "artist": p.artist or top_art,
+                        "thumbnail": p.thumbnail,
+                        "album": "playlist",
+                        "resultType": "playlist",
+                        "genre": "artist-spotlight"
+                    })
+                if art_playlists:
+                    lanes.append({
+                        "genre": "spotlight",
+                        "displayName": top_art.upper(),
+                        "label": f"SPOTLIGHT // {top_art.upper()} & VIBE MIXES",
+                        "reason": f"Inspired by your most played track: {most_played_track['title']} ({most_played_count} plays)",
+                        "playlists": art_playlists
+                    })
+            except Exception as e:
+                print("Artist spotlight playlist search error:", e)
+
+    # Genre lanes for user's top genres (up to 2 dominant genres)
+    for g in top_genres[:2]:
+        try:
+            sr = await music_api.search(f"{g} playlist", filter_type="playlists", limit=6)
+            playlists = []
+            for p in (sr.results if sr else [])[:6]:
+                playlists.append({
+                    "videoId": p.video_id,
+                    "title": p.title,
+                    "artist": p.artist or "Curated Playlist",
+                    "thumbnail": p.thumbnail,
+                    "album": "playlist",
+                    "resultType": "playlist",
+                    "genre": g
+                })
+            session_count = genre_weights.get(g, 0)
+            reason_text = f"Analyzed from your top played {g.title()} tracks · {session_count} playback sessions" if session_count > 0 else f"Curated {g.upper()} essentials for discovery"
+            lanes.append({
+                "genre": g,
+                "displayName": g.upper(),
+                "label": f"RECOMMENDED // {g.upper()} LANE",
+                "reason": reason_text,
+                "playlists": playlists
+            })
+        except Exception as e:
+            print(f"Genre {g} playlist search error:", e)
+
+    result_data = {
+        "top_genres": top_genres,
+        "total_listens": total_listens,
+        "lanes": lanes
+    }
+
+    _PLAYLIST_REC_CACHE["expires_at"] = now + 1800  # 30 minutes cache
+    _PLAYLIST_REC_CACHE["key"] = cache_key
+    _PLAYLIST_REC_CACHE["data"] = result_data
+    return result_data

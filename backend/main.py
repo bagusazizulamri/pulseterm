@@ -532,6 +532,12 @@ async def recommendations(video_id: str, limit: int = 10):
     return {"success": True, "data": {"seed": seed or {"videoId": video_id}, "tracks": tracks}}
 
 
+@app.get("/api/recommended/playlists")
+async def recommended_playlists():
+    data = await recommend.get_recommended_playlists()
+    return {"success": True, "data": data}
+
+
 @app.get("/api/player/continue")
 async def continue_state():
     return {"success": True, "data": {"enabled": player_mgr.auto_continue}}
