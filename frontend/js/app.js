@@ -10,7 +10,7 @@ let searchTimer = null;
 let detailContext = null;
 
 const pageTitles = { home: 'Home', search: 'Search', library: 'Library', playlists: 'Playlists' };
-const THEME_LIST = ['dark', 'amber', 'oled', 'cyberpunk', 'nordic', 'light'];
+const THEME_LIST = ['dark', 'amber', 'oled', 'cyberpunk', 'nordic', 'light', 'liquidglass', 'softdark'];
 
 function esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 

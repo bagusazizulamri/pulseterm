@@ -314,7 +314,7 @@ class TerminalVisualizer {
         const labelW = 48 * (window.devicePixelRatio || 1);
         const meterW = w - labelW - 30;
 
-        ctx.font = `${11 * (window.devicePixelRatio || 1)}px monospace`;
+        ctx.font = `${11 * (window.devicePixelRatio || 1)}px ui-monospace, "SF Mono", Monaco, Menlo, monospace`;
         ctx.fillStyle = inkColor;
 
         // Channel L
@@ -352,12 +352,12 @@ class TerminalVisualizer {
         const chars = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         const lineStr = bands.map(b => chars[Math.min(chars.length - 1, Math.floor(b * chars.length))]).join(' ');
 
-        ctx.font = `${18 * (window.devicePixelRatio || 1)}px monospace`;
+        ctx.font = `${18 * (window.devicePixelRatio || 1)}px ui-monospace, "SF Mono", Monaco, Menlo, monospace`;
         ctx.fillStyle = primaryColor;
         ctx.textAlign = 'center';
         ctx.fillText(lineStr, w / 2, h / 2);
 
-        ctx.font = `${11 * (window.devicePixelRatio || 1)}px monospace`;
+        ctx.font = `${11 * (window.devicePixelRatio || 1)}px ui-monospace, "SF Mono", Monaco, Menlo, monospace`;
         ctx.fillStyle = inkColor;
         ctx.globalAlpha = 0.6;
         ctx.fillText('[ ASCII SPECTRUM // 32-CH BANDS ]', w / 2, h / 2 + 34);

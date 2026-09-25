@@ -18,8 +18,8 @@
   --shell: 1380px;
   --pad: clamp(16px, 2.5vw, 36px);
 
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Consolas, ui-monospace, monospace;
-  --font-term: 'VT323', var(--font-mono);
+  --font-mono: ui-monospace, 'SF Mono', Monaco, Menlo, 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-term: ui-monospace, 'SF Mono', Monaco, Menlo, var(--font-mono);
 
   --fs-display: clamp(20px, 2.2vw, 28px);
   --fs-body: 13.5px;
@@ -145,17 +145,82 @@ body.theme-light {
   --highlight-fg: #fdf6e3;
 }
 
+/* 7. macOS Liquid Glass Vibrant Terminal */
+body.theme-liquidglass {
+  --paper: #0b0f17;
+  --paper-2: rgba(18, 24, 38, 0.75);
+  --paper-3: rgba(28, 38, 58, 0.82);
+  --wash: rgba(22, 30, 48, 0.65);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-focus: #38bdf8;
+  --ink: #f0f6fc;
+  --ink-2: #7dd3fc;
+  --ink-3: #8ba2c4;
+  --seal: #0ea5e9;
+  --seal-glow: rgba(14, 165, 233, 0.45);
+  --glass: rgba(11, 15, 23, 0.78);
+  --card-hover: rgba(56, 189, 248, 0.12);
+  --highlight-bg: #0284c7;
+  --highlight-fg: #ffffff;
+}
+
+body.theme-liquidglass {
+  background: 
+    radial-gradient(ellipse 80% 50% at 20% -20%, rgba(14, 165, 233, 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 85% 105%, rgba(99, 102, 241, 0.14), transparent 70%),
+    #0b0f17;
+}
+
+body.theme-liquidglass #player-bar,
+body.theme-liquidglass #sidebar,
+body.theme-liquidglass .card,
+body.theme-liquidglass dialog,
+body.theme-liquidglass #queue-panel,
+body.theme-liquidglass #settings-panel,
+body.theme-liquidglass #equalizer-panel,
+body.theme-liquidglass #now-playing,
+body.theme-liquidglass #context-menu,
+body.theme-liquidglass #toast {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* 8. Soft Dark Pastel Terminal */
+body.theme-softdark {
+  --paper: #1b1e24;
+  --paper-2: #222731;
+  --paper-3: #2a313d;
+  --wash: #252b36;
+  --line: #384152;
+  --line-focus: #a6e3a1;
+  --ink: #e2e8f0;
+  --ink-2: #89b4fa;
+  --ink-3: #8591a5;
+  --seal: #a6e3a1;
+  --seal-glow: rgba(166, 227, 161, 0.3);
+  --glass: rgba(27, 30, 36, 0.96);
+  --card-hover: rgba(166, 227, 161, 0.08);
+  --highlight-bg: #89b4fa;
+  --highlight-fg: #1b1e24;
+}
+
 /* ============ GLOBAL TERMINAL RESET ============ */
 html, body {
   height: 100%;
   font-family: var(--font-mono);
   font-size: var(--fs-body);
-  line-height: 1.5;
+  line-height: 1.45;
   background: var(--paper);
   color: var(--ink);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.01em;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.012em;
 }
 
 button {
@@ -1525,6 +1590,8 @@ body.playing .tui-state-badge {
 .theme-swatch.cyberpunk { background: #ff0055; }
 .theme-swatch.nordic { background: #7aa2f7; }
 .theme-swatch.light { background: #268bd2; }
+.theme-swatch.liquidglass { background: linear-gradient(135deg, #0ea5e9, #6366f1); border-color: rgba(255,255,255,0.6); }
+.theme-swatch.softdark { background: linear-gradient(135deg, #a6e3a1, #89b4fa); }
 
 .save-btn {
   margin-top: 18px;
