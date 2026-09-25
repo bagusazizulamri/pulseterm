@@ -547,18 +547,22 @@ body.crt-active #crt-overlay {
 .eyebrow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   color: var(--seal);
-  margin: 28px 0 14px;
+  margin: 24px 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .eyebrow::after {
   content: '';
   flex: 1;
+  min-width: 12px;
   height: 1px;
   background: var(--line);
 }
@@ -1665,41 +1669,500 @@ select {
   font-size: 12px;
   box-shadow: 0 4px 18px rgba(0,0,0,0.45);
   z-index: 120;
+  max-width: min(440px, calc(100vw - 28px));
+  box-sizing: border-box;
 }
 
 #toast.hidden { display: none; }
 .tui-prompt-char { color: var(--seal); font-weight: 700; }
 
-/* ============ RESPONSIVE BREAKPOINTS ============ */
-@media (max-width: 900px) {
-  :root { --rail: 70px; }
-  .tui-brand, .tui-telemetry, .tui-side-keys, .nav-btn .nav-text { display: none; }
-  .nav-btn { justify-content: center; padding: 12px 0; }
-  .tui-bitrate-badge { display: none; }
+/* ============ RESPONSIVE BREAKPOINTS (ALL FORM FACTORS) ============ */
+
+/* 1. Large Screens & High-Resolution Displays (min-width: 1400px) */
+@media (min-width: 1400px) {
+  :root {
+    --rail: 230px;
+    --pad: 36px;
+  }
+  .item-grid {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 20px;
+  }
 }
 
-@media (max-width: 680px) {
-  #app {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr var(--player);
-    grid-template-areas: "rail" "main" "player";
+/* 2. Compact Desktop & Landscape Tablets (max-width: 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --rail: 72px;
+    --pad: 20px;
   }
-  #sidebar {
-    flex-direction: row;
-    border-right: none;
-    border-bottom: 1px solid var(--line);
-    padding: 8px 12px;
+  .tui-brand, .tui-telemetry, .tui-side-keys, .nav-btn .nav-text {
+    display: none;
   }
-  .rail-nav { flex-direction: row; justify-content: space-around; width: 100%; }
-  .volume-wrap { display: none; }
-  #player-bar { --player: 110px; }
+  .nav-btn {
+    justify-content: center;
+    padding: 12px 0;
+  }
+  .nav-btn .key-badge {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+  .tui-bitrate-badge {
+    display: none;
+  }
   .player-inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.1fr) auto auto;
+    gap: 12px;
+  }
+}
+
+/* 3. Tablets & Phablets (max-width: 860px) */
+@media (max-width: 860px) {
+  :root {
+    --player: 108px;
+    --pad: 16px;
+  }
+
+  .player-inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
-    padding: 6px var(--pad);
+    grid-template-areas:
+      "info right"
+      "controls controls";
+    align-items: center;
+    row-gap: 8px;
+    column-gap: 12px;
+    padding: 8px var(--pad) 6px;
+    height: auto;
+  }
+
+  .player-info {
+    grid-area: info;
+    min-width: 0;
+  }
+
+  .player-right {
+    grid-area: right;
+    min-width: 0;
+    justify-content: flex-end;
     gap: 8px;
   }
-  .player-right { display: none; }
-  #visualizer-drawer { left: 0; }
-  #now-playing { left: 0; }
+
+  .player-controls {
+    grid-area: controls;
+    justify-content: center;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .player-controls .tui-btn {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .tui-mini-viz {
+    display: none;
+  }
+}
+
+/* 4. Mobile Devices & Small Tablets (max-width: 768px) */
+@media (max-width: 768px) {
+  :root {
+    --rail: 0px;
+    --player: 108px;
+    --pad: 14px;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+      "main"
+      "player"
+      "rail";
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #sidebar {
+    grid-area: rail;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    height: 48px;
+    padding: 4px 8px;
+    background: var(--paper-2);
+    border-top: 1px solid var(--line);
+    border-right: none;
+    border-bottom: none;
+    z-index: 100;
+  }
+
+  .tui-brand, .sidebar-footer {
+    display: none !important;
+  }
+
+  .rail-nav {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    gap: 4px;
+    font-size: 11px;
+    border: 1px solid transparent;
+  }
+
+  .nav-btn .key-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  .nav-btn .nav-text {
+    display: inline-block !important;
+    font-size: 10.5px;
+  }
+
+  #main-content {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #page-content {
+    padding: 14px var(--pad) 28px;
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .page-header h1 {
+    font-size: clamp(15px, 4vw, 20px);
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #visualizer-drawer {
+    left: 0;
+    right: 0;
+    width: 100vw;
+  }
+
+  #now-playing {
+    left: 0;
+    right: 0;
+    inset: 0 0 0 0;
+    z-index: 140;
+    padding: 16px 14px;
+  }
+
+  .now-playing-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .now-cover-frame {
+    max-width: 180px;
+    margin: 0 auto;
+  }
+
+  #lyrics-lines {
+    max-height: calc(100dvh - 340px);
+    padding-right: 6px;
+  }
+
+  .lyric-line {
+    font-size: clamp(14px, 4vw, 18px);
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  #toast {
+    bottom: calc(var(--player) + 54px);
+  }
+}
+
+/* 5. Mobile Handhelds (max-width: 640px) */
+@media (max-width: 640px) {
+  #top-bar {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .tui-prompt-wrap {
+    gap: 6px;
+  }
+
+  .term-prompt {
+    display: none;
+  }
+
+  .search-bar {
+    padding: 4px 8px;
+  }
+
+  #search-input {
+    font-size: 12px;
+  }
+
+  .top-bar-actions {
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .top-bar-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-bar-actions .tui-badge {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  /* Fullscreen Modal Drawers on Small Screens */
+  #settings-panel, #queue-panel, #equalizer-panel {
+    position: fixed;
+    inset: 0 0 0 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    z-index: 150;
+    border-left: none;
+    padding: 14px;
+    box-shadow: none;
+  }
+
+  .drawer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .drawer-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .eq-head-title {
+    min-width: 0;
+  }
+
+  .drawer-head h2, .drawer-head h3 {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Equalizer Rack responsive adjustment */
+  .eq-rack {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 0 8px;
+  }
+
+  .eq-faders {
+    min-width: 320px;
+  }
+
+  .eq-sliders-macro {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Item Cards Grid on Mobile: Crisp 2-column layout */
+  .item-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .item-card {
+    padding: 6px;
+  }
+
+  .card-title {
+    font-size: 11.5px;
+    margin-top: 6px;
+  }
+
+  .card-subtitle {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  /* Lists on Mobile */
+  .list-item {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 8px 8px;
+  }
+
+  .rank {
+    font-size: 10px;
+  }
+
+  .list-title {
+    font-size: 12px;
+  }
+
+  .list-artist {
+    font-size: 10px;
+  }
+
+  .list-duration {
+    font-size: 10.5px;
+  }
+
+  .queue-item {
+    grid-template-columns: 18px 22px minmax(0, 1fr) 26px 20px;
+    gap: 6px;
+    padding: 7px 4px;
+    font-size: 11px;
+  }
+}
+
+/* 5b. Compact Handhelds (max-width: 520px) */
+@media (max-width: 520px) {
+  #continue-btn {
+    display: none;
+  }
+
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
+
+  .player-controls {
+    gap: 5px;
+  }
+}
+
+/* 6. Ultra-compact Screens (max-width: 400px) */
+@media (max-width: 400px) {
+  :root {
+    --player: 116px;
+    --pad: 10px;
+  }
+
+  .item-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .cover-frame {
+    width: 38px;
+    height: 38px;
+  }
+
+  #player-title {
+    font-size: 12px;
+  }
+
+  .player-subtitle {
+    font-size: 10px;
+  }
+
+  .player-clock {
+    font-size: 10px;
+  }
+
+  .player-controls .tui-btn {
+    padding: 3px 5px;
+    font-size: 10px;
+  }
+
+  .play-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  #lyrics-toggle {
+    padding: 2px 5px;
+    font-size: 9.5px;
+  }
+
+  .nav-btn {
+    padding: 4px 2px;
+    gap: 3px;
+  }
+
+  .nav-btn .key-badge {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+
+  .nav-btn .nav-text {
+    font-size: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #shortcut-help dl {
+    grid-template-columns: auto 1fr;
+    gap: 6px 8px;
+    font-size: 11px;
+  }
+}
+
+/* 7. Micro-Screens & Foldables (max-width: 340px) */
+@media (max-width: 340px) {
+  :root {
+    --pad: 6px;
+    --player: 120px;
+  }
+
+  .item-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .player-controls {
+    gap: 3px;
+  }
+
+  .player-controls .tui-btn {
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+
+  .play-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
 }

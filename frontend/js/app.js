@@ -91,13 +91,13 @@ async function renderHome(content) {
     const history = hres.success ? hres.data : [];
     let html = '<div class="page-header"><h1>┌─ PULSETERM AUDIO ARCHIVE ─┐</h1></div>';
     if (trending.length > 0) {
-        html += '<div class="eyebrow">[ 01 // TRENDING TRACKS · YOUTUBE MUSIC ] ────────────────</div><div class="item-grid">';
+        html += '<div class="eyebrow">[ 01 // TRENDING TRACKS · YOUTUBE MUSIC ]</div><div class="item-grid">';
         trending.slice(0, 14).forEach(item => { html += renderCard(item); });
         html += '</div>';
     }
     if (history && history.length > 0) {
         const secNum = trending.length > 0 ? '02' : '01';
-        html += '<div class="eyebrow">[ ' + secNum + ' // RECENT PLAYBACK BUFFER ] ──────────────────────────</div><div class="list">';
+        html += '<div class="eyebrow">[ ' + secNum + ' // RECENT PLAYBACK BUFFER ]</div><div class="list">';
         history.slice(0, 8).forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
             html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
@@ -219,12 +219,12 @@ async function renderLibrary(content) {
     const liked = lres.success ? lres.data : [];
     let html = '<div class="page-header"><h1>┌─ SAVED AUDIO REPOSITORY ─┐</h1><button id="clear-hist-btn" class="tui-btn">[PURGE HISTORY]</button></div>';
     if (liked.length) {
-        html += '<div class="eyebrow">[ 01 // FAVORITE CHANNELS · LIKED ] ───────────────────</div><div class="item-grid">';
+        html += '<div class="eyebrow">[ 01 // FAVORITE CHANNELS · LIKED ]</div><div class="item-grid">';
         liked.forEach(s => { html += renderCard({ ...s, videoId: s.videoId || s.video_id }); });
         html += '</div>';
     }
     if (history && history.length > 0) {
-        html += '<div class="eyebrow">[ 02 // PLAYBACK LOG · HISTORY ] ────────────────────────</div><div class="list">';
+        html += '<div class="eyebrow">[ 02 // PLAYBACK LOG · HISTORY ]</div><div class="list">';
         history.forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
             html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
@@ -391,7 +391,7 @@ async function openPlaylist(id) {
     if (songs.length === 0) {
         html += '<div class="empty-state"><span class="label">[PLAYLIST: EMPTY]</span><h3>NO TRACKS IN THIS PLAYLIST</h3><p>Search songs and click [...] -> "Add to ' + esc(pl.name) + '" to bundle audio streams.</p></div>';
     } else {
-        html += '<div class="eyebrow">[ ' + String(songs.length).padStart(2, '0') + ' // TRACKS IN REGISTRY ] ──────────────────────────</div>' +
+        html += '<div class="eyebrow">[ ' + String(songs.length).padStart(2, '0') + ' // TRACKS IN REGISTRY ]</div>' +
             '<div class="list" id="pl-track-list"></div>';
     }
 
