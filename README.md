@@ -13,8 +13,8 @@ A high-performance, lightweight terminal-style YouTube Music audio player. Built
 
 ---
 
-### 2. 10-Band DSP Parametric Equalizer
-> 32Hz to 16kHz audio mastering with pre-amp headroom, bass booster, and 14 genre presets.
+### 2. 10-Band DSP Parametric Equalizer & Smart Auto-EQ
+> 32Hz to 16kHz audio mastering with real-time `[⚡ PERFECT TUNE]` calibration, `[AUTO: ON/OFF]` genre tracking, pre-amp headroom, and 14 studio presets.
 
 ![PulseTerm 10-Band Equalizer](docs/screenshots/equalizer.png)
 
