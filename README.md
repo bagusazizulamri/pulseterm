@@ -62,7 +62,7 @@ A high-performance, lightweight terminal-style YouTube Music audio player. Built
 
 ```bash
 # Clone the repository
-git clone https://github.com/bandithijo/pulseterm.git
+git clone https://github.com/bagusazizulamri/pulseterm.git
 cd pulseterm
 
 # Run setup (creates venv and installs dependencies)
