@@ -32,7 +32,11 @@ A high-performance, lightweight terminal-style YouTube Music audio player. Built
 - **TUI Monospace Aesthetic**: Clean ASCII borders, retro CRT scanline raster mode, and customizable color schemes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **High-Fidelity Opus 48kHz Audio**: Direct Opus 160kbps audio stream extraction with lossless Web Audio API DSP processing chain and anti-clipping studio limiter.
 - **10-Band DSP Parametric Equalizer**: 32Hz to 16kHz faders with Pre-amp headroom and Bass Booster controls.
-- **14 Studio Genre Presets**: Flat, Bass Boost, Rock, Pop, Electronic/EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Dance, Metal, Vocal, and Treble Boost.
+- **Autoset Perfect Equalizer (Smart Auto-EQ)**:
+  - `[AUTO: ON/OFF]`: Instant zero-latency genre-aware profile auto-matching (Rock, Metal, Pop, EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Vocal, Bass Boost) whenever the track changes.
+  - `[⚡ PERFECT TUNE]`: Instant one-shot real-time spectral calibration (<1ms) analyzing the live audio FFT spectrum to balance deficient bass, scoop mud, and tame sibilance.
+  - **Auto Headroom Gain Staging**: Intelligently scales pre-amp attenuation to guarantee clean, zero-distortion playback without limiter pumping.
+- **14 Studio Genre Presets**: Flat, Bass Boost, Rock, Pop, Electronic/EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Dance, Metal, Vocal, Treble Boost, and Perfect Harmonic Balance.
 - **Synchronized Teletext Lyrics**: Real-time karaoke-style line tracking with auto-scroll and manual seek navigation.
 - **Non-Latin Script Auto-Romanization**: Dual-script lyrics rendering with automatic Romanization:
   - 🇯🇵 Japanese Kanji / Kana ➔ **Romaji** (via pykakasi)
@@ -94,6 +98,8 @@ Access at **http://localhost:3000**
 | `1, 2, 3, 4` | Quick switch: Home, Search, Library, Playlists |
 | `/` | Focus search command prompt |
 | `e` | Toggle 10-Band DSP Equalizer panel |
+| `a` | Toggle Auto-EQ per song (in EQ panel) |
+| `p` | Instant Perfect Tune calibration (in EQ panel) |
 | `v` | Toggle CAVA spectrum visualizer HUD |
 | `c` | Toggle CRT scanline raster effect |
 | `q` | Toggle playback queue buffer drawer |

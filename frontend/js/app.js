@@ -930,6 +930,22 @@ document.addEventListener('keydown', (e) => {
     }
     if (key === 'v') { e.preventDefault(); visualizer.togglePanel(); return; }
     if (key === 'e') { e.preventDefault(); equalizer.togglePanel(); return; }
+    if (key === 'a') {
+        const eqPanel = document.getElementById('equalizer-panel');
+        if (eqPanel && !eqPanel.classList.contains('hidden')) {
+            e.preventDefault();
+            equalizer.toggleAutoMode();
+            return;
+        }
+    }
+    if (key === 'p') {
+        const eqPanel = document.getElementById('equalizer-panel');
+        if (eqPanel && !eqPanel.classList.contains('hidden')) {
+            e.preventDefault();
+            equalizer.perfectTune();
+            return;
+        }
+    }
     if (key === 'c') { e.preventDefault(); visualizer.toggleCrt(); return; }
     if (key === 't') { e.preventDefault(); cycleTheme(); return; }
     if (key === 'q') { e.preventDefault(); toggleQueue(); return; }

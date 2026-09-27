@@ -1512,6 +1512,25 @@ body.playing .tui-state-badge {
   font-weight: 700;
 }
 
+.eq-auto-toggle.active, #eq-auto-btn.active {
+  background: var(--seal);
+  color: var(--paper);
+  border-color: var(--seal);
+  font-weight: 700;
+}
+
+.eq-perfect-btn, #eq-perfect-btn {
+  border-color: var(--seal);
+  color: var(--seal);
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.eq-perfect-btn:hover, #eq-perfect-btn:hover {
+  background: var(--seal);
+  color: var(--paper);
+}
+
 .eq-rack {
   display: flex;
   gap: 12px;

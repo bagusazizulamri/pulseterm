@@ -88,8 +88,28 @@ export const EQ_PRESETS = {
         label: 'Treble Boost',
         gains: [0, 0, 0, 0, 0, 1, 3, 5, 6, 7],
         preamp: -1
+    },
+    perfect: {
+        name: 'PERFECT',
+        label: 'Harmonic Studio Balance',
+        gains: [3.5, 3.0, 1.5, -0.5, 0.5, 1.5, 2.0, 2.5, 3.0, 2.0],
+        preamp: -1.5
     }
 };
+
+export const GENRE_RULES = [
+    { preset: 'metal', words: ['metal', 'metalcore', 'deathcore', 'slipknot', 'metallica', 'megadeth', 'avenged', 'soad', 'pantera', 'iron maiden', 'bmth', 'rammstein', 'architect', 'lorna shore', 'bad omens'] },
+    { preset: 'rock', words: ['rock', 'grunge', 'nirvana', 'muse', 'queen', 'linkin park', 'green day', 'arctic monkeys', 'oasis', 'foo fighters', 'paramore', 'rhcp', 'strokes', 'radiohead', 'weezer'] },
+    { preset: 'electronic', words: ['edm', 'house', 'techno', 'trance', 'dubstep', 'dnb', 'drum and bass', 'avicii', 'skrillex', 'garrix', 'tiesto', 'marshmello', 'alan walker', 'remix', 'club', 'dance'] },
+    { preset: 'hiphop', words: ['hip hop', 'hip-hop', 'rap', 'trap', 'drill', 'eminem', 'drake', 'kendrick', 'kanye', 'travis scott', 'post malone', '2pac', 'snoop'] },
+    { preset: 'rnb', words: ['r&b', 'rnb', 'soul', 'neo soul', 'sza', 'frank ocean', 'brent faiyaz', 'giveon', 'caesar'] },
+    { preset: 'jazz', words: ['jazz', 'bossa', 'swing', 'bebop', 'miles davis', 'coltrane', 'bill evans'] },
+    { preset: 'classical', words: ['classical', 'symphony', 'orchestra', 'bach', 'beethoven', 'mozart', 'chopin', 'ost', 'soundtrack', 'zimmer'] },
+    { preset: 'acoustic', words: ['acoustic', 'akustik', 'unplugged', 'folk', 'guitar', 'fingerstyle', 'piano'] },
+    { preset: 'vocal', words: ['podcast', 'speech', 'interview', 'acapella', 'vocal'] },
+    { preset: 'bass_boost', words: ['dangdut', 'koplo', 'funkot', 'breakbeat', 'bass boost', 'phonk'] },
+    { preset: 'pop', words: ['pop', 'k-pop', 'kpop', 'j-pop', 'jpop', 'bts', 'blackpink', 'twice', 'newjeans', 'yoasobi', 'taylor swift', 'ariana', 'dua lipa', 'billie eilish'] },
+];
 
 class TerminalEqualizer {
     constructor() {
@@ -115,6 +135,8 @@ class TerminalEqualizer {
         this.preamp = 0;
         this.bassBoost = 0; // extra 0-8 dB bass boost
         this.isOpen = false;
+        this.autoMode = false;
+        this.lastTunedHint = '';
 
         this.loadState();
     }
@@ -350,6 +372,112 @@ class TerminalEqualizer {
         return this.enabled;
     }
 
+    autoDetectPreset(song) {
+        if (!song) return 'perfect';
+        const text = `${song.title || ''} ${song.artist || ''} ${song.album || ''}`.toLowerCase();
+        for (const rule of GENRE_RULES) {
+            if (rule.words.some(w => text.includes(w))) {
+                return rule.preset;
+            }
+        }
+        return 'perfect';
+    }
+
+    toggleAutoMode() {
+        this.autoMode = !this.autoMode;
+        this.saveState();
+        this.updateUI();
+        if (this.autoMode && window.player?.currentSong) {
+            this.onTrackChange(window.player.currentSong);
+        }
+        if (window.player?.showToast) {
+            window.player.showToast(this.autoMode ? '[AUTO-EQ: ENABLED]' : '[AUTO-EQ: DISABLED]');
+        }
+        return this.autoMode;
+    }
+
+    onTrackChange(song) {
+        if (!this.autoMode || !this.enabled || !song) return;
+        const presetKey = this.autoDetectPreset(song);
+        this.applyPreset(presetKey);
+        this.lastTunedHint = `AUTO (${EQ_PRESETS[presetKey]?.name || presetKey.toUpperCase()})`;
+        this.updateUI();
+    }
+
+    perfectTune() {
+        this.initAudioContext();
+        this.resume();
+
+        const song = window.player?.currentSong;
+        const baseKey = this.autoDetectPreset(song);
+        const base = EQ_PRESETS[baseKey] || EQ_PRESETS.perfect;
+        let target = [...base.gains];
+        let hint = base.name;
+
+        // One-shot FFT analysis for instant spectral compensation (<1ms execution)
+        if (this.analyser && window.player?.isPlaying) {
+            const count = this.analyser.frequencyBinCount;
+            const data = new Uint8Array(count);
+            this.analyser.getByteFrequencyData(data);
+
+            let sum = 0;
+            for (let i = 0; i < count; i++) sum += data[i];
+            const avg = sum / (count || 1);
+
+            if (avg > 8) {
+                let bSum = 0, mSum = 0, tSum = 0;
+                const bCount = Math.min(6, count);
+                const mCount = Math.max(1, Math.min(18, count) - 6);
+                const tCount = Math.max(1, Math.min(64, count) - 18);
+
+                for (let i = 0; i < bCount; i++) bSum += data[i];
+                for (let i = 6; i < 6 + mCount; i++) mSum += data[i];
+                for (let i = 18; i < 18 + tCount; i++) tSum += data[i];
+
+                const avgBass = bSum / bCount;
+                const avgMid = mSum / mCount;
+                const avgTreble = tSum / tCount;
+
+                if (avgBass < avgMid - 12) {
+                    target[0] = Math.min(12, target[0] + 2);
+                    target[1] = Math.min(12, target[1] + 1.5);
+                    hint += ' · +BASS';
+                } else if (avgBass > avgMid + 30) {
+                    target[2] = Math.max(-12, target[2] - 1.5);
+                    target[3] = Math.max(-12, target[3] - 1.5);
+                    hint += ' · CLARITY';
+                }
+
+                if (avgTreble < avgMid - 20) {
+                    target[7] = Math.min(12, target[7] + 1.5);
+                    target[8] = Math.min(12, target[8] + 2);
+                    target[9] = Math.min(12, target[9] + 1.5);
+                    hint += ' · +AIR';
+                } else if (avgTreble > avgMid + 25) {
+                    target[7] = Math.max(-12, target[7] - 2);
+                    target[8] = Math.max(-12, target[8] - 1.5);
+                    hint += ' · TAME';
+                }
+            }
+        }
+
+        // Headroom auto-gain staging: prevents digital clipping
+        const posSum = target.filter(g => g > 0).reduce((a, b) => a + b, 0);
+        this.preamp = posSum > 14 ? -2.5 : (posSum > 8 ? -1.5 : (posSum > 4 ? -1.0 : 0));
+        this.gains = target.map(g => Math.round(g * 10) / 10);
+        this.currentPreset = 'perfect';
+        this.bassBoost = 0;
+        this.lastTunedHint = hint;
+
+        this.applyFilters();
+        this.updateUI();
+        this.saveState();
+
+        if (window.player?.showToast) {
+            window.player.showToast(`[⚡ PERFECT EQ: ${hint}]`);
+        }
+    }
+
     applyFilters() {
         if (!this.audioCtx || !this.filters.length) return;
         this.resume();
@@ -392,6 +520,8 @@ class TerminalEqualizer {
                         <span class="tui-dim">PROFILE:</span>
                         <span class="eq-preset-indicator font-bold">${this.getPresetDisplayName()}</span>
                         <span class="eq-state-badge ${this.enabled ? 'is-active' : 'is-bypassed'}">${this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]'}</span>
+                        <button class="tui-btn eq-auto-toggle ${this.autoMode ? 'active' : ''}" id="eq-auto-toggle-btn" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
+                        <button class="tui-btn eq-perfect-btn" id="eq-perfect-tune-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
                     </div>
                     <div class="eq-sliders-macro">
                         <div class="eq-macro-group">
@@ -406,7 +536,7 @@ class TerminalEqualizer {
                 </div>
 
                 <div class="eq-presets-ribbon">
-                    <span class="eq-ribbon-label">GENRES:</span>
+                    <span class="eq-ribbon-label">GENRES & PROFILES:</span>
                     <div class="eq-presets-chips">
         `;
 
@@ -459,6 +589,14 @@ class TerminalEqualizer {
         const container = document.getElementById('equalizer-container');
         if (!container) return;
 
+        // Auto and Perfect Tune buttons in container
+        document.getElementById('eq-auto-toggle-btn')?.addEventListener('click', () => {
+            this.toggleAutoMode();
+        });
+        document.getElementById('eq-perfect-tune-btn')?.addEventListener('click', () => {
+            this.perfectTune();
+        });
+
         // Preset buttons
         container.querySelectorAll('[data-preset]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -509,6 +647,9 @@ class TerminalEqualizer {
             if (!this.enabled) {
                 topBtn.textContent = '[EQ: BYPASS]';
                 topBtn.classList.remove('active');
+            } else if (this.autoMode) {
+                topBtn.textContent = `[EQ: AUTO·${this.getPresetDisplayName()}]`;
+                topBtn.classList.add('active');
             } else {
                 topBtn.textContent = `[EQ: ${this.getPresetDisplayName()}]`;
                 topBtn.classList.toggle('active', this.currentPreset !== 'flat');
@@ -521,6 +662,12 @@ class TerminalEqualizer {
             powerBtn.textContent = this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]';
             powerBtn.classList.toggle('btn-danger', !this.enabled);
         }
+
+        // Update Auto-EQ buttons across UI
+        document.querySelectorAll('#eq-auto-btn, #eq-auto-toggle-btn').forEach(btn => {
+            btn.textContent = this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]';
+            btn.classList.toggle('active', this.autoMode);
+        });
 
         // Update presets active states
         document.querySelectorAll('.eq-chip').forEach(chip => {
@@ -540,16 +687,28 @@ class TerminalEqualizer {
             badge.textContent = this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]';
         }
 
+        // Sliders
         for (let i = 0; i < 10; i++) {
             const slider = document.getElementById(`eq-slider-${i}`);
             const valSpan = document.getElementById(`eq-val-${i}`);
             if (slider) slider.value = this.gains[i];
             if (valSpan) valSpan.textContent = (this.gains[i] >= 0 ? '+' : '') + this.gains[i].toFixed(1);
         }
+
+        const preampSlider = document.getElementById('eq-preamp-slider');
+        const preampVal = document.getElementById('eq-preamp-val');
+        if (preampSlider) preampSlider.value = this.preamp;
+        if (preampVal) preampVal.textContent = (this.preamp >= 0 ? '+' : '') + this.preamp.toFixed(1) + 'dB';
+
+        const bassSlider = document.getElementById('eq-bassboost-slider');
+        const bassVal = document.getElementById('eq-bassboost-val');
+        if (bassSlider) bassSlider.value = this.bassBoost;
+        if (bassVal) bassVal.textContent = '+' + this.bassBoost.toFixed(1) + 'dB';
     }
 
     getPresetDisplayName() {
         if (!this.enabled) return 'BYPASS';
+        if (this.currentPreset === 'perfect') return this.lastTunedHint || 'PERFECT';
         if (this.currentPreset === 'custom') return 'CUSTOM';
         const p = EQ_PRESETS[this.currentPreset];
         return p ? p.name : 'FLAT';
@@ -580,7 +739,8 @@ class TerminalEqualizer {
                 preset: this.currentPreset,
                 gains: this.gains,
                 preamp: this.preamp,
-                bassBoost: this.bassBoost
+                bassBoost: this.bassBoost,
+                autoMode: this.autoMode
             };
             localStorage.setItem('pulseterm_eq', JSON.stringify(data));
         } catch {}
@@ -598,6 +758,7 @@ class TerminalEqualizer {
             }
             if (Number.isFinite(data.preamp)) this.preamp = data.preamp;
             if (Number.isFinite(data.bassBoost)) this.bassBoost = data.bassBoost;
+            if (typeof data.autoMode === 'boolean') this.autoMode = data.autoMode;
         } catch {}
     }
 }

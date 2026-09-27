@@ -255,6 +255,8 @@
                 <h3>┌─ [DSP] 10-BAND EQUALIZER ─┐</h3>
             </div>
             <div class="drawer-head-actions">
+                <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn" title="Toggle Auto-EQ per song change">[AUTO: OFF]</button>
+                <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
                 <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">[EQ: ENABLED]</button>
                 <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
                 <button onclick="toggleEqualizer()" class="tui-btn" title="Close equalizer panel (Esc)">[CLOSE ×]</button>
@@ -327,6 +329,8 @@
             <dt>← / →</dt><dd>Seek backward / forward 5 seconds</dd>
             <dt>v</dt><dd>Toggle CAVA audio spectrum visualizer</dd>
             <dt>e</dt><dd>Toggle 10-band DSP equalizer & genre presets</dd>
+            <dt>a</dt><dd>Toggle Auto-EQ per song (in EQ panel)</dd>
+            <dt>p</dt><dd>Instant Perfect Tune calibration (in EQ panel)</dd>
             <dt>c</dt><dd>Toggle CRT scanline raster effect</dd>
             <dt>t</dt><dd>Cycle terminal color palette</dd>
             <dt>q</dt><dd>Toggle playback queue drawer</dd>

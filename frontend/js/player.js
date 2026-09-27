@@ -464,6 +464,7 @@ const player = {
                 this.updatePlayerUI();
                 this.updateMediaSession();
                 this.loadLyrics(song);
+                equalizer.onTrackChange(song);
 
                 // Prepare next track immediately into the newly available preload deck
                 this.prepareNext();
@@ -528,6 +529,7 @@ const player = {
             this.updatePlayerUI();
             this.updateMediaSession();
             this.loadLyrics(song);
+            equalizer.onTrackChange(song);
             // prepareNext() already ran in parallel before the resolve; run it
             // again now that orderPos is settled so the preload target is exact.
             this.prepareNext();
@@ -989,7 +991,7 @@ const player = {
                 equalizer.resetGains();
                 this.crossfadeStarted = false;
                 this.isPlaying = true;
-                this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); this.prepareNext();
+                this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); equalizer.onTrackChange(this.currentSong); this.prepareNext();
                 if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
                     const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
                     this._scheduleContinue(tailSeed);
