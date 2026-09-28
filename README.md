@@ -29,6 +29,10 @@ A high-performance, lightweight terminal-style YouTube Music audio player. Built
 
 ## ✨ Features
 
+- **Dual Interface Modes (Retro TUI vs Modern Studio GUI)**:
+  - `[>_ RETRO TERMINAL]`: Monospace ASCII box-drawing borders, vintage command prompts, and optional CRT scanline raster mode.
+  - `[✦ MODERN STUDIO GUI]`: Clean modern sans-serif typography, rounded cards, elevated pill controls, circular playback controls, and streamlined search bar for users who prefer a modern streaming interface.
+  - Seamlessly switch via Settings `[CONFIG]`, or type `:modern` / `:tui` directly into the search prompt. 100% native CSS with instant toggle and zero overhead across all 8 color themes.
 - **TUI Monospace Aesthetic**: Clean ASCII borders, retro CRT scanline raster mode, and customizable color schemes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **High-Fidelity Opus 48kHz Audio**: Direct Opus 160kbps audio stream extraction with lossless Web Audio API DSP processing chain and anti-clipping studio limiter.
 - **10-Band DSP Parametric Equalizer**: 32Hz to 16kHz faders with Pre-amp headroom and Bass Booster controls.
@@ -103,6 +107,7 @@ Access at **http://localhost:3000**
 | `1, 2, 3, 4` | Quick switch: Home, Search, Library, Playlists |
 | `/` | Focus search command prompt |
 | `F5` / `Ctrl+R` / `Ctrl+L` | Soft refresh view buffer without interrupting audio |
+| `:modern` / `:tui` | Command prompt shortcuts to switch between Modern GUI and Retro TUI layouts |
 | `e` | Toggle 10-Band DSP Equalizer panel |
 | `x` | Cycle 3D Spatial Audio mode (Off / Studio / Wide / Concert) |
 | `a` | Toggle Auto-EQ per song (in EQ panel) |

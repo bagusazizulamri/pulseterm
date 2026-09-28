@@ -176,7 +176,18 @@
                 <button onclick="toggleSettings()" class="tui-btn" aria-label="Close settings">[CLOSE ×]</button>
             </div>
             <div class="setting-group">
-                <label>Terminal Color Palette (T to cycle)</label>
+                <label>Interface Layout Style</label>
+                <div class="layout-options">
+                    <button id="layout-btn-tui" onclick="setLayoutMode('tui', this)" class="theme-btn active" title="Authentic Retro Monospace Terminal Aesthetic">
+                        <span>[>_ RETRO TERMINAL]</span>
+                    </button>
+                    <button id="layout-btn-modern" onclick="setLayoutMode('modern', this)" class="theme-btn" title="Clean Modern Sans-Serif Streaming Aesthetic">
+                        <span>[✦ MODERN STUDIO GUI]</span>
+                    </button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Color Palette (T to cycle)</label>
                 <div class="theme-options">
                     <button onclick="setTheme('dark', this)" class="theme-btn active" data-theme="dark" title="Matrix Phosphor Green"><span class="theme-swatch dark"></span>[MATRIX GREEN]</button>
                     <button onclick="setTheme('amber', this)" class="theme-btn" data-theme="amber" title="Vintage VT100 Amber CRT"><span class="theme-swatch amber"></span>[AMBER CRT]</button>
@@ -327,6 +338,7 @@
             <dt>1, 2, 3, 4</dt><dd>Quick jump: Home, Search, Library, Playlists</dd>
             <dt>/ (Slash)</dt><dd>Focus search command prompt</dd>
             <dt>F5 / Ctrl+R / Ctrl+L / :reload</dt><dd>Soft refresh buffer without interrupting audio</dd>
+            <dt>:modern / :tui</dt><dd>Switch between Modern Studio GUI and Retro Terminal TUI layout</dd>
             <dt>n / p</dt><dd>Next track / Previous track</dd>
             <dt>← / →</dt><dd>Seek backward / forward 5 seconds</dd>
             <dt>v</dt><dd>Toggle CAVA audio spectrum visualizer</dd>

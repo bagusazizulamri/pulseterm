@@ -221,6 +221,16 @@ async function doSearch() {
         await navigate(currentPage);
         return;
     }
+    if (lowerQ === ':modern' || lowerQ === 'modern' || lowerQ === ':gui' || lowerQ === 'gui') {
+        if (input) { input.value = ''; input.blur(); }
+        window.setLayoutMode('modern');
+        return;
+    }
+    if (lowerQ === ':tui' || lowerQ === 'tui' || lowerQ === ':retro' || lowerQ === 'retro') {
+        if (input) { input.value = ''; input.blur(); }
+        window.setLayoutMode('tui');
+        return;
+    }
 
     if (currentPage !== 'search') await navigate('search');
     const container = document.getElementById('search-suggestions-container');
@@ -565,6 +575,10 @@ function initRealtime() {
 }
 
 async function init() {
+    // Initialize Layout Mode (TUI vs Modern GUI)
+    const savedLayout = localStorage.getItem('pulseterm_layout_mode') || 'tui';
+    setLayoutMode(savedLayout);
+
     player.init();
     equalizer.initAudioContext();
     equalizer.updateUI();
@@ -610,10 +624,7 @@ async function init() {
         if (settings.success && settings.data) {
             const d = settings.data;
             if (d.theme) themeToApply = d.theme;
-            document.body.className = 'theme-' + themeToApply;
-            document.querySelectorAll('.theme-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.theme === themeToApply);
-            });
+            window.setTheme(themeToApply);
             player.setVolume(Number.isFinite(d.volume) ? d.volume : .8);
             player.repeatMode = ['none', 'all', 'one'].includes(d.repeat) ? d.repeat : 'none';
             await player.setShuffle(!!d.shuffle);
@@ -655,11 +666,30 @@ function cycleRepeat() {
 }
 
 function cycleTheme() {
-    const current = document.body.className.replace('theme-', '') || 'dark';
+    const currentThemeClass = Array.from(document.body.classList).find(c => c.startsWith('theme-'));
+    const current = currentThemeClass ? currentThemeClass.replace('theme-', '') : 'dark';
     const idx = THEME_LIST.indexOf(current);
     const nextTheme = THEME_LIST[(idx + 1) % THEME_LIST.length];
     window.setTheme(nextTheme);
 }
+
+function setLayoutMode(mode, btn) {
+    const layout = mode === 'modern' ? 'modern' : 'tui';
+    document.body.classList.toggle('layout-modern', layout === 'modern');
+    document.body.classList.toggle('layout-tui', layout === 'tui');
+
+    document.querySelectorAll('.layout-options .theme-btn').forEach(b => {
+        const isTarget = b.id === `layout-btn-${layout}` || b === btn;
+        b.classList.toggle('active', isTarget);
+    });
+
+    localStorage.setItem('pulseterm_layout_mode', layout);
+}
+
+window.setLayoutMode = function(mode, btn) {
+    setLayoutMode(mode, btn);
+    showToast(mode === 'modern' ? '✦ Layout: Modern Studio GUI' : '>_ Layout: Retro Monospace Terminal');
+};
 
 window.navigate = navigate;
 window.doSearch = doSearch;
@@ -731,8 +761,9 @@ window.toggleLike = function() { player.toggleLike(); };
 window.toggleSettings = function() { document.getElementById('settings-panel').classList.toggle('hidden'); };
 window.setTheme = function(t, btn) {
     const themeName = THEME_LIST.includes(t) ? t : 'dark';
-    document.body.className = 'theme-' + themeName;
-    document.querySelectorAll('.theme-btn').forEach(b => {
+    THEME_LIST.forEach(name => document.body.classList.remove('theme-' + name));
+    document.body.classList.add('theme-' + themeName);
+    document.querySelectorAll('.theme-options .theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeName || b === btn);
     });
     localStorage.setItem('pulseterm_theme', themeName);
