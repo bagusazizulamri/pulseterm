@@ -2185,16 +2185,43 @@ dialog.artwork-modal::backdrop {
   flex-shrink: 0;
 }
 
-/* Distance Focus Falloff */
+/* ── Karaoke shimmer animation ── */
+@keyframes lrcScan {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes lrcPulse {
+  0%, 100% { box-shadow: 0 0 12px var(--seal-glow), inset 0 0 8px var(--card-hover); }
+  50%       { box-shadow: 0 0 28px var(--seal-glow), inset 0 0 16px var(--card-hover); }
+}
+
+/* ── Distance Focus Falloff ── */
 .lyric-line[data-dist="0"] {
   opacity: 1;
-  color: var(--seal);
   font-weight: 700;
   background: var(--paper-3);
   border-left-color: var(--seal);
-  box-shadow: 0 0 16px var(--seal-glow);
   transform: translateX(6px);
-  text-shadow: 0 0 12px var(--seal-glow);
+  animation: lrcPulse 1.8s ease-in-out infinite;
+}
+
+/* Active text: animated gradient shimmer */
+.lyric-line[data-dist="0"] .lyric-orig {
+  background: linear-gradient(
+    90deg,
+    var(--seal) 0%,
+    color-mix(in srgb, var(--seal) 60%, white) 30%,
+    var(--seal) 55%,
+    var(--ink-2) 80%,
+    var(--seal) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: lrcScan 2.4s linear infinite;
+  text-shadow: none;
 }
 
 .lyric-line[data-dist="0"] .lyric-timestamp {
@@ -2204,44 +2231,49 @@ dialog.artwork-modal::backdrop {
 }
 
 .lyric-line[data-dist="0"] .lyric-roman {
-  color: var(--seal);
-  opacity: 0.95;
-  text-shadow: 0 0 6px var(--seal-glow);
+  color: color-mix(in srgb, var(--seal) 70%, var(--ink-2));
+  opacity: 0.92;
+  font-style: italic;
 }
 
 .lyric-line[data-dist="0"] .lyric-jump-icon {
   opacity: 1;
   transform: translateX(0);
+  color: var(--seal);
+  animation: lrcPulse 1.8s ease-in-out infinite;
 }
 
+/* dist 1: bright, fading in from below */
 .lyric-line[data-dist="1"] {
-  opacity: 0.82;
-  color: var(--ink);
+  opacity: 0.78;
+  color: color-mix(in srgb, var(--seal) 40%, var(--ink));
   transform: translateX(2px);
 }
-
 .lyric-line[data-dist="1"] .lyric-timestamp {
-  opacity: 0.8;
-  color: var(--ink-2);
+  opacity: 0.7;
+  color: color-mix(in srgb, var(--seal) 35%, var(--ink-2));
 }
 
+/* dist 2 */
 .lyric-line[data-dist="2"] {
-  opacity: 0.58;
+  opacity: 0.5;
   color: var(--ink-2);
 }
 
+/* dist 3 */
 .lyric-line[data-dist="3"] {
-  opacity: 0.36;
+  opacity: 0.3;
   color: var(--ink-3);
 }
 
+/* dist 4+ */
 .lyric-line[data-dist="4"] {
-  opacity: 0.22;
+  opacity: 0.18;
   color: var(--ink-3);
 }
 
-/* Hover preview */
-.lyric-line:hover:not(.active) {
+/* ── Hover preview ── */
+.lyric-line:hover:not([data-dist="0"]) {
   opacity: 1;
   background: var(--paper-2);
   border-left-color: var(--line);
@@ -2256,6 +2288,19 @@ dialog.artwork-modal::backdrop {
 .lyric-line:hover .lyric-jump-icon {
   opacity: 0.75;
   transform: translateX(0);
+}
+
+/* Respect prefers-reduced-motion — keep color, stop animation */
+@media (prefers-reduced-motion: reduce) {
+  .lyric-line[data-dist="0"],
+  .lyric-line[data-dist="0"] .lyric-orig,
+  .lyric-line[data-dist="0"] .lyric-jump-icon {
+    animation: none;
+  }
+  .lyric-line[data-dist="0"] .lyric-orig {
+    background-size: 100% auto;
+    background-position: 0 center;
+  }
 }
 
 /* Romanization display modes */
