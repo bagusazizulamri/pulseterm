@@ -1072,11 +1072,11 @@ body.crt-active #crt-overlay {
 
 .player-inner {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   height: 100%;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 
 .player-info {
@@ -1180,9 +1180,10 @@ body.playing .tui-state-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .player-controls .tui-btn {
