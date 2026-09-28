@@ -15,6 +15,13 @@ const THEME_LIST = ['dark', 'amber', 'oled', 'cyberpunk', 'nordic', 'light', 'li
 
 function esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+function showToast(message, actionLabel = '', action = null) {
+    if (player && typeof player.showToast === 'function') {
+        player.showToast(message, actionLabel, action);
+    }
+}
+window.showToast = showToast;
+
 async function navigate(page) {
     if (!page) page = 'home';
     currentPage = page;
@@ -811,9 +818,18 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    // In-App Soft Reload: F5 or Ctrl+R (without Shift)
-    const isReload = (e.key === 'F5') || ((e.key === 'r' || e.key === 'R') && (e.ctrlKey || e.metaKey) && !e.shiftKey);
-    if (isReload) {
+    // Browser Hard Reload (Ctrl+Shift+R, Cmd+Shift+R, Shift+F5, Ctrl+F5) -> allow browser native reload
+    const isHardReload = ((e.key === 'r' || e.key === 'R') && (e.ctrlKey || e.metaKey) && e.shiftKey) ||
+                         (e.key === 'F5' && (e.shiftKey || e.ctrlKey));
+    if (isHardReload) {
+        return;
+    }
+
+    // In-App Soft Reload: F5, Ctrl+R, Cmd+R, Ctrl+L (terminal screen refresh)
+    const isSoftReload = (e.key === 'F5' && !e.shiftKey && !e.ctrlKey) ||
+                         ((e.key === 'r' || e.key === 'R') && (e.ctrlKey || e.metaKey) && !e.shiftKey) ||
+                         ((e.key === 'l' || e.key === 'L') && (e.ctrlKey || e.metaKey));
+    if (isSoftReload) {
         e.preventDefault();
         showToast('>> VIEW BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
         navigate(currentPage);
@@ -911,7 +927,10 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // Single-key toggles
+    // Single-key toggles (disallow when Ctrl / Meta / Alt is held)
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+    }
     const key = e.key.toLowerCase();
     if (key === 'm') { e.preventDefault(); player.toggleMute(); return; }
     if (key === 's') {

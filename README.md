@@ -102,6 +102,7 @@ Access at **http://localhost:3000**
 | `Space` | Play / Pause |
 | `1, 2, 3, 4` | Quick switch: Home, Search, Library, Playlists |
 | `/` | Focus search command prompt |
+| `F5` / `Ctrl+R` / `Ctrl+L` | Soft refresh view buffer without interrupting audio |
 | `e` | Toggle 10-Band DSP Equalizer panel |
 | `x` | Cycle 3D Spatial Audio mode (Off / Studio / Wide / Concert) |
 | `a` | Toggle Auto-EQ per song (in EQ panel) |
