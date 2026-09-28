@@ -2183,15 +2183,20 @@ dialog.artwork-modal::backdrop {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 3px;
 }
 
 .lyric-orig {
-  display: inline;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .lyric-roman {
-  display: block;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
   font-size: clamp(12px, 1.3vw, 15px);
   line-height: 1.35;
   color: var(--ink-light);
@@ -2345,7 +2350,9 @@ dialog.artwork-modal::backdrop {
 #lyrics-lines.mode-roman .lyric-roman {
   font-size: clamp(16px, 1.8vw, 22px);
   margin-top: 0;
-  display: inline;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
 }
 #lyrics-lines.mode-native .lyric-roman {
   display: none;

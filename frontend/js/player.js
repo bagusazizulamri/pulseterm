@@ -1094,6 +1094,10 @@ const player = {
         this.audio.currentTime = ratio * this.audio.duration;
         bar.setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
         this.savedPosition = this.audio.currentTime;
+        if (this.lyrics?.length) {
+            this.activeLyric = -1;
+            this.updateActiveLyric(this.audio.currentTime * 1000);
+        }
         clearTimeout(this.seekCommitTimer);
         this.seekCommitTimer = setTimeout(() => {
             fetch('/api/player/position', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ position: Math.floor(this.audio.currentTime) }) }).catch(() => {});
@@ -1353,17 +1357,23 @@ const player = {
         }
         // ── Karaoke sweep fill via RAF ──
         if (this._lyricFillRAF) cancelAnimationFrame(this._lyricFillRAF);
-        const lineStart  = Number(this.lyrics[found].start) || 0;
-        const lineEnd    = this.lyrics[found + 1]
-            ? Number(this.lyrics[found + 1].start)
-            : lineStart + 6000;
-        const lineDur    = Math.max(400, lineEnd - lineStart);
+        const curLyric   = this.lyrics[found];
+        const lineStart  = Number(curLyric?.start) || 0;
+        const rawEnd     = Number(curLyric?.end) || 0;
+        const nextStart  = this.lyrics[found + 1] ? (Number(this.lyrics[found + 1].start) || 0) : 0;
+        let lineEnd = lineStart + 4000;
+        if (rawEnd > lineStart) {
+            lineEnd = rawEnd;
+        } else if (nextStart > lineStart) {
+            lineEnd = Math.min(nextStart, lineStart + 8000);
+        }
+        const lineDur    = Math.max(300, lineEnd - lineStart);
         const activeEl   = lines[found];
         const origEl     = activeEl?.querySelector('.lyric-orig');
         const romanEl    = activeEl?.querySelector('.lyric-roman');
         if (!origEl) return;
         const fillTick = () => {
-            const nowMs  = (this.audio?.currentTime || 0) * 1000;
+            const nowMs  = Math.max(0, ((this.audio?.currentTime || 0) * 1000) - 50);
             const pct    = Math.min(100, Math.max(0, ((nowMs - lineStart) / lineDur) * 100));
             const val    = pct.toFixed(2) + '%';
             origEl.style.setProperty('--lyric-progress', val);
