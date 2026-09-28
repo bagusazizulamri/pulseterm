@@ -257,17 +257,30 @@
         </div>
     </div>
 
+    <!-- Backdrop Scrim for Drawers in Modern Mode -->
+    <div id="drawer-backdrop" class="drawer-backdrop hidden" onclick="window.closeAllDrawers()"></div>
+
     <!-- TUI Audio Visualizer Drawer (Collapsible & Expandable) -->
     <div id="visualizer-drawer" class="hidden">
         <div class="drawer-head">
             <div class="viz-head-title">
-                <h3>┌── [VIZ] AUDIO SPECTRUM ANALYZER</h3>
+                <h3 class="tui-only">┌── [VIZ] AUDIO SPECTRUM ANALYZER</h3>
+                <h3 class="modern-only">Audio Spectrum Analyzer</h3>
                 <span id="viz-now-playing" class="viz-track-label"></span>
             </div>
             <div class="viz-actions">
-                <button id="viz-expand-btn" onclick="window.toggleVisualizerExpand()" class="tui-btn" title="Toggle compact/expanded height">[EXPAND ▲]</button>
-                <button onclick="cycleVisualizerMode()" class="tui-btn" title="Switch visualizer algorithm">[MODE: <span id="viz-mode-label">CAVA</span>]</button>
-                <button onclick="toggleVisualizer()" class="tui-btn" title="Close visualizer (Esc)">[CLOSE ×]</button>
+                <button id="viz-expand-btn" onclick="window.toggleVisualizerExpand()" class="tui-btn" title="Toggle compact/expanded height">
+                    <span class="tui-only">[EXPAND ▲]</span>
+                    <span class="modern-only">Expand</span>
+                </button>
+                <button onclick="cycleVisualizerMode()" class="tui-btn" title="Switch visualizer algorithm">
+                    <span class="tui-only">[MODE: <span id="viz-mode-label">CAVA</span>]</span>
+                    <span class="modern-only">Mode: <span id="viz-mode-label-modern">CAVA</span></span>
+                </button>
+                <button onclick="toggleVisualizer()" class="tui-btn drawer-close-btn" title="Close visualizer (Esc)">
+                    <span class="tui-only">[CLOSE ×]</span>
+                    <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+                </button>
             </div>
         </div>
         <div class="viz-body">
@@ -281,35 +294,44 @@
         </div>
     </div>
 
-    <!-- TUI Settings Drawer -->
+    <!-- Settings Drawer -->
     <div id="settings-panel" class="hidden">
         <div class="settings-content">
             <div class="drawer-head">
-                <h2>┌─ CONFIG // SYSTEM PREFERENCES ─┐</h2>
-                <button onclick="toggleSettings()" class="tui-btn" aria-label="Close settings">[CLOSE ×]</button>
+                <h2 class="tui-only">┌─ CONFIG // SYSTEM PREFERENCES ─┐</h2>
+                <div class="modern-only modern-drawer-title">
+                    <h2>Settings</h2>
+                    <span class="modern-drawer-desc">Preferences & System Options</span>
+                </div>
+                <button onclick="toggleSettings()" class="tui-btn drawer-close-btn" aria-label="Close settings">
+                    <span class="tui-only">[CLOSE ×]</span>
+                    <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+                </button>
             </div>
             <div class="setting-group">
                 <label>Interface Layout Style</label>
                 <div class="layout-options">
                     <button id="layout-btn-tui" onclick="setLayoutMode('tui', this)" class="theme-btn active" title="Authentic Retro Monospace Terminal Aesthetic">
-                        <span>[>_ RETRO TERMINAL]</span>
+                        <span class="tui-only">[>_ RETRO TERMINAL]</span>
+                        <span class="modern-only">>_ Retro Terminal</span>
                     </button>
                     <button id="layout-btn-modern" onclick="setLayoutMode('modern', this)" class="theme-btn" title="Clean Modern Sans-Serif Streaming Aesthetic">
-                        <span>[✦ MODERN STUDIO GUI]</span>
+                        <span class="tui-only">[✦ MODERN STUDIO GUI]</span>
+                        <span class="modern-only">✦ Modern Studio</span>
                     </button>
                 </div>
             </div>
             <div class="setting-group">
                 <label>Color Palette (T to cycle)</label>
                 <div class="theme-options">
-                    <button onclick="setTheme('dark', this)" class="theme-btn active" data-theme="dark" title="Matrix Phosphor Green"><span class="theme-swatch dark"></span>[MATRIX GREEN]</button>
-                    <button onclick="setTheme('amber', this)" class="theme-btn" data-theme="amber" title="Vintage VT100 Amber CRT"><span class="theme-swatch amber"></span>[AMBER CRT]</button>
-                    <button onclick="setTheme('oled', this)" class="theme-btn" data-theme="oled" title="Pure Pitch Black & White Monolith"><span class="theme-swatch oled"></span>[OLED MONO]</button>
-                    <button onclick="setTheme('cyberpunk', this)" class="theme-btn" data-theme="cyberpunk" title="Night City Cyan & Magenta"><span class="theme-swatch cyberpunk"></span>[CYBERPUNK]</button>
-                    <button onclick="setTheme('nordic', this)" class="theme-btn" data-theme="nordic" title="Tokyo Night Dark Slate"><span class="theme-swatch nordic"></span>[TOKYO SLATE]</button>
-                    <button onclick="setTheme('light', this)" class="theme-btn" data-theme="light" title="Solarized Retro Terminal"><span class="theme-swatch light"></span>[SOLARIZED]</button>
-                    <button onclick="setTheme('liquidglass', this)" class="theme-btn" data-theme="liquidglass" title="macOS Liquid Glass Vibrant Terminal"><span class="theme-swatch liquidglass"></span>[MAC LIQUID GLASS]</button>
-                    <button onclick="setTheme('softdark', this)" class="theme-btn" data-theme="softdark" title="Soft Dark Pastel Color Terminal"><span class="theme-swatch softdark"></span>[SOFT DARK]</button>
+                    <button onclick="setTheme('dark', this)" class="theme-btn active" data-theme="dark" title="Matrix Phosphor Green"><span class="theme-swatch dark"></span><span class="tui-only">[MATRIX GREEN]</span><span class="modern-only">Matrix Green</span></button>
+                    <button onclick="setTheme('amber', this)" class="theme-btn" data-theme="amber" title="Vintage VT100 Amber CRT"><span class="theme-swatch amber"></span><span class="tui-only">[AMBER CRT]</span><span class="modern-only">Amber CRT</span></button>
+                    <button onclick="setTheme('oled', this)" class="theme-btn" data-theme="oled" title="Pure Pitch Black & White Monolith"><span class="theme-swatch oled"></span><span class="tui-only">[OLED MONO]</span><span class="modern-only">OLED Mono</span></button>
+                    <button onclick="setTheme('cyberpunk', this)" class="theme-btn" data-theme="cyberpunk" title="Night City Cyan & Magenta"><span class="theme-swatch cyberpunk"></span><span class="tui-only">[CYBERPUNK]</span><span class="modern-only">Cyberpunk</span></button>
+                    <button onclick="setTheme('nordic', this)" class="theme-btn" data-theme="nordic" title="Tokyo Night Dark Slate"><span class="theme-swatch nordic"></span><span class="tui-only">[TOKYO SLATE]</span><span class="modern-only">Tokyo Slate</span></button>
+                    <button onclick="setTheme('light', this)" class="theme-btn" data-theme="light" title="Solarized Retro Terminal"><span class="theme-swatch light"></span><span class="tui-only">[SOLARIZED]</span><span class="modern-only">Solarized</span></button>
+                    <button onclick="setTheme('liquidglass', this)" class="theme-btn" data-theme="liquidglass" title="macOS Liquid Glass Vibrant Terminal"><span class="theme-swatch liquidglass"></span><span class="tui-only">[MAC LIQUID GLASS]</span><span class="modern-only">Liquid Glass</span></button>
+                    <button onclick="setTheme('softdark', this)" class="theme-btn" data-theme="softdark" title="Soft Dark Pastel Color Terminal"><span class="theme-swatch softdark"></span><span class="tui-only">[SOFT DARK]</span><span class="modern-only">Soft Dark</span></button>
                 </div>
             </div>
             <div class="setting-group">
@@ -319,28 +341,43 @@
             <div class="setting-group">
                 <label>Playback Subsystem</label>
                 <div class="toggle-group">
-                    <label class="check"><input type="checkbox" id="settings-shuffle" onchange="savePlayerSettings()"> [x] Shuffle playback order</label>
-                    <label class="check">Repeat behavior:
+                    <label class="check">
+                        <input type="checkbox" id="settings-shuffle" onchange="savePlayerSettings()">
+                        <span class="tui-only">[x] Shuffle playback order</span>
+                        <span class="modern-only">Shuffle playback order</span>
+                    </label>
+                    <label class="check">
+                        <span class="tui-only">Repeat behavior:</span>
+                        <span class="modern-only">Repeat mode:</span>
                         <select id="settings-repeat" onchange="savePlayerSettings()">
-                            <option value="none">[NONE] Off</option>
-                            <option value="all">[ALL] Repeat queue</option>
-                            <option value="one">[ONE] Repeat single track</option>
+                            <option value="none">Off</option>
+                            <option value="all">Repeat queue</option>
+                            <option value="one">Repeat single track</option>
                         </select>
                     </label>
                 </div>
             </div>
             <div class="setting-group">
-                <label for="settings-crossfade">DSP Crossfade Buffer: <span id="crossfade-value">0s</span></label>
-                <input type="range" id="settings-crossfade" min="0" max="12" step="1" value="0" oninput="document.getElementById('crossfade-value').textContent=this.value+'s';savePlayerSettings()">
+                <label for="settings-crossfade">
+                    <span class="tui-only">DSP Crossfade Buffer: <span id="crossfade-value">0s</span></span>
+                    <span class="modern-only">Crossfade: <span id="crossfade-value-modern">0s</span></span>
+                </label>
+                <input type="range" id="settings-crossfade" min="0" max="12" step="1" value="0" oninput="const v=this.value+'s'; document.getElementById('crossfade-value').textContent=v; const vm=document.getElementById('crossfade-value-modern'); if(vm) vm.textContent=v; savePlayerSettings()">
             </div>
             <div class="setting-group">
-                <label for="settings-speed">DSP Resampler Speed</label>
+                <label for="settings-speed">
+                    <span class="tui-only">DSP Resampler Speed</span>
+                    <span class="modern-only">Playback Speed</span>
+                </label>
                 <select id="settings-speed" onchange="savePlayerSettings()">
                     <option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1.00× (Bit-perfect)</option><option value="1.1">1.10×</option><option value="1.25">1.25×</option><option value="1.5">1.50×</option>
                 </select>
             </div>
             <div class="setting-group">
-                <label for="settings-queue-limit">Dynamic Radio Queue Limit (Single Song)</label>
+                <label for="settings-queue-limit">
+                    <span class="tui-only">Dynamic Radio Queue Limit (Single Song)</span>
+                    <span class="modern-only">Autoplay Radio Queue Size</span>
+                </label>
                 <select id="settings-queue-limit" onchange="savePlayerSettings()">
                     <option value="10">10 tracks</option>
                     <option value="15">15 tracks</option>
@@ -351,57 +388,105 @@
                 </select>
             </div>
             <div class="setting-group">
-                <label for="settings-sleep">Shutdown / Sleep Timer</label>
+                <label for="settings-sleep">
+                    <span class="tui-only">Shutdown / Sleep Timer</span>
+                    <span class="modern-only">Sleep Timer</span>
+                </label>
                 <select id="settings-sleep" onchange="setSleepTimer(this.value)">
                     <option value="0">Disabled</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>
                 </select>
             </div>
-            <button onclick="savePlayerSettings()" class="save-btn">[COMMIT CONFIG TO FLASH]</button>
-            <p class="keys">ASCII & Unicode terminal music client powered by FastAPI, SQLite-WAL & Web Audio.</p>
+            <button onclick="savePlayerSettings()" class="save-btn">
+                <span class="tui-only">[COMMIT CONFIG TO FLASH]</span>
+                <span class="modern-only">Save Preferences</span>
+            </button>
+            <p class="keys">
+                <span class="tui-only">ASCII & Unicode terminal music client powered by FastAPI, SQLite-WAL & Web Audio.</span>
+                <span class="modern-only">PulseTerm Studio · High-Fidelity Web Audio Streaming Client</span>
+            </p>
         </div>
     </div>
 
-    <!-- TUI Queue Drawer -->
+    <!-- Queue Drawer -->
     <div id="queue-panel" class="hidden">
         <div class="drawer-head">
-            <h3>┌─ PLAYBACK QUEUE BUFFER ─┐</h3>
+            <h3 class="tui-only">┌─ PLAYBACK QUEUE BUFFER ─┐</h3>
+            <div class="modern-only modern-drawer-title">
+                <h2>Playing Next</h2>
+                <span class="modern-drawer-desc">Queue & Upcoming Tracks</span>
+            </div>
             <div class="drawer-head-actions">
-                <button onclick="clearQueue()" class="tui-btn">[PURGE]</button>
-                <button onclick="toggleQueue()" class="tui-btn">[CLOSE ×]</button>
+                <button onclick="clearQueue()" class="tui-btn modern-pill-btn">
+                    <span class="tui-only">[PURGE]</span>
+                    <span class="modern-only">Clear Queue</span>
+                </button>
+                <button onclick="toggleQueue()" class="tui-btn drawer-close-btn" aria-label="Close queue">
+                    <span class="tui-only">[CLOSE ×]</span>
+                    <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+                </button>
             </div>
         </div>
         <ul id="queue-list"></ul>
     </div>
 
-    <!-- TUI DSP Equalizer Drawer -->
+    <!-- Equalizer Drawer -->
     <div id="equalizer-panel" class="hidden">
         <div class="drawer-head">
             <div class="eq-head-title">
-                <h3>┌─ [DSP] 10-BAND EQUALIZER ─┐</h3>
+                <h3 class="tui-only">┌─ [DSP] 10-BAND EQUALIZER ─┐</h3>
+                <div class="modern-only modern-drawer-title">
+                    <h2>Audio Equalizer</h2>
+                    <span class="modern-drawer-desc">10-Band Graphic EQ & Spatial Acoustics</span>
+                </div>
             </div>
             <div class="drawer-head-actions">
-                <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn" title="Cycle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
-                <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn" title="Toggle Auto-EQ per song change">[AUTO: OFF]</button>
-                <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
-                <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">[EQ: ENABLED]</button>
-                <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
-                <button onclick="toggleEqualizer()" class="tui-btn" title="Close equalizer panel (Esc)">[CLOSE ×]</button>
+                <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn" title="Cycle 3D Spatial Audio Mode (X)">
+                    <span class="tui-only">[SPATIAL: OFF]</span>
+                    <span class="modern-only">Spatial: Off</span>
+                </button>
+                <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn" title="Toggle Auto-EQ per song change">
+                    <span class="tui-only">[AUTO: OFF]</span>
+                    <span class="modern-only">Auto EQ: Off</span>
+                </button>
+                <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">
+                    <span class="tui-only">[⚡ PERFECT TUNE]</span>
+                    <span class="modern-only">⚡ Perfect Tune</span>
+                </button>
+                <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">
+                    <span class="tui-only">[EQ: ENABLED]</span>
+                    <span class="modern-only">EQ: Enabled</span>
+                </button>
+                <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">
+                    <span class="tui-only">[RESET FLAT]</span>
+                    <span class="modern-only">Reset Flat</span>
+                </button>
+                <button onclick="toggleEqualizer()" class="tui-btn drawer-close-btn" title="Close equalizer panel (Esc)">
+                    <span class="tui-only">[CLOSE ×]</span>
+                    <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+                </button>
             </div>
         </div>
         <div id="equalizer-container"></div>
     </div>
 
-    <!-- TUI Now Playing / Lyrics Overlay -->
-    <section id="now-playing" class="hidden" aria-label="Now playing terminal teletext">
+    <!-- Now Playing / Lyrics Overlay -->
+    <section id="now-playing" class="hidden" aria-label="Now playing lyrics">
         <div class="now-playing-head">
             <div>
-                <span class="eyebrow-label">┌─ TELETEXT AUDIO STREAM ─┐</span>
+                <span class="eyebrow-label tui-only">┌─ TELETEXT AUDIO STREAM ─┐</span>
+                <span class="eyebrow-label modern-only">Live Lyrics</span>
                 <h2 id="now-title">Nothing playing</h2>
                 <p id="now-artist"></p>
             </div>
             <div class="lyrics-head-actions">
-                <button id="lyrics-roman-btn" onclick="player.cycleRomanMode()" class="tui-btn hidden" title="Toggle Romanization script mode (R)">[SCRIPT: DUAL]</button>
-                <button onclick="closeNowPlaying()" class="tui-btn">[RETURN ESC]</button>
+                <button id="lyrics-roman-btn" onclick="player.cycleRomanMode()" class="tui-btn hidden" title="Toggle Romanization script mode (R)">
+                    <span class="tui-only">[SCRIPT: DUAL]</span>
+                    <span class="modern-only">Romanization</span>
+                </button>
+                <button onclick="closeNowPlaying()" class="tui-btn drawer-close-btn">
+                    <span class="tui-only">[RETURN ESC]</span>
+                    <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+                </button>
             </div>
         </div>
         <div class="now-playing-body">
@@ -409,11 +494,14 @@
                 <img id="now-cover" alt="" class="now-cover-img" />
                 <div class="cover-telemetry">
                     <span id="cover-res-badge">RES: 800×800 HD</span>
-                    <span class="cover-zoom-prompt">[ZOOM 🔍]</span>
+                    <span class="cover-zoom-prompt">
+                        <span class="tui-only">[ZOOM 🔍]</span>
+                        <span class="modern-only">Zoom 🔍</span>
+                    </span>
                 </div>
             </div>
             <div id="lyrics-lines" aria-live="polite">
-                <p class="lyrics-empty">Waiting for synchronized teletext stream…</p>
+                <p class="lyrics-empty">Waiting for synchronized stream…</p>
             </div>
         </div>
     </section>
@@ -421,8 +509,12 @@
     <!-- Master Artwork Full-Resolution Lightbox Modal -->
     <dialog id="artwork-modal" class="tui-modal artwork-modal">
         <div class="modal-head">
-            <span class="eyebrow-label">[ MASTER ALBUM ARTWORK · ULTRA HD ]</span>
-            <button onclick="document.getElementById('artwork-modal').close()" class="tui-btn">[CLOSE ESC]</button>
+            <span class="eyebrow-label tui-only">[ MASTER ALBUM ARTWORK · ULTRA HD ]</span>
+            <span class="eyebrow-label modern-only">Master Album Artwork</span>
+            <button onclick="document.getElementById('artwork-modal').close()" class="tui-btn drawer-close-btn">
+                <span class="tui-only">[CLOSE ESC]</span>
+                <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+            </button>
         </div>
         <div class="artwork-modal-body">
             <img id="artwork-modal-img" alt="Master Album Art" />
@@ -435,16 +527,23 @@
 
     <div id="context-menu" class="hidden" role="menu"></div>
     <div id="toast" role="status" aria-live="polite" class="hidden">
-        <span class="tui-prompt-char">❯</span>
+        <span class="tui-prompt-char tui-only">❯</span>
         <span id="toast-message"></span>
         <button id="toast-action" class="tui-btn hidden">[UNDO]</button>
     </div>
 
-    <!-- TUI Keybind Help Dialog -->
+    <!-- Keybind Help Dialog -->
     <dialog id="shortcut-help">
         <div class="drawer-head">
-            <h2>┌─ COMMAND KEYMAP ─┐</h2>
-            <button onclick="document.getElementById('shortcut-help').close()" class="tui-btn">[CLOSE ×]</button>
+            <h2 class="tui-only">┌─ COMMAND KEYMAP ─┐</h2>
+            <div class="modern-only modern-drawer-title">
+                <h2>Keyboard Shortcuts</h2>
+                <span class="modern-drawer-desc">Quick Keymap Reference</span>
+            </div>
+            <button onclick="document.getElementById('shortcut-help').close()" class="tui-btn drawer-close-btn">
+                <span class="tui-only">[CLOSE ×]</span>
+                <span class="modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+            </button>
         </div>
         <dl>
             <dt>Space</dt><dd>Toggle play / pause</dd>

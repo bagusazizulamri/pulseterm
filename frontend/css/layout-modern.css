@@ -968,22 +968,482 @@ body.layout-modern .lyric-line.active::before {
   display: none !important;
 }
 
-/* ================== DIALOGS & PANELS IN MODERN MODE ================== */
-body.layout-modern #settings-panel,
-body.layout-modern #queue-panel,
-body.layout-modern #equalizer-panel,
-body.layout-modern #visualizer-drawer,
-body.layout-modern dialog {
-  border-radius: 20px;
-  background: rgba(28, 28, 34, 0.92);
-  backdrop-filter: blur(35px) saturate(190%);
-  -webkit-backdrop-filter: blur(35px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+/* ================== BACKDROP SCRIM ================== */
+body.layout-modern #drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 9998;
+  cursor: pointer;
+  animation: modernFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body.layout-modern .theme-btn {
-  border-radius: 9999px;
-  font-weight: 500;
-  padding: 7px 14px;
+body.layout-modern #drawer-backdrop.hidden {
+  display: none !important;
+}
+
+@keyframes modernFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modernDrawerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ================== MODERN DRAWERS & PANELS ================== */
+body.layout-modern #settings-panel,
+body.layout-modern #queue-panel {
+  position: fixed !important;
+  top: 18px !important;
+  right: 18px !important;
+  bottom: calc(var(--player) + 18px) !important;
+  width: min(460px, calc(100vw - 36px)) !important;
+  background: #18181d !important; /* 100% OPAQUE: zero home cards bleed through */
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  z-index: 10000 !important; /* well above all home cards, transforms, and bars */
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  animation: modernDrawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.layout-modern #equalizer-panel {
+  position: fixed !important;
+  top: 18px !important;
+  right: 18px !important;
+  bottom: calc(var(--player) + 18px) !important;
+  width: min(680px, calc(100vw - 36px)) !important;
+  background: #18181d !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85), 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  z-index: 10000 !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  animation: modernDrawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.layout-modern #visualizer-drawer {
+  position: fixed !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: calc(var(--player) + 18px) !important;
+  background: #18181d !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85) !important;
+  z-index: 10000 !important;
+  padding: 20px 24px !important;
+}
+
+body.layout-modern #settings-panel.hidden,
+body.layout-modern #queue-panel.hidden,
+body.layout-modern #equalizer-panel.hidden,
+body.layout-modern #visualizer-drawer.hidden {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  body.layout-modern #settings-panel,
+  body.layout-modern #queue-panel,
+  body.layout-modern #equalizer-panel {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    border-radius: 0 !important;
+    border: none !important;
+    padding: 20px 16px 88px !important;
+  }
+}
+
+/* ================== DRAWER HEADERS & CONTROLS ================== */
+body.layout-modern .drawer-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 18px !important;
+}
+
+body.layout-modern .modern-drawer-title h2 {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+}
+
+body.layout-modern .modern-drawer-desc {
+  font-size: 12px !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  margin-top: 3px !important;
+  display: block !important;
+}
+
+body.layout-modern .drawer-close-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  box-shadow: none !important;
+  flex-shrink: 0 !important;
+}
+
+body.layout-modern .drawer-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  transform: scale(1.08) !important;
+}
+
+/* ================== SETTINGS CONTENT CONTROLS ================== */
+body.layout-modern .settings-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+body.layout-modern .setting-group {
+  padding: 13px 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+body.layout-modern .setting-group:last-of-type {
+  border-bottom: none !important;
+}
+
+body.layout-modern .setting-group label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  margin-bottom: 2px !important;
+}
+
+/* Modern Segmented Layout Option Buttons */
+body.layout-modern .layout-options {
+  display: flex !important;
+  gap: 4px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body.layout-modern .layout-options .theme-btn {
+  flex: 1 !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+  text-align: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+body.layout-modern .layout-options .theme-btn.active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Theme Option Chips in Modern Mode */
+body.layout-modern .theme-options {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 7px !important;
+}
+
+body.layout-modern .theme-options .theme-btn {
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: flex-start !important;
+  transition: all 0.15s ease !important;
+}
+
+body.layout-modern .theme-options .theme-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+body.layout-modern .theme-options .theme-btn.active {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+body.layout-modern .theme-swatch {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+/* Modern Select Dropdowns */
+body.layout-modern select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: rgba(255, 255, 255, 0.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif !important;
+  font-size: 13px !important;
+  padding: 8px 32px 8px 12px !important;
+  outline: none !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}
+
+body.layout-modern select:focus {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08) !important;
+}
+
+body.layout-modern select option {
+  background: #1e1e24 !important;
+  color: #ffffff !important;
+}
+
+body.layout-modern span.modern-only {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Playback Subsystem Toggles */
+body.layout-modern .toggle-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+body.layout-modern .toggle-group label.check {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  cursor: pointer !important;
+  width: 100% !important;
+}
+
+body.layout-modern .toggle-group label.check:first-child {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body.layout-modern input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 6px !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+body.layout-modern input[type="checkbox"]:checked {
+  background: #fa2d48 !important;
+  border-color: #fa2d48 !important;
+}
+
+body.layout-modern input[type="checkbox"]:checked::after {
+  content: "" !important;
+  display: block !important;
+  width: 4px !important;
+  height: 8px !important;
+  border: solid white !important;
+  border-width: 0 2px 2px 0 !important;
+  transform: rotate(45deg) translate(-0.5px, -1px) !important;
+}
+
+/* Modern Save Preferences Button */
+body.layout-modern .save-btn {
+  background: #fa2d48 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  box-shadow: 0 4px 16px rgba(250, 45, 72, 0.35) !important;
+  cursor: pointer !important;
+  margin-top: 14px !important;
+  width: 100% !important;
+  text-align: center !important;
+  transition: transform 0.15s ease, background 0.15s ease !important;
+}
+
+body.layout-modern .save-btn:hover {
+  background: #ff3b56 !important;
+  transform: scale(1.02) !important;
+}
+
+body.layout-modern .keys {
+  font-size: 11px !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  text-align: center !important;
+  margin-top: 10px !important;
+  letter-spacing: normal !important;
+}
+
+/* Modern Pill Button inside Panels */
+body.layout-modern .modern-pill-btn {
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+body.layout-modern .modern-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+}
+
+/* Modern Queue Items */
+body.layout-modern .queue-item {
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid transparent !important;
+  margin-bottom: 6px !important;
+  padding: 10px 14px !important;
+  transition: all 0.15s ease !important;
+}
+
+body.layout-modern .queue-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.layout-modern .queue-item.active {
+  background: rgba(250, 45, 72, 0.12) !important;
+  border-color: rgba(250, 45, 72, 0.28) !important;
+}
+
+body.layout-modern .queue-grip {
+  opacity: 0.3 !important;
+}
+
+/* Modern Equalizer Control Buttons */
+body.layout-modern #equalizer-panel .drawer-head-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+body.layout-modern #equalizer-panel .drawer-head-actions button.tui-btn:not(.drawer-close-btn) {
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+body.layout-modern #equalizer-panel .drawer-head-actions button.tui-btn:not(.drawer-close-btn):hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+body.layout-modern #equalizer-panel .drawer-head-actions button.tui-btn.active {
+  background: rgba(250, 45, 72, 0.2) !important;
+  border-color: #fa2d48 !important;
+  color: #fa2d48 !important;
+}
+
+/* Modern Toast Notification */
+body.layout-modern #toast {
+  border-radius: 9999px !important;
+  background: rgba(28, 28, 34, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 9px 20px !important;
+  z-index: 20000 !important;
+  bottom: calc(var(--player) + 20px) !important;
+}
+
+body.layout-modern .tui-prompt-char {
+  display: none !important;
+}
+
+/* Modern Dialogs & Modals */
+body.layout-modern dialog#shortcut-help,
+body.layout-modern dialog#artwork-modal {
+  border-radius: 24px !important;
+  background: #18181d !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85) !important;
+  color: #ffffff !important;
+  padding: 24px !important;
+  z-index: 10001 !important;
 }

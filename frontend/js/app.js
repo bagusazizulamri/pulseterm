@@ -159,11 +159,11 @@ async function renderHome(content) {
 function renderSearch(content) {
     content.innerHTML = '<div class="page-header"><h1 class="tui-only">┌─ SEARCH ENGINE QUERY BUFFER ─┐</h1><h1 class="modern-only">Search & Browse</h1></div>' +
         '<div class="search-page"><div class="search-filters" id="search-filters">' +
-        '<button class="filter-btn active" data-f="all">[ALL]</button>' +
-        '<button class="filter-btn" data-f="song">[SONGS]</button>' +
-        '<button class="filter-btn" data-f="artist">[ARTISTS]</button>' +
-        '<button class="filter-btn" data-f="playlist">[PLAYLISTS]</button>' +
-        '<button class="filter-btn" data-f="album">[ALBUMS]</button></div>' +
+        '<button class="filter-btn active" data-f="all"><span class="tui-only">[ALL]</span><span class="modern-only">All</span></button>' +
+        '<button class="filter-btn" data-f="song"><span class="tui-only">[SONGS]</span><span class="modern-only">Songs</span></button>' +
+        '<button class="filter-btn" data-f="artist"><span class="tui-only">[ARTISTS]</span><span class="modern-only">Artists</span></button>' +
+        '<button class="filter-btn" data-f="playlist"><span class="tui-only">[PLAYLISTS]</span><span class="modern-only">Playlists</span></button>' +
+        '<button class="filter-btn" data-f="album"><span class="tui-only">[ALBUMS]</span><span class="modern-only">Albums</span></button></div>' +
         '<div class="quick-tags">' +
         '<span class="quick-tag-label">QUICK QUERY:</span>' +
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Indonesian Hits\')">Indonesian Hits</button>' +
@@ -279,7 +279,7 @@ async function renderLibrary(content) {
     const history = hres.success ? hres.data : [];
     const lres = await getLikedSongs();
     const liked = lres.success ? lres.data : [];
-    let html = '<div class="page-header"><h1 class="tui-only">┌─ SAVED AUDIO REPOSITORY ─┐</h1><h1 class="modern-only">My Library</h1><button id="clear-hist-btn" class="tui-btn">[PURGE HISTORY]</button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ SAVED AUDIO REPOSITORY ─┐</h1><h1 class="modern-only">My Library</h1><button id="clear-hist-btn" class="tui-btn"><span class="tui-only">[PURGE HISTORY]</span><span class="modern-only">Clear History</span></button></div>';
     if (liked.length) {
         html += '<div class="eyebrow"><span class="tui-only">[ 01 // FAVORITE CHANNELS · LIKED ]</span><span class="modern-only">Liked Songs</span></div><div class="item-grid">';
         liked.forEach(s => { html += renderCard({ ...s, videoId: s.videoId || s.video_id }); });
@@ -307,7 +307,7 @@ async function renderLibrary(content) {
 async function renderPlaylists(content) {
     const pres = await getPlaylists();
     const pls = pres.success ? pres.data : [];
-    let html = '<div class="page-header"><h1 class="tui-only">┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><h1 class="modern-only">Playlists</h1><button id="new-pl-btn" class="tui-btn">[+ NEW PLAYLIST]</button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><h1 class="modern-only">Playlists</h1><button id="new-pl-btn" class="tui-btn"><span class="tui-only">[+ NEW PLAYLIST]</span><span class="modern-only">+ New Playlist</span></button></div>';
     if (pls.length === 0) {
         html += '<div class="empty-state"><span class="label">[REGISTRY: VOID]</span><h3>NO PLAYLISTS INITIALIZED</h3><p>Create a custom playlist to bundle audio streams.</p></div>';
     } else {
@@ -803,7 +803,41 @@ window.toggleShuffle = function() {
     if (btn) btn.classList.toggle('on', player.shuffleMode);
 };
 window.toggleLike = function() { player.toggleLike(); };
-window.toggleSettings = function() { document.getElementById('settings-panel').classList.toggle('hidden'); };
+
+window.updateDrawerBackdrop = function() {
+    const backdrop = document.getElementById('drawer-backdrop');
+    if (!backdrop) return;
+    const settingsOpen = !document.getElementById('settings-panel')?.classList.contains('hidden');
+    const queueOpen = !document.getElementById('queue-panel')?.classList.contains('hidden');
+    const eqOpen = !document.getElementById('equalizer-panel')?.classList.contains('hidden');
+    const anyOpen = settingsOpen || queueOpen || eqOpen;
+    if (anyOpen && document.body.classList.contains('layout-modern')) {
+        backdrop.classList.remove('hidden');
+    } else {
+        backdrop.classList.add('hidden');
+    }
+};
+
+window.closeAllDrawers = function() {
+    document.getElementById('settings-panel')?.classList.add('hidden');
+    document.getElementById('queue-panel')?.classList.add('hidden');
+    document.getElementById('equalizer-panel')?.classList.add('hidden');
+    document.getElementById('visualizer-drawer')?.classList.add('hidden');
+    document.getElementById('modern-options-popover')?.classList.add('hidden');
+    const backdrop = document.getElementById('drawer-backdrop');
+    if (backdrop) backdrop.classList.add('hidden');
+    if (typeof player !== 'undefined') player.queueVisible = false;
+};
+
+window.toggleSettings = function() {
+    const p = document.getElementById('settings-panel');
+    if (p) p.classList.toggle('hidden');
+    if (document.body.classList.contains('layout-modern')) {
+        document.getElementById('modern-options-popover')?.classList.add('hidden');
+    }
+    window.updateDrawerBackdrop();
+};
+
 window.setTheme = function(t, btn) {
     const themeName = THEME_LIST.includes(t) ? t : 'dark';
     THEME_LIST.forEach(name => document.body.classList.remove('theme-' + name));
@@ -835,6 +869,7 @@ window.savePlayerSettings = async function() {
     player.setQueueLimit(queueLimit);
     player.saveState();
     document.getElementById('settings-panel').classList.add('hidden');
+    window.updateDrawerBackdrop();
 };
 
 function isEditingText(el) {
@@ -944,11 +979,8 @@ document.addEventListener('keydown', (e) => {
     // Escape: dismiss all overlays, drawers, dialogs, and navigation focus
     if (e.key === 'Escape') {
         e.preventDefault();
+        window.closeAllDrawers();
         document.getElementById('context-menu')?.classList.add('hidden');
-        document.getElementById('visualizer-drawer')?.classList.add('hidden');
-        document.getElementById('equalizer-panel')?.classList.add('hidden');
-        document.getElementById('settings-panel')?.classList.add('hidden');
-        document.getElementById('queue-panel')?.classList.add('hidden');
         document.getElementById('shortcut-help')?.close();
         if (player.nowPlayingVisible) closeNowPlaying();
         if (document.activeElement && typeof document.activeElement.blur === 'function') {

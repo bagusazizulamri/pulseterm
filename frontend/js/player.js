@@ -1218,7 +1218,8 @@ const player = {
         const mode = this.romanMode || 'dual';
         const modeLabel = mode === 'dual' ? `[${scriptName.toUpperCase()}: DUAL]` :
                           (mode === 'roman' ? `[${scriptName.toUpperCase()}: ONLY]` : `[${scriptName.toUpperCase()}: OFF]`);
-        rBtn.textContent = modeLabel;
+        const modernLabel = `${scriptName}: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`;
+        rBtn.innerHTML = `<span class="tui-only">${modeLabel}</span><span class="modern-only">${modernLabel}</span>`;
         rBtn.title = `Toggle ${scriptName} romanization display mode (R) - Currently: ${mode.toUpperCase()}`;
     },
 
@@ -1432,7 +1433,11 @@ const player = {
             const no = document.createElement('span'); no.className = 'q-rank'; no.textContent = 'NOW';
             const info = document.createElement('div'); info.className = 'list-info';
             const title = document.createElement('div'); title.className = 'list-title'; title.textContent = this.currentSong.title || 'Unknown';
-            const artist = document.createElement('div'); artist.className = 'q-artist'; artist.textContent = (this.currentSong.artist || '') + ' · [ACTIVE STREAM]';
+            const artist = document.createElement('div'); artist.className = 'q-artist';
+            const artistName = document.createTextNode(this.currentSong.artist || '');
+            const tuiStream = document.createElement('span'); tuiStream.className = 'tui-only'; tuiStream.textContent = ' · [ACTIVE STREAM]';
+            const modernStream = document.createElement('span'); modernStream.className = 'modern-only'; modernStream.textContent = ' · Now Playing';
+            artist.append(artistName, tuiStream, modernStream);
             info.append(title, artist);
             const menu = document.createElement('button'); menu.className = 'q-menu icon-btn'; menu.type = 'button'; menu.textContent = '···'; menu.setAttribute('aria-label', 'Track actions');
             menu.addEventListener('click', e => { e.stopPropagation(); this.showContextMenu(this.currentSong, e.clientX, e.clientY); });
@@ -1788,6 +1793,7 @@ export function toggleQueue() {
     const panel = document.getElementById('queue-panel');
     if (panel) panel.classList.toggle('hidden', !player.queueVisible);
     if (player.queueVisible) player.updateQueueUI();
+    if (window.updateDrawerBackdrop) window.updateDrawerBackdrop();
 }
 export function removeFromQueue(index) { return player.removeQueueItem('user', index); }
 export function clearQueue() { return player.clearQueue(); }

@@ -664,13 +664,17 @@ class TerminalEqualizer {
         // Update power button
         const powerBtn = document.getElementById('eq-power-btn');
         if (powerBtn) {
-            powerBtn.textContent = this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]';
+            const tuiText = this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]';
+            const modernText = this.enabled ? 'EQ: Enabled' : 'EQ: Bypass';
+            powerBtn.innerHTML = `<span class="tui-only">${tuiText}</span><span class="modern-only">${modernText}</span>`;
             powerBtn.classList.toggle('btn-danger', !this.enabled);
         }
 
         // Update Auto-EQ buttons across UI
         document.querySelectorAll('#eq-auto-btn, #eq-auto-toggle-btn').forEach(btn => {
-            btn.textContent = this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]';
+            const tuiText = this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]';
+            const modernText = this.autoMode ? 'Auto EQ: On' : 'Auto EQ: Off';
+            btn.innerHTML = `<span class="tui-only">${tuiText}</span><span class="modern-only">${modernText}</span>`;
             btn.classList.toggle('active', this.autoMode);
         });
 
@@ -731,12 +735,14 @@ class TerminalEqualizer {
             this.render();
             this.updateUI();
         }
+        if (window.updateDrawerBackdrop) window.updateDrawerBackdrop();
     }
 
     closePanel() {
         const panel = document.getElementById('equalizer-panel');
         if (panel) panel.classList.add('hidden');
         this.isOpen = false;
+        if (window.updateDrawerBackdrop) window.updateDrawerBackdrop();
     }
 
     saveState() {

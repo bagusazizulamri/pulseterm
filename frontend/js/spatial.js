@@ -270,7 +270,10 @@ class SpatialAudioEngine {
         btns.forEach(btn => {
             const isOff = this.mode === 'off';
             const name = (SPATIAL_CONFIGS[this.mode]?.name || this.mode).toUpperCase();
-            btn.textContent = isOff ? '[SPATIAL: OFF]' : `[SPATIAL: ${name}]`;
+            const cleanName = SPATIAL_CONFIGS[this.mode]?.name || this.mode;
+            const tuiText = isOff ? '[SPATIAL: OFF]' : `[SPATIAL: ${name}]`;
+            const modernText = isOff ? 'Spatial: Off' : `Spatial: ${cleanName}`;
+            btn.innerHTML = `<span class="tui-only">${tuiText}</span><span class="modern-only">${modernText}</span>`;
             btn.classList.toggle('active', !isOff);
             btn.setAttribute('title', `Spatial Audio Mode: ${SPATIAL_CONFIGS[this.mode]?.label || name} (Press x)`);
         });
