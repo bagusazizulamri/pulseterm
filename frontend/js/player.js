@@ -1827,10 +1827,6 @@ const player = {
         }
         const badge = document.getElementById('player-state-badge');
         if (badge) badge.textContent = this.currentSong ? (this.isPlaying ? '[PLAYING]' : '[PAUSED]') : '[IDLE]';
-        const mBadge = document.getElementById('mobile-play-badge');
-        if (mBadge) mBadge.textContent = this.currentSong ? (this.isPlaying ? '[PLAYING]' : '[PAUSED]') : '[IDLE]';
-        const mTrack = document.getElementById('mobile-track-label');
-        if (mTrack) mTrack.textContent = this.currentSong ? `${this.currentSong.title} — ${this.currentSong.artist}` : 'Nothing playing';
         const repeat = document.getElementById('repeat-btn');
         if (repeat) {
             repeat.dataset.state = this.repeatMode;

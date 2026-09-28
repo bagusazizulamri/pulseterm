@@ -403,137 +403,39 @@ body.crt-active #crt-overlay {
   font-weight: 700;
 }
 
-/* Sidebar Now Playing Mini Deck (Relocated from player bar) */
-.sidebar-now-playing {
-  margin-top: auto;
-  margin-bottom: 6px;
-  background: var(--paper-3);
-  border: 1px solid var(--line);
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  border-radius: 2px;
-  transition: border-color 0.15s var(--ease);
-}
-
-.sidebar-now-playing:hover {
-  border-color: var(--seal);
-}
-
-.snp-cover-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  max-height: 110px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.snp-cover-frame:hover {
-  border-color: var(--seal);
-}
-
-.snp-cover-frame .player-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.snp-cover-fallback {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-3);
-  font-size: 10.5px;
-  letter-spacing: 0.05em;
-  font-family: var(--font-term);
-  pointer-events: none;
-  background: var(--paper);
-}
-
-.snp-cover-frame:has(.player-cover[src]:not([style*="display: none"])) .snp-cover-fallback,
-.player-cover[src]:not([style*="display: none"]) ~ .snp-cover-fallback {
-  display: none;
-}
-
-.snp-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.snp-state-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.snp-like-btn {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.snp-title {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--ink);
-  font-family: var(--font-term);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-  line-height: 1.25;
-  margin-top: 1px;
-}
-
-.snp-title:hover {
-  color: var(--seal);
-}
-
-.snp-artist {
-  font-size: 10px;
-  color: var(--ink-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.snp-lrc-btn {
-  width: 100%;
-  text-align: center;
-  padding: 3px 6px;
-  font-size: 9.5px;
-  margin-top: 3px;
-}
-
-.snp-meta .player-status {
-  font-size: 9px;
-  color: var(--seal);
-}
-
-/* Volume footer */
+/* Volume, Bitrate Telemetry & Visualizer Toggle Footer */
 .sidebar-footer {
-  margin-top: 0;
-  padding-top: 8px;
+  margin-top: auto;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+.sidebar-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-family: var(--font-term);
+}
+
+.sidebar-viz-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--seal);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+
+.sidebar-viz-btn:hover {
+  border-color: var(--seal);
+  box-shadow: 0 0 6px var(--seal-glow);
 }
 
 .tui-stat {
@@ -1194,20 +1096,59 @@ body.crt-active #crt-overlay {
 
 .player-inner {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   height: 100%;
-  padding: 0 24px;
+  padding: 0 20px;
 }
 
-.mobile-now-playing {
-  display: none;
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cover-frame {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  background: var(--paper-3);
+  flex: 0 0 auto;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.cover-frame:hover {
+  border-color: var(--seal);
+}
+
+.player-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .tui-state-badge {
   font-size: 9px;
-  padding: 1px 4px;
+  padding: 0 4px;
   background: var(--paper-3);
   border: 1px solid var(--line);
   color: var(--seal);
@@ -1260,7 +1201,6 @@ body.playing .tui-state-badge {
 .like-btn.active svg, .like-btn.on svg { fill: var(--seal); stroke: var(--seal); }
 
 .player-controls {
-  grid-column: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1302,7 +1242,6 @@ body.playing .tui-state-badge {
 }
 
 .player-right {
-  grid-column: 3;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2560,17 +2499,8 @@ select {
   --rail: 72px;
 }
 .layout-compact-rail .tui-brand,
-.layout-compact-rail .nav-btn .nav-text,
-.layout-compact-rail .sidebar-now-playing {
+.layout-compact-rail .nav-btn .nav-text {
   display: none !important;
-}
-.layout-compact-rail .mobile-now-playing {
-  grid-column: 1 !important;
-  display: flex !important;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  overflow: hidden;
 }
 .layout-compact-rail .nav-btn {
   justify-content: center !important;
@@ -2600,7 +2530,7 @@ select {
   grid-template-columns: 1fr auto !important;
   grid-template-rows: auto auto !important;
   grid-template-areas:
-    "mobile-info right"
+    "info right"
     "controls controls" !important;
   align-items: center !important;
   row-gap: 6px !important;
@@ -2608,7 +2538,7 @@ select {
   padding: 6px var(--pad) 4px !important;
   height: auto !important;
 }
-.layout-stacked-player .mobile-now-playing { grid-area: mobile-info !important; display: flex !important; min-width: 0 !important; }
+.layout-stacked-player .player-info { grid-area: info !important; min-width: 0 !important; }
 .layout-stacked-player .player-right { grid-area: right !important; min-width: 0 !important; justify-content: flex-end !important; gap: 8px !important; }
 .layout-stacked-player .player-controls { grid-area: controls !important; justify-content: center !important; width: 100% !important; gap: 6px !important; }
 .layout-stacked-player .tui-mini-viz { display: none !important; }
@@ -2633,7 +2563,7 @@ select {
     --rail: 72px;
     --pad: 20px;
   }
-  .tui-brand, .sidebar-footer, .nav-btn .nav-text, .sidebar-now-playing {
+  .tui-brand, .sidebar-footer, .nav-btn .nav-text {
     display: none !important;
   }
   .nav-btn {
@@ -2652,17 +2582,8 @@ select {
     display: none;
   }
   .player-inner {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.1fr) auto auto;
     gap: 12px;
-  }
-  .mobile-now-playing {
-    grid-column: 1;
-    display: flex !important;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    overflow: hidden;
-    cursor: pointer;
   }
 }
 
@@ -2673,63 +2594,37 @@ select {
     --pad: 16px;
   }
 
-  .sidebar-now-playing {
-    display: none !important;
-  }
-
   .player-inner {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto !important;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
     grid-template-areas:
-      "mobile-info right"
-      "controls controls" !important;
-    align-items: center !important;
-    row-gap: 8px !important;
-    column-gap: 12px !important;
-    padding: 8px var(--pad) 6px !important;
-    height: auto !important;
+      "info right"
+      "controls controls";
+    align-items: center;
+    row-gap: 8px;
+    column-gap: 12px;
+    padding: 8px var(--pad) 6px;
+    height: auto;
   }
 
-  .mobile-now-playing {
-    grid-area: mobile-info !important;
-    grid-column: auto !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    cursor: pointer !important;
-  }
-
-  #mobile-play-badge {
-    flex-shrink: 0 !important;
-  }
-
-  #mobile-track-label {
-    flex: 1 !important;
-    min-width: 0 !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    color: var(--ink) !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-family: var(--font-term) !important;
+  .player-info {
+    grid-area: info;
+    min-width: 0;
   }
 
   .player-right {
-    grid-area: right !important;
-    min-width: 0 !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
+    grid-area: right;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: 8px;
   }
 
   .player-controls {
-    grid-area: controls !important;
-    justify-content: center !important;
-    width: 100% !important;
-    gap: 6px !important;
+    grid-area: controls;
+    justify-content: center;
+    width: 100%;
+    gap: 6px;
   }
 
   .player-controls .tui-btn {

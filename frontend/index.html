@@ -42,30 +42,17 @@
                 </button>
             </nav>
 
-            <!-- Now Playing Mini Deck in Sidebar (Relocated from player bar) -->
-            <div id="sidebar-now-playing" class="sidebar-now-playing">
-                <div class="snp-cover-frame" onclick="toggleLyrics()" title="Click to view teletext lyrics and track artwork (L)">
-                    <img id="player-cover" alt="" class="player-cover" style="display: none;">
-                    <div class="snp-cover-fallback">[ ∅ IDLE ]</div>
-                </div>
-                <div class="snp-meta">
-                    <div class="snp-state-row">
-                        <span id="player-state-badge" class="tui-state-badge">[IDLE]</span>
-                        <span id="player-audio-quality" class="tui-bitrate-badge is-hq" title="Audio Quality Telemetry">[HQ · OPUS]</span>
-                        <button onclick="toggleLike()" class="tui-icon-btn like-btn snp-like-btn" id="like-btn" aria-label="Save to liked" title="Favorite track">
-                            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 19.4S4.6 14.7 4.6 9.9A4.15 4.15 0 0 1 12 7.5a4.15 4.15 0 0 1 7.4 2.4c0 4.8-7.4 9.5-7.4 9.5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-                        </button>
-                    </div>
-                    <div class="snp-title" id="player-title" onclick="toggleLyrics()" title="Click to view teletext lyrics">Nothing playing</div>
-                    <div class="snp-artist" id="player-artist">Press [/] to search</div>
-                    <button onclick="toggleLyrics()" class="tui-btn lyrics-toggle snp-lrc-btn" id="lyrics-toggle" title="View synchronized teletext lyrics (L)">[TELETEXT LRC]</button>
-                    <span id="player-status" class="player-status"></span>
-                </div>
-            </div>
-
-            <!-- Volume -->
+            <!-- Volume, Bitrate Telemetry & Visualizer Toggle -->
             <div class="sidebar-footer">
-                <div class="tui-stat">
+                <div class="sidebar-stat-row">
+                    <span class="tui-dim">STREAM</span>
+                    <span id="player-audio-quality" class="tui-bitrate-badge is-hq" title="Audio Stream Quality Telemetry">[HQ · OPUS 160K]</span>
+                </div>
+                <div class="sidebar-stat-row">
+                    <span class="tui-dim">VIZ</span>
+                    <button id="player-mini-viz" class="tui-mini-viz sidebar-viz-btn" onclick="toggleVisualizer()" title="Toggle visualizer HUD (V)">[ ░░░░░░░░ ]</button>
+                </div>
+                <div class="sidebar-stat-row">
                     <span class="tui-dim">VOL</span>
                     <button id="vol-mute-btn" onclick="player.toggleMute()" class="tui-mute-btn" title="Mute / Unmute (M)">
                         <span id="vol-readout" class="tui-val">80%</span>
@@ -119,10 +106,22 @@
             </div>
 
             <div class="player-inner">
-                <!-- Mobile only song title banner -->
-                <div id="mobile-now-playing" class="mobile-now-playing" onclick="toggleLyrics()" title="Click to view lyrics">
-                    <span id="mobile-play-badge" class="tui-state-badge">[IDLE]</span>
-                    <span id="mobile-track-label">Nothing playing</span>
+                <div class="player-info">
+                    <div class="cover-frame" onclick="toggleLyrics()" title="Click to view teletext lyrics and track artwork (L)" style="cursor: pointer;">
+                        <img id="player-cover" alt="" class="player-cover">
+                    </div>
+                    <div class="player-meta">
+                        <div class="title-row">
+                            <span id="player-state-badge" class="tui-state-badge">[IDLE]</span>
+                            <span id="player-title" onclick="toggleLyrics()" title="Click to view teletext lyrics">Nothing playing</span>
+                        </div>
+                        <span id="player-artist" class="player-subtitle">Press [/] to search or select a track</span>
+                        <span id="player-status" class="player-status"></span>
+                    </div>
+                    <button onclick="toggleLike()" class="tui-icon-btn like-btn" id="like-btn" aria-label="Save to liked" title="Favorite track">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19.4S4.6 14.7 4.6 9.9A4.15 4.15 0 0 1 12 7.5a4.15 4.15 0 0 1 7.4 2.4c0 4.8-7.4 9.5-7.4 9.5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    </button>
+                    <button onclick="toggleLyrics()" class="tui-btn lyrics-toggle" id="lyrics-toggle" title="View synchronized teletext lyrics (L)">[LYRICS]</button>
                 </div>
 
                 <div class="player-controls">
@@ -147,7 +146,6 @@
                     <div class="player-clock">
                         <span id="current-time">0:00</span><span class="clock-sep">/</span><span id="total-time">0:00</span>
                     </div>
-                    <button id="player-mini-viz" class="tui-mini-viz" onclick="toggleVisualizer()" title="Click to toggle audio visualizer HUD (V)">[ ░░░░░░░░ ]</button>
                     <button onclick="toggleQueue()" class="tui-btn queue-btn" title="View queue buffer (Q)">[QUEUE]</button>
                 </div>
             </div>
