@@ -25,12 +25,31 @@ window.showToast = showToast;
 async function navigate(page) {
     if (!page) page = 'home';
     currentPage = page;
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === currentPage));
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isActive = btn.dataset.page === currentPage;
+        btn.classList.toggle('active', isActive);
+        const cursor = btn.querySelector('.nav-cursor');
+        if (cursor) cursor.textContent = isActive ? '▶' : ' ';
+    });
     if (window.location.hash !== '#' + page) {
         try { history.replaceState(null, '', '#' + page); } catch { window.location.hash = '#' + page; }
     }
     await renderPage(page);
 }
+
+async function openLikedSongsLane() {
+    await navigate('library');
+    const el = document.querySelector('.item-grid') || document.querySelector('[data-lane="liked"]');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.openLikedSongsLane = openLikedSongsLane;
+
+async function openHistoryLane() {
+    await navigate('library');
+    const el = document.querySelector('.list') || document.getElementById('clear-hist-btn');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.openHistoryLane = openHistoryLane;
 
 async function openRemoteItem(item) {
     const kind = item.album === 'artist' ? 'artist' : item.album === 'album' ? 'album' : item.album === 'playlist' ? 'playlist' : '';

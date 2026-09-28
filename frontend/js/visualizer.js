@@ -378,12 +378,43 @@ class TerminalVisualizer {
             const isPlaying = this.audio && !this.audio.paused && this.audio.currentTime > 0;
             if (!isPlaying) {
                 this.miniEl.textContent = '[ ░░░░░░░░ ]';
+                // Reset sidebar VU to idle state
+                const vuL = document.getElementById('sidebar-vu-l');
+                const vuR = document.getElementById('sidebar-vu-r');
+                const dbL = document.getElementById('sidebar-vu-db-l');
+                const dbR = document.getElementById('sidebar-vu-db-r');
+                if (vuL) vuL.textContent = '[░░░░░░░░]';
+                if (vuR) vuR.textContent = '[░░░░░░░░]';
+                if (dbL) dbL.textContent = '-inf';
+                if (dbR) dbR.textContent = '-inf';
                 return;
             }
 
             const bands = this.getFrequencies(8);
             const str = bands.map(b => chars[Math.min(chars.length - 1, Math.floor(b * chars.length))]).join('');
             this.miniEl.textContent = `[ ${str} ]`;
+
+            // Update sidebar VU meter with L/R split from 16 bands
+            const vuL = document.getElementById('sidebar-vu-l');
+            const vuR = document.getElementById('sidebar-vu-r');
+            const dbL = document.getElementById('sidebar-vu-db-l');
+            const dbR = document.getElementById('sidebar-vu-db-r');
+            if (vuL || vuR) {
+                const bands16 = this.getFrequencies(16);
+                const levelL = bands16.slice(0, 8).reduce((a, b) => Math.max(a, b), 0);
+                const levelR = bands16.slice(8, 16).reduce((a, b) => Math.max(a, b), 0);
+                const toBar = (v) => {
+                    const filled = Math.round(v * 8);
+                    const empty = 8 - filled;
+                    const barChar = chars[Math.min(7, Math.round(v * 7))];
+                    return '[' + barChar.repeat(Math.max(0, filled)) + '░'.repeat(Math.max(0, empty)) + ']';
+                };
+                const toDb = (v) => v > 0.01 ? (20 * Math.log10(v)).toFixed(1) + 'dB' : '-inf';
+                if (vuL) vuL.textContent = toBar(levelL);
+                if (vuR) vuR.textContent = toBar(levelR);
+                if (dbL) dbL.textContent = toDb(levelL);
+                if (dbR) dbR.textContent = toDb(levelR);
+            }
         }, 80);
     }
 }

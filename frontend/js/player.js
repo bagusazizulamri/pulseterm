@@ -1365,10 +1365,13 @@ const player = {
 
     updateLikeButton() {
         const b = document.getElementById('like-btn');
-        if (!b) return;
         const liked = !!this.currentSong && this.likedIds.has(this.currentSong.videoId);
-        b.classList.toggle('active', liked);
-        b.setAttribute('aria-label', liked ? 'Remove from liked songs' : 'Add to liked songs');
+        if (b) {
+            b.classList.toggle('active', liked);
+            b.setAttribute('aria-label', liked ? 'Remove from liked songs' : 'Add to liked songs');
+        }
+        const lCount = document.getElementById('sidebar-liked-count');
+        if (lCount) lCount.textContent = String(this.likedIds.size || 0);
     },
 
     async refreshOffline() {
@@ -1535,6 +1538,8 @@ const player = {
             ...this.userQueue.map((song, i) => ({ kind: 'user', index: i, song })),
             ...contextUpcoming,
         ];
+        const qCount = document.getElementById('sidebar-queue-count');
+        if (qCount) qCount.textContent = String(rows.length);
         if (!rows.length) {
             const empty = document.createElement('li'); empty.className = 'queue-empty'; empty.textContent = this.currentSong ? (this.autoContinue ? 'Finding the same lane…' : 'No upcoming tracks') : 'Queue is empty'; list.appendChild(empty);
             this._renderContinueToggle(list);
@@ -1779,6 +1784,11 @@ const player = {
             if (specEq && window.equalizer) {
                 const preset = window.equalizer.currentPreset || 'FLAT';
                 specEq.textContent = `10-BAND [${preset.toUpperCase()}]`;
+            }
+            const dspStatus = document.getElementById('sidebar-dsp-status');
+            if (dspStatus && window.equalizer) {
+                const preset = window.equalizer.currentPreset || 'FLAT';
+                dspStatus.textContent = `DSP: 10-BAND [${preset.toUpperCase()}]`;
             }
         } else {
             if (title) title.textContent = 'Nothing playing';
