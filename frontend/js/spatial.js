@@ -1,4 +1,4 @@
-import { calculatePannerCoordinates } from './eq-core.js';
+import { calculatePannerCoordinates, getMidSideGains } from './eq-core.js';
 
 export const SPATIAL_MODES = ['off', 'studio', 'wide', 'concert'];
 
@@ -8,7 +8,6 @@ export const SPATIAL_CONFIGS = {
         label: 'Stereo (Bypass)',
         azimuthDeg: 0,
         radius: 1.5,
-        centerDist: 1.5,
         sideWidth: 1.0,
         roomGain: 0.0,
         roomDelay: 0.015,
@@ -19,8 +18,7 @@ export const SPATIAL_CONFIGS = {
         label: 'Studio Monitors 3D',
         azimuthDeg: 30,       // Standard ITU-R BS.775 30-degree monitor azimuth
         radius: 1.5,
-        centerDist: 1.5,      // Front center
-        sideWidth: 1.0,
+        sideWidth: 1.0,       // Natural width
         roomGain: 0.12,       // Subtle acoustic room crossfeed
         roomDelay: 0.014,     // 14ms early reflection
         cutoffFreq: 6500      // High-frequency absorption by room air
@@ -30,8 +28,7 @@ export const SPATIAL_CONFIGS = {
         label: 'Wide 3D Stage',
         azimuthDeg: 45,       // Ultra-wide 45-degree lateral spread
         radius: 1.5,
-        centerDist: 1.5,
-        sideWidth: 1.25,
+        sideWidth: 1.25,      // Controlled 25% side expansion
         roomGain: 0.18,       // Out-of-head immersive spatialization
         roomDelay: 0.020,     // 20ms early reflection
         cutoffFreq: 8000      // Crisp air extension
@@ -41,8 +38,7 @@ export const SPATIAL_CONFIGS = {
         label: 'Concert Hall',
         azimuthDeg: 40,       // Grand concert hall 40-degree stage
         radius: 1.5,
-        centerDist: 1.5,
-        sideWidth: 1.3,
+        sideWidth: 1.3,       // Enveloping stadium diffusion
         roomGain: 0.32,       // Lush acoustic hall reflections
         roomDelay: 0.035,     // 35ms hall reflections
         cutoffFreq: 5000      // Warm acoustic hall roll-off
@@ -61,7 +57,10 @@ class SpatialAudioEngine {
 
         // Mid-Side & 3D Panners
         this.splitter = null;
-        this.midPanner = null;
+        this.gainLL = null;
+        this.gainRL = null;
+        this.gainLR = null;
+        this.gainRR = null;
         this.leftPanner = null;
         this.rightPanner = null;
 
@@ -120,29 +119,33 @@ class SpatialAudioEngine {
                 listener.setOrientation(0, 0, -1, 0, 1, 0);
             }
 
-            // 1. Mid Channel Matrix: (L + R) * 0.5
-            const midGainL = this.audioCtx.createGain();
-            const midGainR = this.audioCtx.createGain();
-            midGainL.gain.value = 0.5;
-            midGainR.gain.value = 0.5;
-            this.splitter.connect(midGainL, 0);
-            this.splitter.connect(midGainR, 1);
+            // True Mid/Side Stereo Matrix
+            // L' = a*L + b*R
+            // R' = b*L + a*R
+            this.gainLL = this.audioCtx.createGain();
+            this.gainRL = this.audioCtx.createGain();
+            this.gainLR = this.audioCtx.createGain();
+            this.gainRR = this.audioCtx.createGain();
 
-            const midSum = this.audioCtx.createGain();
-            midGainL.connect(midSum);
-            midGainR.connect(midSum);
+            this.gainLL.gain.value = 1.0;
+            this.gainRR.gain.value = 1.0;
+            this.gainRL.gain.value = 0.0;
+            this.gainLR.gain.value = 0.0;
 
-            // Center Virtual Panner (HRTF)
-            this.midPanner = this._createHRTFPanner(0, 0, -1.2);
-            midSum.connect(this.midPanner);
-            this.midPanner.connect(this.outputNode);
+            // Connect Splitter -> Matrix Gains
+            this.splitter.connect(this.gainLL, 0); // L -> L'
+            this.splitter.connect(this.gainLR, 0); // L -> R'
+            this.splitter.connect(this.gainRL, 1); // R -> L'
+            this.splitter.connect(this.gainRR, 1); // R -> R'
 
-            // 2. Left & Right Virtual Panners (HRTF)
-            this.leftPanner = this._createHRTFPanner(-1.4, 0.1, -0.6);
-            this.rightPanner = this._createHRTFPanner(1.4, 0.1, -0.6);
+            // Binaural HRTF Panners (Left & Right)
+            this.leftPanner = this._createHRTFPanner(-0.75, 0, -1.3);
+            this.rightPanner = this._createHRTFPanner(0.75, 0, -1.3);
 
-            this.splitter.connect(this.leftPanner, 0);
-            this.splitter.connect(this.rightPanner, 1);
+            this.gainLL.connect(this.leftPanner);
+            this.gainRL.connect(this.leftPanner);
+            this.gainLR.connect(this.rightPanner);
+            this.gainRR.connect(this.rightPanner);
 
             this.leftPanner.connect(this.outputNode);
             this.rightPanner.connect(this.outputNode);
@@ -253,11 +256,20 @@ class SpatialAudioEngine {
             this.spatialBus.gain.cancelScheduledValues(now);
             this.spatialBus.gain.linearRampToValueAtTime(1.0, now + ramp);
 
+            // Apply Mid/Side Matrix stereo width
+            const width = typeof cfg.sideWidth === 'number' ? cfg.sideWidth : 1.0;
+            const { a, b } = getMidSideGains(width);
+            if (this.gainLL && this.gainRR && this.gainRL && this.gainLR) {
+                this.gainLL.gain.setTargetAtTime(a, now, ramp);
+                this.gainRR.gain.setTargetAtTime(a, now, ramp);
+                this.gainRL.gain.setTargetAtTime(b, now, ramp);
+                this.gainLR.gain.setTargetAtTime(b, now, ramp);
+            }
+
             // Reposition Virtual 3D Stage Panners on constant sphere radius (R = 1.5m, y = 0)
             const radius = cfg.radius || 1.5;
             const leftCoords = calculatePannerCoordinates(-cfg.azimuthDeg, radius);
             const rightCoords = calculatePannerCoordinates(cfg.azimuthDeg, radius);
-            this._setPannerPosition(this.midPanner, 0, 0, -radius, ramp);
             this._setPannerPosition(this.leftPanner, leftCoords.x, leftCoords.y, leftCoords.z, ramp);
             this._setPannerPosition(this.rightPanner, rightCoords.x, rightCoords.y, rightCoords.z, ramp);
 

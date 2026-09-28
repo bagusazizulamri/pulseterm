@@ -260,3 +260,20 @@ export function calculatePannerCoordinates(azimuthDeg, radius = 1.5) {
     const y = 0.0;
     return { x, y, z };
 }
+
+export function computeMidSideMatrix(L, R, width = 1.0) {
+    const M = 0.5 * (L + R);
+    const S = 0.5 * (L - R);
+    const lPrime = M + width * S;
+    const rPrime = M - width * S;
+    return { lPrime, rPrime, M, S };
+}
+
+export function getMidSideGains(width = 1.0) {
+    // Coefficients for:
+    // L' = a*L + b*R
+    // R' = b*L + a*R
+    const a = 0.5 * (1 + width);
+    const b = 0.5 * (1 - width);
+    return { a, b };
+}
