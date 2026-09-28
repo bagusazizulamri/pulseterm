@@ -3,7 +3,7 @@
 
 import { spatial } from './spatial.js';
 import { getGenre } from './api.js';
-import { mapGenresToPreset, detectPresetLocal } from './eq-core.js';
+import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
 
 export { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
 import { EQ_PRESETS } from './eq-core.js';
@@ -54,6 +54,8 @@ class TerminalEqualizer {
         this.lastTunedHint = '';
         this._autoToken = 0;
         this._genreCache = new Map();
+        this.tuneAnalyser = null;
+        this._isTuning = false;
 
         this.loadState();
     }
@@ -79,6 +81,12 @@ class TerminalEqualizer {
 
             // Connect input -> preamp
             this.inputNode.connect(this.preampNode);
+
+            // Dedicated pre-EQ analyser for Perfect Tune (not connected to destination)
+            this.tuneAnalyser = this.audioCtx.createAnalyser();
+            this.tuneAnalyser.fftSize = 8192;
+            this.tuneAnalyser.smoothingTimeConstant = 0;
+            this.inputNode.connect(this.tuneAnalyser);
 
             // Create 10-band biquad filters
             this.filters = [];
@@ -374,77 +382,98 @@ class TerminalEqualizer {
         this.updateUI();
     }
 
-    perfectTune() {
+    async perfectTune() {
         this.initAudioContext();
         this.resume();
 
-        const song = window.player?.currentSong;
-        const baseKey = this.autoDetectPreset(song);
-        const base = EQ_PRESETS[baseKey] || EQ_PRESETS.perfect;
-        let target = [...base.gains];
-        let hint = base.name;
-
-        // One-shot FFT analysis for instant spectral compensation (<1ms execution)
-        if (this.analyser && window.player?.isPlaying) {
-            const count = this.analyser.frequencyBinCount;
-            const data = new Uint8Array(count);
-            this.analyser.getByteFrequencyData(data);
-
-            let sum = 0;
-            for (let i = 0; i < count; i++) sum += data[i];
-            const avg = sum / (count || 1);
-
-            if (avg > 8) {
-                let bSum = 0, mSum = 0, tSum = 0;
-                const bCount = Math.min(6, count);
-                const mCount = Math.max(1, Math.min(18, count) - 6);
-                const tCount = Math.max(1, Math.min(64, count) - 18);
-
-                for (let i = 0; i < bCount; i++) bSum += data[i];
-                for (let i = 6; i < 6 + mCount; i++) mSum += data[i];
-                for (let i = 18; i < 18 + tCount; i++) tSum += data[i];
-
-                const avgBass = bSum / bCount;
-                const avgMid = mSum / mCount;
-                const avgTreble = tSum / tCount;
-
-                if (avgBass < avgMid - 12) {
-                    target[0] = Math.min(12, target[0] + 2);
-                    target[1] = Math.min(12, target[1] + 1.5);
-                    hint += ' · +BASS';
-                } else if (avgBass > avgMid + 30) {
-                    target[2] = Math.max(-12, target[2] - 1.5);
-                    target[3] = Math.max(-12, target[3] - 1.5);
-                    hint += ' · CLARITY';
-                }
-
-                if (avgTreble < avgMid - 20) {
-                    target[7] = Math.min(12, target[7] + 1.5);
-                    target[8] = Math.min(12, target[8] + 2);
-                    target[9] = Math.min(12, target[9] + 1.5);
-                    hint += ' · +AIR';
-                } else if (avgTreble > avgMid + 25) {
-                    target[7] = Math.max(-12, target[7] - 2);
-                    target[8] = Math.max(-12, target[8] - 1.5);
-                    hint += ' · TAME';
-                }
+        if (this._isTuning) return;
+        if (window.player?.crossfadeStarted) {
+            if (window.player?.showToast) {
+                window.player.showToast('[⚡ PERFECT TUNE: Tunggu crossfade selesai]');
             }
+            return;
         }
 
-        // Headroom auto-gain staging: prevents digital clipping
-        const posSum = target.filter(g => g > 0).reduce((a, b) => a + b, 0);
-        this.preamp = posSum > 14 ? -2.5 : (posSum > 8 ? -1.5 : (posSum > 4 ? -1.0 : 0));
-        this.gains = target.map(g => Math.round(g * 10) / 10);
-        this.currentPreset = 'perfect';
-        this.bassBoost = 0;
-        this.lastTunedHint = hint;
+        if (!this.tuneAnalyser || !window.player?.isPlaying) {
+            if (window.player?.showToast) {
+                window.player.showToast('[⚡ PERFECT TUNE: Putar lagu terlebih dahulu]');
+            }
+            return;
+        }
 
-        this.applyFilters();
-        this.updateUI();
-        this.saveState();
-
+        this._isTuning = true;
         if (window.player?.showToast) {
-            window.player.showToast(`[⚡ PERFECT EQ: ${hint}]`);
+            window.player.showToast('[⚡ PERFECT TUNE: Menganalisis spektrum audio...]');
+        }
+
+        try {
+            const fftSize = this.tuneAnalyser.fftSize;
+            const binCount = this.tuneAnalyser.frequencyBinCount;
+            const sampleRate = this.audioCtx.sampleRate || 48000;
+            const floatData = new Float32Array(binCount);
+
+            // Accumulate 25 frames over ~1.25s (50ms interval)
+            const frames = 25;
+            const bandAccumPower = new Float64Array(10).fill(0);
+            let validFrames = 0;
+
+            for (let f = 0; f < frames; f++) {
+                if (!window.player?.isPlaying || window.player?.crossfadeStarted) break;
+                this.tuneAnalyser.getFloatFrequencyData(floatData);
+
+                // Accumulate octave linear power for each of the 10 bands
+                for (let b = 0; b < 10; b++) {
+                    const fc = EQ_FREQUENCIES[b];
+                    const bandDb = bandPowerDb(floatData, sampleRate, fftSize, fc);
+                    bandAccumPower[b] += Math.pow(10, bandDb / 10);
+                }
+                validFrames++;
+                await new Promise(r => setTimeout(r, 50));
+            }
+
+            if (validFrames < 5) {
+                if (window.player?.showToast) {
+                    window.player.showToast('[⚡ PERFECT TUNE: Analisis dibatalkan]');
+                }
+                return;
+            }
+
+            // Average power per band and convert to dB
+            const avgBandDb = Array.from(bandAccumPower).map(sumP => {
+                const avgP = sumP / validFrames;
+                return 10 * Math.log10(Math.max(avgP, 1e-12));
+            });
+
+            // Reject if silent or too low (level at 1 kHz < -90 dBFS)
+            if (avgBandDb[5] < -90) {
+                if (window.player?.showToast) {
+                    window.player.showToast('[⚡ Level sinyal terlalu rendah untuk Perfect Tune]');
+                }
+                return;
+            }
+
+            const { gains, preamp, hint } = computeTuneCorrections(avgBandDb);
+
+            this.gains = [...gains];
+            this.preamp = preamp;
+            this.currentPreset = 'perfect';
+            this.bassBoost = 0;
+            this.lastTunedHint = hint;
+
+            this.manualPreset = 'perfect';
+            this.manualGains = [...this.gains];
+            this.manualPreamp = this.preamp;
+            this.manualBassBoost = 0;
+
+            this.applyFilters({ tau: 0.1 });
+            this.updateUI();
+            this.saveState();
+
+            if (window.player?.showToast) {
+                window.player.showToast(`[⚡ PERFECT EQ: ${hint}]`);
+            }
+        } finally {
+            this._isTuning = false;
         }
     }
 

@@ -176,3 +176,75 @@ export function detectPresetLocal(song) {
     }
     return 'flat';
 }
+
+export function bandPowerDb(freqDb, sampleRate, fftSize, fc) {
+    if (!freqDb || !freqDb.length || !sampleRate || !fftSize || !fc) return -100;
+    const binWidth = sampleRate / fftSize;
+    const fLow = fc / Math.SQRT2;
+    const fHigh = fc * Math.SQRT2;
+    const kLow = Math.max(0, Math.floor(fLow / binWidth));
+    const kHigh = Math.min(freqDb.length - 1, Math.ceil(fHigh / binWidth));
+
+    if (kLow > kHigh) {
+        const k = Math.min(freqDb.length - 1, Math.max(0, Math.round(fc / binWidth)));
+        return freqDb[k];
+    }
+
+    let sumPower = 0;
+    let count = 0;
+    for (let k = kLow; k <= kHigh; k++) {
+        sumPower += Math.pow(10, freqDb[k] / 10);
+        count++;
+    }
+    const avgPower = count > 0 ? (sumPower / count) : 1e-12;
+    return 10 * Math.log10(Math.max(avgPower, 1e-12));
+}
+
+export function computeTuneCorrections(bandDb) {
+    if (!Array.isArray(bandDb) || bandDb.length !== 10) {
+        return { gains: new Array(10).fill(0), preamp: 0, hint: 'FLAT' };
+    }
+
+    // Ref at 1000 Hz (index 5)
+    const refDb = bandDb[5];
+    const targetTiltPerOctave = -4.5; // Pink noise reference curve
+
+    // delta[i] = targetTilt[i] - actualRelativeDb[i]
+    const delta = bandDb.map((val, i) => {
+        const targetRel = (i - 5) * targetTiltPerOctave;
+        const actualRel = val - refDb;
+        return targetRel - actualRel;
+    });
+
+    // 3-point smoothing [0.25, 0.5, 0.25] with clamped boundaries
+    const smoothed = delta.map((d, i) => {
+        if (i === 0) return 0.75 * delta[0] + 0.25 * delta[1];
+        if (i === delta.length - 1) return 0.75 * delta[9] + 0.25 * delta[8];
+        return 0.25 * delta[i - 1] + 0.5 * delta[i] + 0.25 * delta[i + 1];
+    });
+
+    // Clamp corrections to [-4, +4] dB per band
+    const gains = smoothed.map(g => {
+        const clamped = Math.max(-4, Math.min(4, g));
+        return Math.round(clamped * 10) / 10;
+    });
+
+    // Headroom auto-gain staging to prevent digital clipping
+    const maxGain = Math.max(0, ...gains);
+    const sumPos = gains.filter(g => g > 0).reduce((a, b) => a + b, 0);
+    const preamp = -(Math.round((maxGain * 0.6 + (sumPos > 10 ? 1.0 : 0)) * 10) / 10);
+
+    // Formulate descriptive hint
+    let hint = 'BALANCED';
+    const bassAvg = (gains[0] + gains[1] + gains[2]) / 3;
+    const trebleAvg = (gains[7] + gains[8] + gains[9]) / 3;
+    if (bassAvg > 1.0 && trebleAvg < -0.5) hint = '+BASS · TAME';
+    else if (bassAvg > 1.0) hint = '+BASS';
+    else if (bassAvg < -1.0 && trebleAvg > 1.0) hint = 'CLARITY · +AIR';
+    else if (bassAvg < -1.0) hint = 'CLARITY';
+    else if (trebleAvg > 1.0) hint = '+AIR';
+    else if (trebleAvg < -1.0) hint = 'WARM';
+
+    return { gains, preamp, hint };
+}
+
