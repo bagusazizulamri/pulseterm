@@ -38,7 +38,33 @@ class TerminalVisualizer {
         }
 
         this.applyCrt(this.crtEnabled);
+        this.tryInitWebAudio();
         this.startMiniViz();
+    }
+
+    updateAudioElement(audioElement) {
+        if (audioElement) {
+            this.audio = audioElement;
+        }
+    }
+
+    getActiveAudio() {
+        if (window.player && typeof window.player.getActiveAudio === 'function') {
+            return window.player.getActiveAudio();
+        }
+        if (window.player?.audio && !window.player.audio.paused && window.player.audio.currentTime > 0) {
+            return window.player.audio;
+        }
+        if (window.player?.preloadAudio && !window.player.preloadAudio.paused && window.player.preloadAudio.currentTime > 0) {
+            return window.player.preloadAudio;
+        }
+        return this.audio || window.player?.audio || null;
+    }
+
+    get isPlaying() {
+        const a = this.getActiveAudio();
+        const playerSaysPlaying = Boolean(window.player ? window.player.isPlaying : true);
+        return Boolean(playerSaysPlaying && a && !a.paused && a.currentTime > 0);
     }
 
     resize() {
@@ -50,15 +76,17 @@ class TerminalVisualizer {
     }
 
     tryInitWebAudio() {
-        if (this.analyser) return true;
+        if (this.analyser && this.audioCtx) return true;
         try {
             const eqAnalyser = equalizer.getAnalyser();
             const eqCtx = equalizer.getAudioContext();
             if (eqAnalyser && eqCtx) {
                 this.audioCtx = eqCtx;
                 this.analyser = eqAnalyser;
-                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-                this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
+                if (!this.dataArray || this.dataArray.length !== this.analyser.frequencyBinCount) {
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
+                }
                 return true;
             }
         } catch (e) {
@@ -68,22 +96,15 @@ class TerminalVisualizer {
         try {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (!AudioContextClass) return false;
-            this.audioCtx = new AudioContextClass();
-            this.analyser = this.audioCtx.createAnalyser();
-            this.analyser.fftSize = 256;
-            this.analyser.smoothingTimeConstant = 0.8;
-            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-            this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
-
-            // Connect if allowed without muting
-            if (this.audio && !this.source) {
-                try {
-                    this.source = this.audioCtx.createMediaElementSource(this.audio);
-                    this.source.connect(this.analyser);
-                    this.analyser.connect(this.audioCtx.destination);
-                } catch (e) {
-                    console.debug('MediaElementSource not allowed or tainted, using synthesis fallback', e);
-                }
+            if (!this.audioCtx) {
+                this.audioCtx = new AudioContextClass();
+            }
+            if (!this.analyser) {
+                this.analyser = this.audioCtx.createAnalyser();
+                this.analyser.fftSize = 256;
+                this.analyser.smoothingTimeConstant = 0.8;
+                this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.freqArray = new Uint8Array(this.analyser.frequencyBinCount);
             }
             return true;
         } catch (e) {
@@ -151,29 +172,40 @@ class TerminalVisualizer {
 
     getFrequencies(numBands = 32) {
         const bands = new Array(numBands).fill(0);
-        const isPlaying = this.audio && !this.audio.paused && this.audio.currentTime > 0;
-        
+        const isPlaying = this.isPlaying;
+        const activeAudio = this.getActiveAudio();
+
+        if (!this.analyser) {
+            this.tryInitWebAudio();
+        }
+
         let hasRealData = false;
         if (this.analyser && isPlaying) {
-            this.analyser.getByteFrequencyData(this.dataArray);
-            let sum = 0;
-            for (let i = 0; i < this.dataArray.length; i++) sum += this.dataArray[i];
-            if (sum > 10) {
-                hasRealData = true;
-                const step = Math.floor(this.dataArray.length / numBands);
-                for (let b = 0; b < numBands; b++) {
-                    let avg = 0;
-                    for (let s = 0; s < step; s++) avg += this.dataArray[b * step + s] || 0;
-                    bands[b] = (avg / step) / 255;
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume().catch(() => {});
+            }
+            if (this.dataArray) {
+                this.analyser.getByteFrequencyData(this.dataArray);
+                let sum = 0;
+                for (let i = 0; i < this.dataArray.length; i++) sum += this.dataArray[i];
+                if (this.audioCtx?.state === 'running' || sum > 0) {
+                    hasRealData = true;
+                    const step = Math.max(1, Math.floor(this.dataArray.length / numBands));
+                    for (let b = 0; b < numBands; b++) {
+                        let avg = 0;
+                        for (let s = 0; s < step; s++) avg += this.dataArray[b * step + s] || 0;
+                        bands[b] = (avg / step) / 255;
+                    }
                 }
             }
         }
 
-        // High fidelity procedural spectrum synthesizer when audio is playing but CORS prevents direct raw FFT
-        if (!hasRealData && isPlaying) {
-            this.simPhase += 0.08 * (this.audio.playbackRate || 1);
+        // Only synthesize procedural movement if Web Audio Analyser is genuinely unavailable and audio is confirmed playing
+        if (!hasRealData && !this.analyser && isPlaying) {
+            const rate = activeAudio?.playbackRate || 1;
+            this.simPhase += 0.08 * rate;
             const t = this.simPhase;
-            const vol = this.audio.volume || 0.8;
+            const vol = activeAudio?.volume ?? 0.8;
             for (let b = 0; b < numBands; b++) {
                 const oct = b / numBands;
                 const bass = Math.sin(t * 2.2 + b * 0.3) * 0.4 + Math.cos(t * 1.1) * 0.3;
@@ -268,7 +300,7 @@ class TerminalVisualizer {
 
     drawWave(ctx, w, h, primaryColor, lineColor) {
         const bands = this.getFrequencies(64);
-        const isPlaying = this.audio && !this.audio.paused;
+        const isPlaying = this.isPlaying;
 
         // Draw grid
         ctx.strokeStyle = lineColor;
@@ -372,12 +404,11 @@ class TerminalVisualizer {
         this.miniTimer = setInterval(() => {
             if (!this.miniEl) {
                 this.miniEl = document.getElementById('player-mini-viz');
-                if (!this.miniEl) return;
             }
 
-            const isPlaying = this.audio && !this.audio.paused && this.audio.currentTime > 0;
+            const isPlaying = this.isPlaying;
             if (!isPlaying) {
-                this.miniEl.textContent = '[ ░░░░░░░░ ]';
+                if (this.miniEl) this.miniEl.textContent = '[ ░░░░░░░░ ]';
                 // Reset sidebar VU to idle state
                 const vuL = document.getElementById('sidebar-vu-l');
                 const vuR = document.getElementById('sidebar-vu-r');
@@ -390,9 +421,17 @@ class TerminalVisualizer {
                 return;
             }
 
-            const bands = this.getFrequencies(8);
-            const str = bands.map(b => chars[Math.min(chars.length - 1, Math.floor(b * chars.length))]).join('');
-            this.miniEl.textContent = `[ ${str} ]`;
+            // Single-pass 16 bands to prevent double-polling and phase-jitter
+            const bands16 = this.getFrequencies(16);
+
+            // 8 bands for mini-viz by combining paired bands
+            if (this.miniEl) {
+                const str = Array.from({ length: 8 }, (_, i) => {
+                    const val = Math.max(bands16[i * 2] || 0, bands16[i * 2 + 1] || 0);
+                    return chars[Math.min(chars.length - 1, Math.floor(val * chars.length))];
+                }).join('');
+                this.miniEl.textContent = `[ ${str} ]`;
+            }
 
             // Update sidebar VU meter with L/R split from 16 bands
             const vuL = document.getElementById('sidebar-vu-l');
@@ -400,7 +439,6 @@ class TerminalVisualizer {
             const dbL = document.getElementById('sidebar-vu-db-l');
             const dbR = document.getElementById('sidebar-vu-db-r');
             if (vuL || vuR) {
-                const bands16 = this.getFrequencies(16);
                 const levelL = bands16.slice(0, 8).reduce((a, b) => Math.max(a, b), 0);
                 const levelR = bands16.slice(8, 16).reduce((a, b) => Math.max(a, b), 0);
                 const toBar = (v) => {
@@ -420,3 +458,4 @@ class TerminalVisualizer {
 }
 
 export const visualizer = new TerminalVisualizer();
+window.visualizer = visualizer;

@@ -100,11 +100,18 @@ const player = {
         })).filter(s => s.videoId);
     },
 
+    getActiveAudio() {
+        return this.audio;
+    },
+
     _bindActiveAudio() {
         if (this.boundAudio && this.boundHandlers) {
             for (const [event, handler] of Object.entries(this.boundHandlers)) this.boundAudio.removeEventListener(event, handler);
         }
         this.boundAudio = this.audio;
+        if (window.visualizer && typeof window.visualizer.updateAudioElement === 'function') {
+            window.visualizer.updateAudioElement(this.audio);
+        }
         this.boundHandlers = {
             timeupdate: () => this.onTimeUpdate(),
             progress: () => this.onBuffered(),

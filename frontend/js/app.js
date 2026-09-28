@@ -726,6 +726,7 @@ window.cycleCrt = () => visualizer.toggleCrt();
 window.cycleTheme = cycleTheme;
 window.player = player;
 window.spatial = spatial;
+window.visualizer = visualizer;
 
 window.clearSearch = () => {
     const sInput = document.getElementById('search-input');
