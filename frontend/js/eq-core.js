@@ -1,5 +1,99 @@
-// PulseTerm — Pure Audio DSP Core Logic (Framework-independent, DOM-independent)
-// Clean mathematical models for Web Audio tuning, genre routing, and spatial calculations
+export const EQ_FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+export const EQ_LABELS = ['32Hz', '64Hz', '125Hz', '250Hz', '500Hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz'];
+
+export const EQ_PRESETS = {
+    flat: {
+        name: 'FLAT',
+        label: 'Flat / Neutral',
+        gains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        preamp: 0
+    },
+    bass_boost: {
+        name: 'BASS BOOST',
+        label: 'Bass Boost',
+        gains: [8, 7, 5, 3, 1, 0, 0, 0, 0, 0],
+        preamp: -2
+    },
+    rock: {
+        name: 'ROCK',
+        label: 'Rock & Alt',
+        gains: [5, 4, 3, 1, -1, -1, 1, 3, 4, 5],
+        preamp: -1
+    },
+    pop: {
+        name: 'POP',
+        label: 'Pop & Modern',
+        gains: [-1, 1, 3, 4, 4, 3, 1, 0, 2, 3],
+        preamp: -1
+    },
+    electronic: {
+        name: 'EDM',
+        label: 'Electronic / EDM',
+        gains: [6, 5, 3, 0, -2, 1, 2, 3, 5, 5],
+        preamp: -2
+    },
+    hiphop: {
+        name: 'HIP-HOP',
+        label: 'Hip-Hop & Rap',
+        gains: [6, 5, 3, 1, -1, 1, 2, 1, 3, 4],
+        preamp: -1.5
+    },
+    rnb: {
+        name: 'R&B',
+        label: 'R&B / Soul',
+        gains: [4, 6, 3, 0, 1, 2, 2, 1, 2, 3],
+        preamp: -1
+    },
+    jazz: {
+        name: 'JAZZ',
+        label: 'Jazz & Lounge',
+        gains: [3, 2, 1, 2, -1, -1, 0, 1, 3, 4],
+        preamp: 0
+    },
+    classical: {
+        name: 'CLASSIC',
+        label: 'Classical & Symphony',
+        gains: [4, 3, 2, 2, -1, -1, 0, 2, 3, 4],
+        preamp: 0
+    },
+    acoustic: {
+        name: 'ACOUSTIC',
+        label: 'Acoustic & Folk',
+        gains: [3, 2, 1, 1, 2, 2, 3, 3, 3, 2],
+        preamp: 0
+    },
+    dance: {
+        name: 'DANCE',
+        label: 'Dance & Club',
+        gains: [5, 6, 4, 1, 0, 0, 2, 3, 4, 2],
+        preamp: -1.5
+    },
+    metal: {
+        name: 'METAL',
+        label: 'Heavy Metal',
+        gains: [5, 4, 2, 0, -2, -2, 1, 4, 5, 4],
+        preamp: -1.5
+    },
+    vocal: {
+        name: 'VOCAL',
+        label: 'Vocal / Podcast',
+        gains: [-2, -1, 0, 2, 4, 4, 3, 1, 0, -1],
+        preamp: 0
+    },
+    treble_boost: {
+        name: 'TREBLE',
+        label: 'Treble Boost',
+        gains: [0, 0, 0, 0, 0, 1, 3, 5, 6, 7],
+        preamp: -1
+    },
+    perfect: {
+        name: 'PERFECT',
+        label: 'Harmonic Studio Balance',
+        gains: [3.5, 3.0, 1.5, -0.5, 0.5, 1.5, 2.0, 2.5, 3.0, 2.0],
+        preamp: -1.5
+    }
+};
+
 
 export const GENRE_PRIORITY = [
     'metal', 'dangdut', 'hip-hop', 'edm', 'rock', 'punk', 'alternative',

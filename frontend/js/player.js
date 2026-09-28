@@ -975,6 +975,11 @@ const player = {
             outgoingGain.gain.linearRampToValueAtTime(0, start + this.crossfade);
             incomingGain.gain.linearRampToValueAtTime(1, start + this.crossfade);
             setTimeout(() => {
+                if (this.crossfadeStarted && next) {
+                    equalizer.onTrackChange(next);
+                }
+            }, Math.max(0, (this.crossfade * 1000) / 2));
+            setTimeout(() => {
                 if (this.preloadAudio.paused) return;
                 const old = this.audio;
                 this.audio = this.preloadAudio;
@@ -1004,7 +1009,7 @@ const player = {
                 equalizer.resetGains();
                 this.crossfadeStarted = false;
                 this.isPlaying = true;
-                this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); equalizer.onTrackChange(this.currentSong); this.prepareNext();
+                this.updatePlayerUI(); this.saveState(); this.loadLyrics(this.currentSong); this.prepareNext();
                 if (this.autoContinue && this.playOrder.length - (this.orderPos + 1) <= 3) {
                     const tailSeed = (this.currentSongs?.length ? this.currentSongs[this.currentSongs.length - 1] : null) || this.currentSong || this.continueSeed;
                     this._scheduleContinue(tailSeed);
