@@ -4,7 +4,7 @@
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | Dashboard & Taste Profiler | 10-Band Equalizer & DSP | Synced Teletext Lyrics |
 | :---: | :---: | :---: |
@@ -12,22 +12,22 @@
 
 ---
 
-## ⚡ Highlights
+## Highlights
 
 - **Pure Monospace TUI**: Retro CRT scanlines, ASCII telemetry, and customizable color themes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **Studio Audio DSP (48 kHz Opus)**:
   - **10-Band Parametric EQ**: 32Hz–16kHz faders, preamp trim, harmonic bass boost, and 14 calibrated presets.
   - **Smart Auto-EQ**: Word-boundary genre classification that adapts EQ presets seamlessly on track changes without overwriting user manual settings.
-  - **⚡ Perfect Tune**: Pre-EQ 8192-FFT octave spectral analysis with target pink noise tilt (-4.5 dB/oct) and auto gain staging.
+  - **Perfect Tune**: Pre-EQ 8192-FFT octave spectral analysis with target pink noise tilt (-4.5 dB/oct) and auto gain staging.
   - **3D Binaural Spatial Audio**: True Mid/Side matrix with HRTF panners, synthetic stereo convolver reverb, and RMS-normalized loudness matching (`OFF`, `STUDIO`, `WIDE`, `CONCERT`).
   - **Brickwall Lookahead Limiter**: 5ms lookahead AudioWorklet with -1.0 dBFS ceiling and transparent compressor fallback.
 - **Synced Multi-Script Lyrics**: Real-time timed lyrics with automatic dual-script Romanization:
-  - 🇯🇵 Japanese (Romaji) · 🇰🇷 Korean (Romaja) · 🇨🇳 Chinese (Pinyin) · 🇷🇺 Cyrillic.
+  - Japanese (Romaji), Korean (Romaja), Chinese (Pinyin), Cyrillic.
 - **Privacy & Performance**: Personal/local use, zero external CDN dependencies, SQLite WAL storage, <1% CPU footprint.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone repository
@@ -50,7 +50,7 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
-## ⌨️ Keybindings
+## Keybindings
 
 | Key | Action | Key | Action |
 | :--- | :--- | :--- | :--- |
@@ -67,7 +67,7 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite (aiosqlite WAL), ytmusicapi, yt-dlp.
 - **Audio Engine**: Web Audio API (BiquadFilter, AudioWorklet brickwall limiter, ConvolverNode, HRTF Panner).
@@ -75,6 +75,6 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
-## 📄 License
+## License
 
 GPL-3.0
