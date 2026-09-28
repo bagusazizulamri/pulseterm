@@ -1,125 +1,77 @@
-# PulseTerm // Minimalist TUI Audio Player
+# PulseTerm
 
-A high-performance, lightweight terminal-style YouTube Music audio player. Built with an authentic TUI monospace aesthetic, zero tracking, zero bloat, CAVA spectrum analyzer, 10-band DSP parametric equalizer with genre presets, and synchronized multi-script teletext lyrics.
+> Minimalist, lightweight TUI YouTube Music player with studio-grade Web Audio DSP, 3D Spatial Audio, and synchronized multi-script lyrics. Zero telemetry, zero bloat.
 
 ---
 
 ## 📸 Screenshots
 
-### 1. Dashboard & Smart Taste Recommendations
-> Monospace terminal UI with trending tracks, customized taste profiler lanes, and retro playback status.
-
-![PulseTerm Home Dashboard](docs/screenshots/home.png)
-
----
-
-### 2. 10-Band DSP Parametric Equalizer & Smart Auto-EQ
-> 32Hz to 16kHz audio mastering with real-time `[⚡ PERFECT TUNE]` calibration, `[AUTO: ON/OFF]` genre tracking, pre-amp headroom, and 14 studio presets.
-
-![PulseTerm 10-Band Equalizer](docs/screenshots/equalizer.png)
+| Dashboard & Taste Profiler | 10-Band Equalizer & DSP | Synced Teletext Lyrics |
+| :---: | :---: | :---: |
+| ![Dashboard](docs/screenshots/home.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Lyrics](docs/screenshots/lyrics.png) |
 
 ---
 
-### 3. Synchronized Teletext Lyrics & Multi-Script Romanization
-> Real-time timed lyrics with automatic Romaji (Japanese), Romaja (Korean), Pinyin (Chinese), and Cyrillic transliteration alongside 800x800 HD album artwork.
+## ⚡ Highlights
 
-![PulseTerm Synchronized Lyrics](docs/screenshots/lyrics.png)
-
----
-
-## ✨ Features
-
-- **TUI Monospace Aesthetic**: Clean ASCII borders, retro CRT scanline raster mode, and customizable color schemes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
-- **High-Fidelity Opus 48kHz Audio**: Direct Opus 160kbps audio stream extraction with lossless Web Audio API DSP processing chain and anti-clipping studio limiter.
-- **10-Band DSP Parametric Equalizer**: 32Hz to 16kHz faders with Pre-amp headroom and Bass Booster controls.
-- **3D Binaural Spatial Audio (Apple Music Spatialize Stereo style)**:
-  - Native Web Audio API HRTF (Head-Related Transfer Function) binaural spatializer running hardware-accelerated with zero latency and <1% CPU.
-  - Mid-Side (M/S) matrix decomposition anchoring lead vocals to the virtual front stage while dispersing stereo width into a 3D spherical soundstage.
-  - Studio room crossfeed and early reflections eliminating in-head headphone listening fatigue (*out-of-head localization*).
-  - 4 Modes: `OFF` (Pure Stereo Bypass), `STUDIO` (Virtual Studio Monitors), `WIDE` (Expansive 360° Spherical Stage), `CONCERT` (Acoustic Hall Diffusion).
-- **Autoset Perfect Equalizer (Smart Auto-EQ)**:
-  - `[AUTO: ON/OFF]`: Instant zero-latency genre-aware profile auto-matching (Rock, Metal, Pop, EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Vocal, Bass Boost) whenever the track changes.
-  - `[⚡ PERFECT TUNE]`: Instant one-shot real-time spectral calibration (<1ms) analyzing the live audio FFT spectrum to balance deficient bass, scoop mud, and tame sibilance.
-  - **Auto Headroom Gain Staging**: Intelligently scales pre-amp attenuation to guarantee clean, zero-distortion playback without limiter pumping.
-- **14 Studio Genre Presets**: Flat, Bass Boost, Rock, Pop, Electronic/EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Dance, Metal, Vocal, Treble Boost, and Perfect Harmonic Balance.
-- **Synchronized Teletext Lyrics**: Real-time karaoke-style line tracking with auto-scroll and manual seek navigation.
-- **Non-Latin Script Auto-Romanization**: Dual-script lyrics rendering with automatic Romanization:
-  - 🇯🇵 Japanese Kanji / Kana ➔ **Romaji** (via pykakasi)
-  - 🇰🇷 Korean Hangul ➔ **Romaja** (via korean-romanizer)
-  - 🇨🇳 Chinese Hanzi ➔ **Pinyin** (via pypinyin)
-  - 🇷🇺 Cyrillic Script ➔ **Transliteration** (via cyrtranslit)
-- **HD Album Artwork & Lightbox**: High-resolution 800x800 cover extraction with 1200x1200 master zoom lightbox.
-- **Smart Taste Profiler**: Dynamic listening telemetry recommending tailored playlists based on your top-played genres and artists.
-- **Instant Deck Swapping & Crossfade**: Smooth gapless transitions between tracks.
-- **Full Keyboard Navigation**: Command-line hotkeys for mouse-free operation.
-- **Privacy First**: Zero tracking, zero telemetry, zero analytics, zero external CDNs.
-
----
-
-## 🛠 Tech Stack
-
-- **Backend**: Python 3.12 + FastAPI + Uvicorn + SQLite WAL
-- **Audio Engine**: Web Audio API (BiquadFilterNode DSP chain, DynamicsCompressor limiter)
-- **YouTube Audio**: ytmusicapi + yt-dlp + Stream proxying
-- **Database**: SQLite via aiosqlite
-- **Frontend**: Vanilla ES6 Modules + Pure CSS (zero frontend frameworks)
-- **Visualizer**: High-performance canvas CAVA / Oscilloscope / VU / ASCII
+- **Pure Monospace TUI**: Retro CRT scanlines, ASCII telemetry, and customizable color themes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
+- **Studio Audio DSP (48 kHz Opus)**:
+  - **10-Band Parametric EQ**: 32Hz–16kHz faders, preamp trim, harmonic bass boost, and 14 calibrated presets.
+  - **Smart Auto-EQ**: Word-boundary genre classification that adapts EQ presets seamlessly on track changes without overwriting user manual settings.
+  - **⚡ Perfect Tune**: Pre-EQ 8192-FFT octave spectral analysis with target pink noise tilt (-4.5 dB/oct) and auto gain staging.
+  - **3D Binaural Spatial Audio**: True Mid/Side matrix with HRTF panners, synthetic stereo convolver reverb, and RMS-normalized loudness matching (`OFF`, `STUDIO`, `WIDE`, `CONCERT`).
+  - **Brickwall Lookahead Limiter**: 5ms lookahead AudioWorklet with -1.0 dBFS ceiling and transparent compressor fallback.
+- **Synced Multi-Script Lyrics**: Real-time timed lyrics with automatic dual-script Romanization:
+  - 🇯🇵 Japanese (Romaji) · 🇰🇷 Korean (Romaja) · 🇨🇳 Chinese (Pinyin) · 🇷🇺 Cyrillic.
+- **Privacy & Performance**: Personal/local use, zero external CDN dependencies, SQLite WAL storage, <1% CPU footprint.
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/bagusazizulamri/pulseterm.git
 cd pulseterm
 
-# Run setup (creates venv and installs dependencies)
-chmod +x setup.sh
+# Setup & install
+chmod +x setup.sh manage.sh
 ./setup.sh
 
-# Start server
+# Start service
 ./manage.sh start
 ```
 
-Access at **http://localhost:3000**
-
-### Service Management
+Open **http://localhost:3000** in your browser.
 
 ```bash
-./manage.sh start    # Start server
-./manage.sh stop     # Stop server
-./manage.sh restart  # Restart server
-./manage.sh status   # Check status
+./manage.sh [start | stop | restart | status]
 ```
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## ⌨️ Keybindings
 
-| Shortcut | Description |
-|:---|:---|
-| `Space` | Play / Pause |
-| `1, 2, 3, 4` | Quick switch: Home, Search, Library, Playlists |
-| `/` | Focus search command prompt |
-| `F5` / `Ctrl+R` / `Ctrl+L` | Soft refresh view buffer without interrupting audio |
-| `e` | Toggle 10-Band DSP Equalizer panel |
-| `x` | Cycle 3D Spatial Audio mode (Off / Studio / Wide / Concert) |
-| `a` | Toggle Auto-EQ per song (in EQ panel) |
-| `p` | Instant Perfect Tune calibration (in EQ panel) |
-| `v` | Toggle CAVA spectrum visualizer HUD |
-| `c` | Toggle CRT scanline raster effect |
-| `q` | Toggle playback queue buffer drawer |
-| `l` | Toggle teletext lyrics overlay |
-| `n` / `p` | Next track / Previous track |
-| `←` / `→` | Seek backward / forward 5 seconds |
-| `↑` / `↓` | Volume up / down |
-| `m` | Toggle mute |
-| `s` | Toggle shuffle mode |
-| `r` | Cycle repeat mode (none / all / one) |
-| `t` | Cycle terminal color themes |
-| `Esc` | Dismiss active drawer or modal |
-| `?` | Show command keymap |
+| Key | Action | Key | Action |
+| :--- | :--- | :--- | :--- |
+| `Space` | Play / Pause | `e` | Toggle Equalizer panel |
+| `n` / `p` | Next / Prev track *(or Perfect Tune when EQ open)* | `x` | Cycle Spatial Audio mode |
+| `←` / `→` | Seek ±5s | `a` | Toggle Auto-EQ *(in EQ panel)* |
+| `↑` / `↓` | Volume ±5% | `p` | Perfect Tune *(in EQ panel)* |
+| `m` | Toggle Mute | `l` | Toggle Lyrics overlay |
+| `s` | Toggle Shuffle | `v` | Toggle CAVA visualizer |
+| `r` | Cycle Repeat (none / all / one) | `c` | Toggle CRT scanlines |
+| `/` | Search command prompt | `q` | Toggle Queue drawer |
+| `1`–`4` | Switch tab (Home / Search / Library / Playlists) | `t` | Cycle color theme |
+| `Esc` | Close active panel or modal | `?` | Show help modal |
+
+---
+
+## 🛠 Tech Stack
+
+- **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite (aiosqlite WAL), ytmusicapi, yt-dlp.
+- **Audio Engine**: Web Audio API (BiquadFilter, AudioWorklet brickwall limiter, ConvolverNode, HRTF Panner).
+- **Frontend**: Vanilla ES6 Modules + Pure CSS (no build tools, no npm, no frameworks).
 
 ---
 
