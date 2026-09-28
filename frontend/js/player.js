@@ -1688,7 +1688,10 @@ const player = {
         const repeat = document.getElementById('repeat-btn');
         if (repeat) {
             repeat.dataset.state = this.repeatMode;
-            repeat.textContent = this.repeatMode === 'none' ? '[REP: OFF]' : (this.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+            const tuiSpan = repeat.querySelector('.tui-only');
+            const repText = this.repeatMode === 'none' ? '[REP: OFF]' : (this.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+            if (tuiSpan) tuiSpan.textContent = repText;
+            else repeat.textContent = repText;
         }
         const shuffle = document.getElementById('shuffle-btn'); if (shuffle) shuffle.classList.toggle('on', this.shuffleMode);
         const vizTrack = document.getElementById('viz-now-playing');

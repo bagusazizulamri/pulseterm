@@ -2494,7 +2494,9 @@ select {
   display: contents;
 }
 
-body.layout-modern .modern-only { display: inherit; }
+body.layout-modern .modern-only { display: inherit !important; }
+body.layout-modern span.modern-only { display: inline-flex !important; }
+body.layout-modern div.modern-only { display: block !important; }
 body.layout-modern .modern-only-flex { display: flex !important; }
 body.layout-modern .modern-only-grid { display: grid !important; }
 body.layout-modern .tui-only { display: none !important; }

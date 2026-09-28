@@ -105,12 +105,12 @@ async function renderHome(content) {
     const history = hres && hres.success ? hres.data : [];
 
     let secIndex = 1;
-    let html = '<div class="page-header"><h1>┌─ PULSETERM AUDIO ARCHIVE ─┐</h1></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ PULSETERM AUDIO ARCHIVE ─┐</h1><h1 class="modern-only">Listen Now</h1></div>';
 
     // 01: Trending Tracks
     if (trending.length > 0) {
         const secStr = String(secIndex++).padStart(2, '0');
-        html += '<div class="eyebrow">[ ' + secStr + ' // TRENDING TRACKS · YOUTUBE MUSIC ]</div><div class="item-grid">';
+        html += '<div class="eyebrow"><span class="tui-only">[ ' + secStr + ' // TRENDING TRACKS · YOUTUBE MUSIC ]</span><span class="modern-only">Trending Songs</span></div><div class="item-grid">';
         trending.slice(0, 14).forEach(item => { html += renderCard(item); });
         html += '</div>';
     }
@@ -118,7 +118,7 @@ async function renderHome(content) {
     // 02: Recommended Playlists (Smart taste telemetry based on top played songs & genres)
     if (recPlaylists.lanes && recPlaylists.lanes.length > 0) {
         const secStr = String(secIndex++).padStart(2, '0');
-        html += '<div class="eyebrow">[ ' + secStr + ' // RECOMMENDED PLAYLISTS · TASTE PROFILE TELEMETRY ]</div>';
+        html += '<div class="eyebrow"><span class="tui-only">[ ' + secStr + ' // RECOMMENDED PLAYLISTS · TASTE PROFILE TELEMETRY ]</span><span class="modern-only">Made For You</span></div>';
         html += '<div class="recommend-lanes-container">';
         recPlaylists.lanes.forEach(lane => {
             if (!lane.playlists || !lane.playlists.length) return;
@@ -137,7 +137,7 @@ async function renderHome(content) {
     // 03: Recent Playback Buffer
     if (history && history.length > 0) {
         const secStr = String(secIndex++).padStart(2, '0');
-        html += '<div class="eyebrow">[ ' + secStr + ' // RECENT PLAYBACK BUFFER ]</div><div class="list">';
+        html += '<div class="eyebrow"><span class="tui-only">[ ' + secStr + ' // RECENT PLAYBACK BUFFER ]</span><span class="modern-only">Recently Played</span></div><div class="list">';
         history.slice(0, 8).forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
             html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
@@ -157,7 +157,7 @@ async function renderHome(content) {
 }
 
 function renderSearch(content) {
-    content.innerHTML = '<div class="page-header"><h1>┌─ SEARCH ENGINE QUERY BUFFER ─┐</h1></div>' +
+    content.innerHTML = '<div class="page-header"><h1 class="tui-only">┌─ SEARCH ENGINE QUERY BUFFER ─┐</h1><h1 class="modern-only">Search & Browse</h1></div>' +
         '<div class="search-page"><div class="search-filters" id="search-filters">' +
         '<button class="filter-btn active" data-f="all">[ALL]</button>' +
         '<button class="filter-btn" data-f="song">[SONGS]</button>' +
@@ -279,14 +279,14 @@ async function renderLibrary(content) {
     const history = hres.success ? hres.data : [];
     const lres = await getLikedSongs();
     const liked = lres.success ? lres.data : [];
-    let html = '<div class="page-header"><h1>┌─ SAVED AUDIO REPOSITORY ─┐</h1><button id="clear-hist-btn" class="tui-btn">[PURGE HISTORY]</button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ SAVED AUDIO REPOSITORY ─┐</h1><h1 class="modern-only">My Library</h1><button id="clear-hist-btn" class="tui-btn">[PURGE HISTORY]</button></div>';
     if (liked.length) {
-        html += '<div class="eyebrow">[ 01 // FAVORITE CHANNELS · LIKED ]</div><div class="item-grid">';
+        html += '<div class="eyebrow"><span class="tui-only">[ 01 // FAVORITE CHANNELS · LIKED ]</span><span class="modern-only">Liked Songs</span></div><div class="item-grid">';
         liked.forEach(s => { html += renderCard({ ...s, videoId: s.videoId || s.video_id }); });
         html += '</div>';
     }
     if (history && history.length > 0) {
-        html += '<div class="eyebrow">[ 02 // PLAYBACK LOG · HISTORY ]</div><div class="list">';
+        html += '<div class="eyebrow"><span class="tui-only">[ 02 // PLAYBACK LOG · HISTORY ]</span><span class="modern-only">Listening History</span></div><div class="list">';
         history.forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
             html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
@@ -307,7 +307,7 @@ async function renderLibrary(content) {
 async function renderPlaylists(content) {
     const pres = await getPlaylists();
     const pls = pres.success ? pres.data : [];
-    let html = '<div class="page-header"><h1>┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><button id="new-pl-btn" class="tui-btn">[+ NEW PLAYLIST]</button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><h1 class="modern-only">Playlists</h1><button id="new-pl-btn" class="tui-btn">[+ NEW PLAYLIST]</button></div>';
     if (pls.length === 0) {
         html += '<div class="empty-state"><span class="label">[REGISTRY: VOID]</span><h3>NO PLAYLISTS INITIALIZED</h3><p>Create a custom playlist to bundle audio streams.</p></div>';
     } else {
@@ -315,8 +315,8 @@ async function renderPlaylists(content) {
         pls.forEach(pl => {
             const n = pl.songs ? pl.songs.length : 0;
             html += '<div class="item-card" data-pl="' + pl.id + '">' +
-                '<div class="cover-wrap"><div class="cover cover-fallback">[PLAYLIST]</div><div class="card-play-overlay"><span class="play-icon">▶</span><span class="play-text">OPEN</span></div></div>' +
-                '<div class="card-title">' + esc(pl.name) + '</div><div class="card-subtitle"><span class="tui-state-badge">[PL]</span> ' + n + ' tracks</div></div>';
+                '<div class="cover-wrap"><div class="cover cover-fallback"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" opacity="0.3"><path d="M19 9H2v2h17V9zm0-4H2v2h17V5zM2 15h11v-2H2v2zm14 0v6l5-3-5-3z"/></svg></div><div class="card-play-overlay"><span class="play-icon">▶</span><span class="play-text">OPEN</span></div></div>' +
+                '<div class="card-title">' + esc(pl.name) + '</div><div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[PL]</span><span class="modern-only">PLAYLIST</span></span> ' + n + ' tracks</div></div>';
         });
         html += '</div>';
     }
@@ -333,16 +333,16 @@ function renderCard(item) {
                : item.album === 'artist' || item.resultType === 'artist' || item.result_type === 'artist' ? 'artist'
                : item.album === 'album' || item.resultType === 'album' || item.result_type === 'album' ? 'album'
                : '';
-    const badgeText = kind ? `[${kind.toUpperCase()}]` : (isVid ? '[VIDEO]' : '[SONG]');
+    const badgeText = kind ? kind.toUpperCase() : (isVid ? 'VIDEO' : 'SONG');
     const durStr = item.duration ? ` · ${Math.floor(item.duration / 60)}:${String(item.duration % 60).padStart(2, '0')}` : '';
 
     return '<div class="item-card" data-video-id="' + esc(vid) + '" data-title="' + esc(item.title) + '" data-artist="' + esc(item.artist) + '" data-thumbnail="' + esc(item.thumbnail || '') + '" data-duration="' + (item.duration || 0) + '" data-kind="' + esc(kind) + '" data-is-video="' + (isVid ? 'true' : 'false') + '">' +
         '<div class="cover-wrap">' +
-            (item.thumbnail ? '<img class="cover" src="' + esc(item.thumbnail) + '" alt="' + esc(item.title) + '" loading="lazy" onerror="this.style.display=\'none\'">' : '<div class="cover cover-fallback">[NO IMG]</div>') +
+            (item.thumbnail ? '<img class="cover" src="' + esc(item.thumbnail) + '" alt="' + esc(item.title) + '" loading="lazy" onerror="this.onerror=null; this.src=\'/assets/favicon.svg\';">' : '<div class="cover cover-fallback"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" opacity="0.3"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>') +
             '<div class="card-play-overlay"><span class="play-icon">▶</span><span class="play-text">' + (kind ? 'OPEN' : 'PLAY') + '</span></div>' +
         '</div>' +
         '<div class="card-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div>' +
-        '<div class="card-subtitle"><span class="tui-state-badge">' + badgeText + '</span> ' + esc(item.artist || vid || 'Various') + durStr + '</div>' +
+        '<div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[' + badgeText + ']</span><span class="modern-only">' + badgeText + '</span></span> ' + esc(item.artist || vid || 'Various') + durStr + '</div>' +
         '</div>';
 }
 
@@ -634,7 +634,10 @@ async function init() {
             const rb = document.getElementById('repeat-btn');
             if (rb) {
                 rb.dataset.state = player.repeatMode;
-                rb.textContent = player.repeatMode === 'none' ? '[REP: OFF]' : (player.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+                const tuiSpan = rb.querySelector('.tui-only');
+                const repText = player.repeatMode === 'none' ? '[REP: OFF]' : (player.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+                if (tuiSpan) tuiSpan.textContent = repText;
+                else rb.textContent = repText;
             }
             const sb = document.getElementById('shuffle-btn');
             if (sb) sb.classList.toggle('on', player.shuffleMode);
@@ -661,7 +664,10 @@ function cycleRepeat() {
     const btn = document.getElementById('repeat-btn');
     if (btn) {
         btn.dataset.state = nxt;
-        btn.textContent = nxt === 'none' ? '[REP: OFF]' : (nxt === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+        const tuiSpan = btn.querySelector('.tui-only');
+        const repText = nxt === 'none' ? '[REP: OFF]' : (nxt === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+        if (tuiSpan) tuiSpan.textContent = repText;
+        else btn.textContent = repText;
     }
 }
 
