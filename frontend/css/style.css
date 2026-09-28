@@ -162,9 +162,6 @@ body.theme-liquidglass {
   --card-hover: rgba(56, 189, 248, 0.12);
   --highlight-bg: #0284c7;
   --highlight-fg: #ffffff;
-}
-
-body.theme-liquidglass {
   background: 
     radial-gradient(ellipse 80% 50% at 20% -20%, rgba(14, 165, 233, 0.18), transparent 70%),
     radial-gradient(ellipse 60% 50% at 85% 105%, rgba(99, 102, 241, 0.14), transparent 70%),
@@ -2815,16 +2812,8 @@ select {
   .tui-mini-viz {
     display: none;
   }
-}
 
-/* 4. Mobile Devices & Small Tablets (max-width: 768px) */
-@media (max-width: 768px) {
-  :root {
-    --rail: 0px;
-    --player: 108px;
-    --pad: 14px;
-  }
-
+  /* Sidebar becomes horizontal bottom tab bar */
   #app {
     display: grid;
     grid-template-columns: 100%;
@@ -2922,136 +2911,6 @@ select {
     left: 0;
     right: 0;
     width: 100vw;
-  }
-
-  #now-playing {
-    left: 0;
-    right: 0;
-    inset: 0 0 0 0;
-    z-index: 140;
-    padding: 0;
-  }
-
-  .now-playing-content {
-    padding: 12px 14px;
-  }
-
-  .now-playing-head {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding-bottom: 8px;
-    gap: 8px;
-  }
-
-  .now-playing-head h2 {
-    font-size: 18px;
-  }
-
-  .lyrics-head-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-  }
-
-  .now-playing-body {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 10px;
-  }
-
-  .now-deck-sidebar {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .now-cover-frame {
-    width: 80px;
-    min-width: 80px;
-    max-width: 80px;
-    padding: 3px;
-    margin: 0;
-  }
-
-  .cover-telemetry {
-    display: none;
-  }
-
-  .now-deck-telemetry {
-    flex: 1;
-    padding: 8px 10px;
-    gap: 6px;
-  }
-
-  .deck-specs-box,
-  .now-art-zoom-btn {
-    display: none;
-  }
-
-  .lyrics-scroll-wrap {
-    flex: 1;
-    min-height: 0;
-  }
-
-  #lyrics-lines {
-    padding: 14px 6px 60px 2px;
-    gap: 4px;
-  }
-
-  .lyric-line {
-    font-size: clamp(14px, 3.8vw, 17px);
-    line-height: 1.45;
-    padding: 8px 10px;
-    gap: 10px;
-  }
-  #toast {
-    bottom: calc(var(--player) + 54px);
-  }
-
-  /* Fullscreen Modal Drawers on Small Screens & Tablets */
-  #settings-panel, #queue-panel, #equalizer-panel {
-    position: fixed;
-    inset: 0 0 0 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100dvh;
-    z-index: 200;
-    border-left: none;
-    padding: 16px 16px 80px;
-    box-shadow: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .drawer-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .drawer-head-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .eq-head-title {
-    min-width: 0;
-  }
-
-  .drawer-head h2, .drawer-head h3 {
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 
