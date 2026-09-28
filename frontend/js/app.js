@@ -603,12 +603,198 @@ function initRealtime() {
     }
 }
 
+let currentUiScale = 1.0;
+
+function updateResponsiveZoom() {
+    const scale = currentUiScale || 1.0;
+    const effectiveW = window.innerWidth / scale;
+    const effectiveH = window.innerHeight / scale;
+    document.documentElement.classList.toggle('layout-compact-rail', effectiveW < 1260);
+    document.documentElement.classList.toggle('layout-compact-player-bar', effectiveW < 1320);
+    document.documentElement.classList.toggle('layout-stacked-player', effectiveW < 880 || effectiveH < 560);
+}
+
+function setUiScale(scale, notify = true) {
+    const numericScale = Math.min(1.40, Math.max(0.70, Math.round(Number(scale) * 100) / 100));
+    currentUiScale = numericScale;
+    window.currentUiScale = numericScale;
+    
+    // Apply zoom to documentElement for full page element scaling
+    document.documentElement.style.zoom = numericScale;
+    document.documentElement.style.setProperty('--ui-scale', String(numericScale));
+    
+    // Update responsive layout classes for zoomed coordinate system
+    updateResponsiveZoom();
+    
+    // Update label & slider
+    const label = document.getElementById('zoom-value-label');
+    if (label) label.textContent = `${Math.round(numericScale * 100)}%`;
+    
+    const slider = document.getElementById('zoom-slider');
+    if (slider) slider.value = Math.round(numericScale * 100);
+    
+    // Update active preset button
+    document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
+        const btnScale = parseFloat(btn.dataset.scale);
+        btn.classList.toggle('active', Math.abs(btnScale - numericScale) < 0.02);
+    });
+    
+    localStorage.setItem('pulseterm_zoom', String(numericScale));
+    setLocalSettings({ uiScale: numericScale });
+    if (notify) {
+        showToast(`>> UI SCALE: ${Math.round(numericScale * 100)}%`);
+    }
+}
+
+function changeUiScale(delta) {
+    setUiScale(currentUiScale + delta, true);
+}
+
+window.currentUiScale = currentUiScale;
+window.setUiScale = setUiScale;
+window.changeUiScale = changeUiScale;
+window.updateResponsiveZoom = updateResponsiveZoom;
+window.addEventListener('resize', updateResponsiveZoom);
+
+// =========================================================================
+// Dual-Layer Settings Engine: Local-First (0ms sync) + SQLite DB Fallback Sync
+// =========================================================================
+const SETTINGS_STORAGE_KEY = 'pulseterm_settings';
+
+function getLocalSettings() {
+    try {
+        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch {}
+    const theme = localStorage.getItem('pulseterm_theme');
+    const zoom = parseFloat(localStorage.getItem('pulseterm_zoom'));
+    if (theme || !isNaN(zoom)) {
+        return {
+            theme: theme || 'dark',
+            uiScale: !isNaN(zoom) ? zoom : 1.0,
+        };
+    }
+    return null;
+}
+
+function setLocalSettings(data) {
+    if (!data || typeof data !== 'object') return {};
+    try {
+        const existing = getLocalSettings() || {};
+        const merged = { ...existing, ...data };
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+        if (merged.theme) localStorage.setItem('pulseterm_theme', merged.theme);
+        if (merged.uiScale) localStorage.setItem('pulseterm_zoom', String(merged.uiScale));
+        return merged;
+    } catch {
+        return data;
+    }
+}
+
+function applySettings(d, syncInputs = true) {
+    if (!d || typeof d !== 'object') return;
+
+    // 1. UI Zoom Scale
+    const scale = parseFloat(d.uiScale ?? d.zoom);
+    if (!isNaN(scale) && scale >= 0.70 && scale <= 1.40) {
+        setUiScale(scale, false);
+    }
+
+    // 2. Theme
+    const themeToApply = d.theme && THEME_LIST.includes(d.theme) ? d.theme : (d.theme || 'dark');
+    document.body.className = 'theme-' + themeToApply;
+    document.querySelectorAll('.theme-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.theme === themeToApply);
+    });
+
+    // 3. Audio & Playback Parameters
+    if (typeof d.volume === 'number' && Number.isFinite(d.volume)) {
+        player.setVolume(d.volume);
+    }
+    if (d.repeat && ['none', 'all', 'one'].includes(d.repeat)) {
+        player.repeatMode = d.repeat;
+        const rb = document.getElementById('repeat-btn');
+        if (rb) {
+            rb.dataset.state = player.repeatMode;
+            rb.textContent = player.repeatMode === 'none' ? '[REP: OFF]' : (player.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
+        }
+    }
+    if (typeof d.shuffle !== 'undefined') {
+        player.setShuffle(Boolean(d.shuffle)).catch(() => {});
+        const sb = document.getElementById('shuffle-btn');
+        if (sb) sb.classList.toggle('on', player.shuffleMode);
+    }
+    if (typeof d.crossfade !== 'undefined') {
+        player.crossfade = Number(d.crossfade) || 0;
+        const cfLabel = document.getElementById('crossfade-value');
+        if (cfLabel) cfLabel.textContent = player.crossfade + 's';
+    }
+    if (typeof d.speed !== 'undefined') {
+        player.setPlaybackSpeed(Number(d.speed) || 1);
+    }
+    if (Number(d.sleepMinutes) > 0) {
+        player.setSleepTimer(Number(d.sleepMinutes));
+    }
+    if (typeof d.queueLimit !== 'undefined') {
+        player.setQueueLimit(Number(d.queueLimit) || 20);
+    }
+
+    // 4. Update Form Inputs if Settings Panel exists
+    if (syncInputs) {
+        const sh = document.getElementById('settings-shuffle'); if (sh) sh.checked = Boolean(player.shuffleMode);
+        const rp = document.getElementById('settings-repeat'); if (rp) rp.value = player.repeatMode;
+        const cf = document.getElementById('settings-crossfade'); if (cf) cf.value = player.crossfade;
+        const sp = document.getElementById('settings-speed'); if (sp) sp.value = player.audio?.playbackRate || 1;
+        const sl = document.getElementById('settings-sleep'); if (sl) sl.value = String(d.sleepMinutes || 0);
+        const ql = document.getElementById('settings-queue-limit'); if (ql) ql.value = String(player.queueLimit || 20);
+        const sv = document.getElementById('settings-volume'); if (sv) sv.value = Math.round((player.volume ?? 0.8) * 100);
+    }
+
+    const vol = player.volume ?? 0.8;
+    const vReadout = document.getElementById('vol-readout');
+    if (vReadout) vReadout.textContent = Math.round(vol * 100) + '%';
+}
+
+async function syncSettingsWithServer(localSettings) {
+    try {
+        const res = await getSettings();
+        if (res?.success && res.data) {
+            const server = res.data;
+            if (!localSettings) {
+                // Layer 2 Fallback: Local storage was empty (cache wiped / first visit) -> restore from DB
+                setLocalSettings(server);
+                applySettings(server);
+            } else {
+                // Dual layer merge: retain local overrides while syncing server defaults
+                const merged = setLocalSettings(server);
+                applySettings(merged);
+            }
+        }
+    } catch (e) {
+        console.debug('Background settings DB sync notice:', e);
+    }
+}
+
 async function init() {
+    // LAYER 1 (Early 0ms): Apply theme and UI zoom before DOM renders to prevent any visual flash
+    const localSettings = getLocalSettings();
+    applySettings(localSettings || { theme: localStorage.getItem('pulseterm_theme') || 'dark' });
+
     player.init();
     equalizer.initAudioContext();
     equalizer.updateUI();
     visualizer.init(player.audio);
     initRealtime();
+
+    // LAYER 1 (Player bound): Re-apply settings to player instance
+    if (localSettings) {
+        applySettings(localSettings);
+    }
+
+    // LAYER 2: Background sync with SQLite database (non-blocking)
+    syncSettingsWithServer(localSettings);
+
+    // Non-blocking home render
     await renderPage('home');
 
     // Seek bar hover scrub tooltip
@@ -641,51 +827,6 @@ async function init() {
             sClear.classList.toggle('hidden', !sInput.value);
         });
     }
-
-    const localZoom = parseFloat(localStorage.getItem('pulseterm_zoom'));
-    if (!isNaN(localZoom) && localZoom >= 0.70 && localZoom <= 1.40) {
-        setUiScale(localZoom, false);
-    } else {
-        setUiScale(1.0, false);
-    }
-
-    const localTheme = localStorage.getItem('pulseterm_theme');
-    let themeToApply = localTheme || 'dark';
-    try {
-        const settings = await getSettings();
-        if (settings.success && settings.data) {
-            const d = settings.data;
-            if (d.theme) themeToApply = d.theme;
-            document.body.className = 'theme-' + themeToApply;
-            document.querySelectorAll('.theme-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.theme === themeToApply);
-            });
-            player.setVolume(Number.isFinite(d.volume) ? d.volume : .8);
-            player.repeatMode = ['none', 'all', 'one'].includes(d.repeat) ? d.repeat : 'none';
-            await player.setShuffle(!!d.shuffle);
-            player.crossfade = Number(d.crossfade) || 0;
-            player.setPlaybackSpeed(Number(d.speed) || 1);
-            if (Number(d.sleepMinutes) > 0) player.setSleepTimer(Number(d.sleepMinutes));
-            const rb = document.getElementById('repeat-btn');
-            if (rb) {
-                rb.dataset.state = player.repeatMode;
-                rb.textContent = player.repeatMode === 'none' ? '[REP: OFF]' : (player.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
-            }
-            const sb = document.getElementById('shuffle-btn');
-            if (sb) sb.classList.toggle('on', player.shuffleMode);
-            const sh = document.getElementById('settings-shuffle'); if (sh) sh.checked = player.shuffleMode;
-            const rp = document.getElementById('settings-repeat'); if (rp) rp.value = player.repeatMode;
-            const cf = document.getElementById('settings-crossfade'); if (cf) cf.value = player.crossfade;
-            const sp = document.getElementById('settings-speed'); if (sp) sp.value = player.audio.playbackRate;
-            const sl = document.getElementById('settings-sleep'); if (sl) sl.value = String(d.sleepMinutes || 0);
-            const ql = document.getElementById('settings-queue-limit'); if (ql) ql.value = String(player.queueLimit || 20);
-            const cfLabel = document.getElementById('crossfade-value'); if (cfLabel) cfLabel.textContent = player.crossfade + 's';
-        }
-    } catch {}
-
-    const vol = player.volume ?? 0.8;
-    const vReadout = document.getElementById('vol-readout');
-    if (vReadout) vReadout.textContent = Math.round(vol * 100) + '%';
 }
 
 const REPEAT_ORDER = ['none', 'all', 'one'];
@@ -782,83 +923,31 @@ window.setTheme = function(t, btn) {
     document.querySelectorAll('.theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeName || b === btn);
     });
-    localStorage.setItem('pulseterm_theme', themeName);
+    setLocalSettings({ theme: themeName });
     saveSettings({ theme: themeName }).catch(() => {});
 };
 
-let currentUiScale = 1.0;
-
-function updateResponsiveZoom() {
-    const scale = currentUiScale || 1.0;
-    const effectiveW = window.innerWidth / scale;
-    const effectiveH = window.innerHeight / scale;
-    document.documentElement.classList.toggle('layout-compact-rail', effectiveW < 1260);
-    document.documentElement.classList.toggle('layout-compact-player-bar', effectiveW < 1320);
-    document.documentElement.classList.toggle('layout-stacked-player', effectiveW < 880 || effectiveH < 560);
-}
-
-function setUiScale(scale, notify = true) {
-    const numericScale = Math.min(1.40, Math.max(0.70, Math.round(Number(scale) * 100) / 100));
-    currentUiScale = numericScale;
-    window.currentUiScale = numericScale;
-    
-    // Apply zoom to documentElement for full page element scaling
-    document.documentElement.style.zoom = numericScale;
-    document.documentElement.style.setProperty('--ui-scale', String(numericScale));
-    
-    // Update responsive layout classes for zoomed coordinate system
-    updateResponsiveZoom();
-    
-    // Update label & slider
-    const label = document.getElementById('zoom-value-label');
-    if (label) label.textContent = `${Math.round(numericScale * 100)}%`;
-    
-    const slider = document.getElementById('zoom-slider');
-    if (slider) slider.value = Math.round(numericScale * 100);
-    
-    // Update active preset button
-    document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
-        const btnScale = parseFloat(btn.dataset.scale);
-        btn.classList.toggle('active', Math.abs(btnScale - numericScale) < 0.02);
-    });
-    
-    localStorage.setItem('pulseterm_zoom', String(numericScale));
-    if (notify) {
-        showToast(`>> UI SCALE: ${Math.round(numericScale * 100)}%`);
-    }
-}
-
-function changeUiScale(delta) {
-    setUiScale(currentUiScale + delta, true);
-}
-
-window.currentUiScale = currentUiScale;
-window.setUiScale = setUiScale;
-window.changeUiScale = changeUiScale;
-window.updateResponsiveZoom = updateResponsiveZoom;
-window.addEventListener('resize', updateResponsiveZoom);
-
-window.savePlayerSettings = async function() {
+window.savePlayerSettings = function() {
     const activeThemeBtn = document.querySelector('.theme-btn.active');
     const theme = activeThemeBtn?.dataset.theme || (document.body.className.replace('theme-', '') || 'dark');
-    const vol = document.getElementById('settings-volume').value / 100;
-    const shuffle = document.getElementById('settings-shuffle').checked;
-    const repeat = document.getElementById('settings-repeat').value;
+    const vol = Number(document.getElementById('settings-volume')?.value || 80) / 100;
+    const shuffle = Boolean(document.getElementById('settings-shuffle')?.checked);
+    const repeat = document.getElementById('settings-repeat')?.value || 'none';
     const crossfade = Number(document.getElementById('settings-crossfade')?.value || 0);
     const speed = Number(document.getElementById('settings-speed')?.value || 1);
     const sleepMinutes = Number(document.getElementById('settings-sleep')?.value || 0);
     const queueLimit = Number(document.getElementById('settings-queue-limit')?.value || 20);
-    localStorage.setItem('pulseterm_theme', theme);
-    await saveSettings({ theme, volume: vol, shuffle, repeat, crossfade, speed, sleepMinutes });
-    player.setVolume(vol);
-    await player.setRepeat(repeat);
-    await player.setShuffle(shuffle);
-    player.crossfade = crossfade;
-    player.setPlaybackSpeed(speed);
-    player.setSleepTimer(sleepMinutes);
-    player.setQueueLimit(queueLimit);
+
+    const newSettings = { theme, volume: vol, shuffle, repeat, crossfade, speed, sleepMinutes, queueLimit };
+
+    // 1. Layer 1: Optimistic Local-First write (0ms)
+    setLocalSettings(newSettings);
+    applySettings(newSettings);
     player.saveState();
-    document.getElementById('settings-panel').classList.add('hidden');
+    document.getElementById('settings-panel')?.classList.add('hidden');
+
+    // 2. Layer 2: Background sync with SQLite database
+    saveSettings(newSettings).catch(e => console.debug('Settings DB sync notice:', e));
 };
 
 function isEditingText(el) {

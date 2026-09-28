@@ -612,9 +612,14 @@ const player = {
             this.userQueue = this._norm(s.userQueue || []);
             this.history = this._norm(s.history || []);
             this.savedPosition = Math.max(0, Number(s.position) || 0);
-            this.shuffleMode = !!s.shuffle;
-            this.repeatMode = s.repeat || 'none';
-            this.setVolume(Number.isFinite(s.volume) ? s.volume : this.volume, false);
+            const localSt = (() => {
+                try { return JSON.parse(localStorage.getItem('pulseterm_settings') || '{}'); } catch { return {}; }
+            })();
+            this.shuffleMode = typeof localSt.shuffle !== 'undefined' ? Boolean(localSt.shuffle) : (!!s.shuffle);
+            this.repeatMode = (localSt.repeat && ['none', 'all', 'one'].includes(localSt.repeat)) ? localSt.repeat : (s.repeat || 'none');
+            if (typeof localSt.crossfade !== 'undefined') this.crossfade = Number(localSt.crossfade) || 0;
+            const targetVol = (typeof localSt.volume === 'number' && Number.isFinite(localSt.volume)) ? localSt.volume : (Number.isFinite(s.volume) ? s.volume : this.volume);
+            this.setVolume(targetVol, false);
             this.currentSong = s.currentSong ? this._norm([s.currentSong])[0] : null;
             if (this.currentSong) {
                 this._adoptContinueSeed(this.currentSong);

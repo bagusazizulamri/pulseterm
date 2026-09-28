@@ -175,6 +175,14 @@ async def get_setting(key):
             row = await cur.fetchone()
             return row["value"] if row else None
 
+async def get_all_settings():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT key, value FROM settings") as cur:
+            rows = await cur.fetchall()
+            return {r["key"]: r["value"] for r in rows}
+
+
 async def add_search_history(query):
     q = (query or "").strip()
     if not q:

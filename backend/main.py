@@ -13,7 +13,7 @@ from config import APP_PORT, APP_HOST, CORS_ORIGINS, CACHE_DIR
 from database import (init_db, get_playlists, get_playlist_songs,
     create_playlist, add_song_to_playlist, remove_song_from_playlist,
     delete_playlist, add_history, get_history, clear_history,
-    save_setting, get_setting, add_search_history, get_search_history,
+    save_setting, get_setting, get_all_settings, add_search_history, get_search_history,
     clear_search_history, get_liked, liked_ids, is_liked, set_liked,
     get_cached_lyrics, cache_lyrics)
 from api import music, recommend, stream
@@ -849,8 +849,9 @@ SETTINGS_DEFAULTS = {"theme": "dark", "volume": 0.8, "shuffle": False, "repeat":
 @app.get("/api/settings")
 async def get_settings():
     out = dict(SETTINGS_DEFAULTS)
+    all_raw = await get_all_settings()
     for key, default in SETTINGS_DEFAULTS.items():
-        raw = await get_setting(key)
+        raw = all_raw.get(key)
         if raw is None:
             continue
         try:
