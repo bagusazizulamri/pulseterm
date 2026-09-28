@@ -2,6 +2,8 @@
 // 10-Band Parametric Audio DSP with Genre Presets & Anti-Clipping Dynamics Limiter
 
 import { spatial } from './spatial.js';
+import { getGenre } from './api.js';
+import { mapGenresToPreset, detectPresetLocal } from './eq-core.js';
 
 export const EQ_FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 export const EQ_LABELS = ['32Hz', '64Hz', '125Hz', '250Hz', '500Hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz'];
@@ -139,6 +141,8 @@ class TerminalEqualizer {
         this.isOpen = false;
         this.autoMode = false;
         this.lastTunedHint = '';
+        this._autoToken = 0;
+        this._genreCache = new Map();
 
         this.loadState();
     }
@@ -379,13 +383,11 @@ class TerminalEqualizer {
 
     autoDetectPreset(song) {
         if (!song) return 'perfect';
-        const text = `${song.title || ''} ${song.artist || ''} ${song.album || ''}`.toLowerCase();
-        for (const rule of GENRE_RULES) {
-            if (rule.words.some(w => text.includes(w))) {
-                return rule.preset;
-            }
+        const cacheKey = song.id || song.videoId || `${song.title || ''}_${song.artist || ''}`;
+        if (cacheKey && this._genreCache.has(cacheKey)) {
+            return this._genreCache.get(cacheKey);
         }
-        return 'perfect';
+        return detectPresetLocal(song);
     }
 
     toggleAutoMode() {
@@ -401,9 +403,38 @@ class TerminalEqualizer {
         return this.autoMode;
     }
 
-    onTrackChange(song) {
+    async onTrackChange(song) {
         if (!this.autoMode || !this.enabled || !song) return;
-        const presetKey = this.autoDetectPreset(song);
+        const token = ++this._autoToken;
+        const cacheKey = song.id || song.videoId || `${song.title || ''}_${song.artist || ''}`;
+        let presetKey = null;
+
+        if (cacheKey && this._genreCache.has(cacheKey)) {
+            presetKey = this._genreCache.get(cacheKey);
+        } else {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1000);
+            try {
+                const res = await getGenre(
+                    { title: song.title || '', artist: song.artist || '', album: song.album || '' },
+                    { signal: controller.signal }
+                );
+                clearTimeout(timeoutId);
+                if (res && res.success && res.data && Array.isArray(res.data.genres) && res.data.genres.length > 0) {
+                    presetKey = mapGenresToPreset(res.data.genres);
+                }
+            } catch (e) {
+                clearTimeout(timeoutId);
+            }
+            if (!presetKey) {
+                presetKey = detectPresetLocal(song);
+            }
+            if (cacheKey && presetKey) {
+                this._genreCache.set(cacheKey, presetKey);
+            }
+        }
+
+        if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
         this.applyPreset(presetKey);
         this.lastTunedHint = `AUTO (${EQ_PRESETS[presetKey]?.name || presetKey.toUpperCase()})`;
         this.updateUI();

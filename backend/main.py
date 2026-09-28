@@ -891,7 +891,15 @@ async def update_settings(body: dict = None):
     settings = await get_settings()
     return {"success": True, "data": settings["data"]}
 
+
+@app.get("/api/genre")
+async def genre_of(title: str = Query("", max_length=300), artist: str = Query("", max_length=300), album: str = Query("", max_length=300)):
+    prof = recommend.profile({"title": title, "artist": artist, "album": album})
+    return {"success": True, "data": {"genres": prof["genres"], "vibes": prof["vibes"]}}
+
+
 app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dir, "assets")), name="assets")
+
 
 FAVICON_PATH = os.path.join(frontend_dir, "assets", "favicon.svg")
 

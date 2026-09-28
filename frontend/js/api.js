@@ -1,12 +1,12 @@
 const API_BASE = '';
 
-async function apiGet(endpoint) {
+async function apiGet(endpoint, options = {}) {
     try {
-        const res = await fetch(API_BASE + endpoint);
+        const res = await fetch(API_BASE + endpoint, options);
         const data = await res.json();
         return data;
     } catch (e) {
-        console.error('API Error:', e);
+        if (e.name !== 'AbortError') console.error('API Error:', e);
         return { success: false, data: null };
     }
 }
@@ -249,4 +249,13 @@ export async function getSettings() {
 
 export async function saveSettings(data) {
     return apiPost('/api/settings', data);
+}
+
+export async function getGenre(meta = {}, options = {}) {
+    const params = new URLSearchParams();
+    if (meta.title) params.set('title', meta.title);
+    if (meta.artist) params.set('artist', meta.artist);
+    if (meta.album) params.set('album', meta.album);
+    const qs = params.toString();
+    return apiGet(`/api/genre${qs ? '?' + qs : ''}`, options);
 }
