@@ -1,0 +1,918 @@
+/* ==========================================================================
+   PULSETERM MODERN STUDIO GUI LAYOUT (APPLE MUSIC INSPIRED)
+   Strictly isolated under body.layout-modern.
+   Zero specificity collisions with Retro TUI default layout.
+   ========================================================================== */
+
+body.layout-modern {
+  --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", -system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-term: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", -system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --rail: 240px;
+  --player: 84px;
+  letter-spacing: -0.01em;
+}
+
+/* ================== GLOBAL MODERN ELEVATIONS & SURFACES ================== */
+body.layout-modern button {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+body.layout-modern input,
+body.layout-modern select,
+body.layout-modern textarea {
+  font-family: var(--font-mono);
+}
+
+body.layout-modern ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+body.layout-modern ::-webkit-scrollbar-track {
+  background: transparent;
+  border: none;
+}
+
+body.layout-modern ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+}
+
+body.layout-modern ::-webkit-scrollbar-thumb:hover {
+  background: var(--seal);
+}
+
+/* ================== SIDEBAR (FROSTED ACRYLIC NAVIGATION) ================== */
+body.layout-modern #sidebar {
+  background: var(--paper-2);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-right: 1px solid var(--line);
+  padding: 16px 14px 12px 14px;
+}
+
+body.layout-modern .modern-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 18px 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+body.layout-modern .modern-brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--seal), #ff2d55);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--seal-glow);
+}
+
+body.layout-modern .modern-brand-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+body.layout-modern .modern-brand-info {
+  display: flex;
+  flex-direction: column;
+}
+
+body.layout-modern .modern-brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+body.layout-modern .modern-brand-sub {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--seal);
+}
+
+body.layout-modern .modern-nav-group {
+  margin-bottom: 18px;
+}
+
+body.layout-modern .modern-nav-group-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  padding: 0 10px 6px 10px;
+}
+
+body.layout-modern .rail-nav {
+  gap: 4px;
+}
+
+body.layout-modern .nav-btn {
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.layout-modern .nav-btn .nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  transition: color 0.18s;
+}
+
+body.layout-modern .nav-btn .nav-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+body.layout-modern .nav-btn:hover {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+body.layout-modern .nav-btn:hover .nav-icon {
+  color: var(--ink);
+}
+
+body.layout-modern .nav-btn.active {
+  background: var(--seal);
+  color: var(--paper);
+  font-weight: 600;
+  box-shadow: 0 4px 16px var(--seal-glow);
+}
+
+body.layout-modern .nav-btn.active .nav-icon {
+  color: var(--paper);
+}
+
+body.layout-modern .sidebar-footer {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  gap: 10px;
+}
+
+body.layout-modern .modern-sidebar-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  color: var(--ink-3);
+}
+
+body.layout-modern .modern-vol-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+body.layout-modern .modern-vol-icon svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+body.layout-modern .volume-wrap input[type="range"] {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--paper-3);
+}
+
+body.layout-modern input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--line);
+}
+
+body.layout-modern input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--seal);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin-top: -4px;
+  transition: transform 0.15s ease;
+}
+
+body.layout-modern input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+/* ================== TOP BAR (CLEAN UNCLUTTERED HEADER) ================== */
+body.layout-modern #top-bar {
+  height: 56px;
+  background: var(--paper-2);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-bottom: 1px solid var(--line);
+  padding: 0 24px;
+}
+
+body.layout-modern .tui-prompt-wrap {
+  max-width: 480px;
+}
+
+body.layout-modern .search-bar {
+  border-radius: 9999px;
+  padding: 5px 14px;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+body.layout-modern .search-bar:focus-within {
+  border-color: var(--seal);
+  box-shadow: 0 0 0 3px var(--seal-glow);
+  background: var(--paper-3);
+}
+
+body.layout-modern .search-bar input {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+body.layout-modern .modern-search-icon {
+  display: flex;
+  align-items: center;
+  color: var(--ink-3);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+body.layout-modern .modern-search-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+body.layout-modern .modern-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+body.layout-modern .modern-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  transition: all 0.18s ease;
+}
+
+body.layout-modern .modern-pill-badge:hover {
+  border-color: var(--seal);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+body.layout-modern .modern-pill-badge.active,
+body.layout-modern .modern-spatial-active {
+  background: linear-gradient(135deg, var(--seal), #ff2d55);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--seal-glow);
+}
+
+body.layout-modern .modern-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  transition: all 0.18s ease;
+}
+
+body.layout-modern .modern-icon-btn:hover {
+  border-color: var(--seal);
+  color: var(--ink);
+  background: var(--paper-3);
+  transform: scale(1.05);
+}
+
+body.layout-modern .modern-icon-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+/* ================== STUDIO CONTROL CENTER POPOVER ================== */
+body.layout-modern #modern-options-popover {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 330px;
+  background: var(--paper-2);
+  backdrop-filter: blur(35px) saturate(190%);
+  -webkit-backdrop-filter: blur(35px) saturate(190%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.2);
+  padding: 16px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+body.layout-modern #modern-options-popover.hidden {
+  display: none !important;
+}
+
+body.layout-modern .popover-section-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+
+body.layout-modern .popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--wash);
+  border-radius: 12px;
+  font-size: 12.5px;
+}
+
+body.layout-modern .popover-row-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+body.layout-modern .popover-segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: var(--paper-3);
+  padding: 3px;
+  border-radius: 12px;
+}
+
+body.layout-modern .popover-segmented-btn {
+  padding: 5px 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  color: var(--ink-3);
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+body.layout-modern .popover-segmented-btn:hover {
+  color: var(--ink);
+}
+
+body.layout-modern .popover-segmented-btn.active {
+  background: var(--seal);
+  color: var(--paper);
+  box-shadow: 0 2px 8px var(--seal-glow);
+}
+
+body.layout-modern .popover-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body.layout-modern .popover-action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+body.layout-modern .popover-action-card:hover {
+  border-color: var(--seal);
+  background: var(--paper-3);
+  transform: translateY(-2px);
+}
+
+body.layout-modern .popover-action-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+body.layout-modern .popover-action-desc {
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+/* ================== MAIN CONTENT & APPLE-STYLE CARDS ================== */
+body.layout-modern #main-content {
+  background: var(--paper);
+  padding: 0;
+}
+
+body.layout-modern #page-content {
+  padding: 24px 32px 100px 32px;
+}
+
+body.layout-modern .page-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+
+body.layout-modern .eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 28px 0 14px 0;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.layout-modern .item-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 22px;
+}
+
+body.layout-modern .item-card {
+  position: relative;
+  border-radius: 14px;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  padding: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+body.layout-modern .item-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.45);
+  border-color: var(--line-focus);
+}
+
+body.layout-modern .cover-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.35);
+  position: relative;
+}
+
+body.layout-modern .item-card .cover {
+  border-radius: 10px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+}
+
+body.layout-modern .item-card:hover .cover {
+  transform: scale(1.03);
+  filter: brightness(0.92);
+}
+
+/* Floating Circular Play Button (Apple Music style) */
+body.layout-modern .card-play-overlay {
+  position: absolute;
+  inset: auto 10px 10px auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--seal);
+  color: var(--paper);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(8px) scale(0.9);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+  pointer-events: auto;
+}
+
+body.layout-modern .card-play-overlay .play-text {
+  display: none;
+}
+
+body.layout-modern .card-play-overlay .play-icon {
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+body.layout-modern .item-card:hover .card-play-overlay {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+body.layout-modern .card-title {
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+body.layout-modern .card-subtitle {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+body.layout-modern .card-subtitle .tui-state-badge {
+  border-radius: 4px;
+  font-size: 9.5px;
+  padding: 1px 5px;
+  margin-right: 4px;
+}
+
+/* Track list table (Apple Music row layout) */
+body.layout-modern .list {
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+body.layout-modern .list-item {
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+body.layout-modern .list-item:hover {
+  background: var(--wash);
+  color: inherit;
+  transform: translateX(3px);
+}
+
+body.layout-modern .list-item.is-playing {
+  background: var(--wash);
+  border-left: none;
+  box-shadow: inset 3px 0 0 var(--seal);
+}
+
+body.layout-modern .list-item.is-playing .list-title {
+  color: var(--seal);
+  font-weight: 700;
+}
+
+/* ================== PLAYER BAR (APPLE MUSIC FLOATING DOCK) ================== */
+body.layout-modern #player-bar {
+  background: var(--paper-2);
+  backdrop-filter: blur(35px) saturate(190%);
+  -webkit-backdrop-filter: blur(35px) saturate(190%);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+  height: 84px;
+}
+
+body.layout-modern .player-inner {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  gap: 16px;
+  padding: 0 24px;
+}
+
+/* Left: Now Playing item */
+body.layout-modern .player-info {
+  gap: 12px;
+}
+
+body.layout-modern .cover-frame {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  border: none;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+body.layout-modern .cover-frame:hover {
+  transform: scale(1.04);
+}
+
+body.layout-modern .player-cover {
+  border-radius: 8px;
+}
+
+body.layout-modern #player-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+body.layout-modern .player-subtitle {
+  font-size: 11.5px;
+}
+
+body.layout-modern .tui-icon-btn.like-btn {
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  transition: all 0.15s ease;
+}
+
+body.layout-modern .tui-icon-btn.like-btn:hover {
+  color: #ff2d55;
+  transform: scale(1.15);
+}
+
+body.layout-modern .like-btn.active svg,
+body.layout-modern .like-btn.on svg {
+  fill: #ff2d55;
+  stroke: #ff2d55;
+}
+
+/* Center: Transport & Integrated Scrubber */
+body.layout-modern .player-controls-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 380px;
+  max-width: 520px;
+  width: 100%;
+}
+
+body.layout-modern .player-controls {
+  gap: 10px;
+}
+
+body.layout-modern .player-controls .tui-btn {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  transition: all 0.15s ease;
+}
+
+body.layout-modern .player-controls .tui-btn:hover {
+  color: var(--ink);
+  background: var(--wash);
+  transform: scale(1.08);
+}
+
+body.layout-modern .play-btn {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: var(--seal) !important;
+  color: var(--paper) !important;
+  box-shadow: 0 4px 14px var(--seal-glow) !important;
+  font-size: 14px !important;
+}
+
+body.layout-modern .play-btn:hover {
+  transform: scale(1.1) !important;
+}
+
+body.layout-modern .modern-scrubber-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+body.layout-modern .modern-scrubber-track {
+  position: relative;
+  flex: 1;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+body.layout-modern #progress-bar {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--line);
+  width: 100%;
+}
+
+body.layout-modern #progress-bar::before {
+  display: none;
+}
+
+body.layout-modern #progress-fill {
+  border-radius: 9999px;
+  height: 4px;
+}
+
+body.layout-modern #progress-bar:hover #progress-fill {
+  height: 6px;
+}
+
+body.layout-modern #progress-fill::after {
+  display: none;
+}
+
+/* Right: Volume, Badges, Lyrics, Queue */
+body.layout-modern .player-right {
+  gap: 12px;
+}
+
+body.layout-modern .modern-player-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 110px;
+  color: var(--ink-3);
+}
+
+body.layout-modern .modern-player-volume svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+body.layout-modern .modern-action-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  transition: all 0.15s ease;
+}
+
+body.layout-modern .modern-action-btn:hover {
+  background: var(--wash);
+  color: var(--ink);
+}
+
+body.layout-modern .modern-action-btn.active {
+  color: var(--seal);
+}
+
+body.layout-modern .modern-action-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+body.layout-modern .modern-lossless-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  color: var(--seal);
+}
+
+/* ================== IMMERSIVE APPLE MUSIC LYRICS VIEW ================== */
+body.layout-modern #now-playing {
+  background: var(--paper);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  padding: 40px 60px;
+}
+
+body.layout-modern .now-playing-head {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+
+body.layout-modern .now-playing-head h2 {
+  font-size: clamp(24px, 3.5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+body.layout-modern .now-playing-body {
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  gap: 60px;
+  margin-top: 36px;
+}
+
+body.layout-modern #now-cover {
+  border-radius: 18px;
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px var(--seal-glow);
+}
+
+body.layout-modern #lyrics-lines {
+  max-height: calc(100vh - 250px);
+}
+
+body.layout-modern .lyric-line {
+  font-size: clamp(20px, 2.5vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  color: var(--ink-3);
+  opacity: 0.35;
+  filter: blur(0.4px);
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.layout-modern .lyric-line:hover {
+  opacity: 0.7;
+  filter: blur(0);
+}
+
+body.layout-modern .lyric-line.active {
+  color: #ffffff;
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1.02);
+  text-shadow: 0 2px 16px rgba(255, 255, 255, 0.3);
+}
+
+body.layout-modern .lyric-line.active::before {
+  display: none;
+}
+
+/* ================== DIALOGS & PANELS IN MODERN MODE ================== */
+body.layout-modern #settings-panel,
+body.layout-modern #queue-panel,
+body.layout-modern #equalizer-panel,
+body.layout-modern #visualizer-drawer,
+body.layout-modern dialog {
+  border-radius: 20px;
+  background: var(--paper-2);
+  backdrop-filter: blur(35px) saturate(190%);
+  -webkit-backdrop-filter: blur(35px) saturate(190%);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+body.layout-modern .theme-btn {
+  border-radius: 9999px;
+  font-weight: 500;
+  padding: 7px 14px;
+}

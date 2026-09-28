@@ -10,13 +10,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/layout-modern.css">
 </head>
 <body class="theme-dark">
     <div id="crt-overlay" aria-hidden="true"></div>
 
     <div id="app">
         <aside id="sidebar" aria-label="Navigation">
-            <div class="tui-brand">
+            <!-- Retro TUI Brand -->
+            <div class="tui-brand tui-only">
                 <div class="tui-logo-frame">
                     <span class="tui-logo">┌── PULSETERM ──┐</span>
                     <span class="tui-sub">│  TUI ENGINE   │</span>
@@ -24,23 +26,46 @@
                 </div>
             </div>
 
+            <!-- Modern Studio Brand -->
+            <div class="modern-brand modern-only-flex">
+                <div class="modern-brand-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                </div>
+                <div class="modern-brand-info">
+                    <span class="modern-brand-title">PulseStudio</span>
+                    <span class="modern-brand-sub">Hi-Res Audio</span>
+                </div>
+            </div>
+
+            <!-- Navigation Sections -->
+            <div class="modern-nav-group-title modern-only">Discover</div>
             <nav class="rail-nav">
                 <button onclick="navigate('home')" class="nav-btn active" data-page="home" title="Press [1] for Home">
-                    <span class="key-badge">1</span><span class="nav-text">HOME</span>
+                    <span class="key-badge tui-only">1</span>
+                    <span class="nav-icon modern-only"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>
+                    <span class="nav-text">HOME</span>
                 </button>
                 <button onclick="navigate('search')" class="nav-btn" data-page="search" title="Press [2] for Search">
-                    <span class="key-badge">2</span><span class="nav-text">SEARCH</span>
+                    <span class="key-badge tui-only">2</span>
+                    <span class="nav-icon modern-only"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
+                    <span class="nav-text">SEARCH</span>
                 </button>
+                <div class="modern-nav-group-title modern-only" style="margin-top: 14px;">Library</div>
                 <button onclick="navigate('library')" class="nav-btn" data-page="library" title="Press [3] for Library">
-                    <span class="key-badge">3</span><span class="nav-text">LIBRARY</span>
+                    <span class="key-badge tui-only">3</span>
+                    <span class="nav-icon modern-only"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></span>
+                    <span class="nav-text">LIBRARY</span>
                 </button>
                 <button onclick="navigate('playlists')" class="nav-btn" data-page="playlists" title="Press [4] for Playlists">
-                    <span class="key-badge">4</span><span class="nav-text">PLAYLISTS</span>
+                    <span class="key-badge tui-only">4</span>
+                    <span class="nav-icon modern-only"><svg viewBox="0 0 24 24"><path d="M19 9H2v2h17V9zm0-4H2v2h17V5zM2 15h11v-2H2v2zm14 0v6l5-3-5-3z"/></svg></span>
+                    <span class="nav-text">PLAYLISTS</span>
                 </button>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="tui-telemetry">
+                <!-- Retro TUI Telemetry -->
+                <div class="tui-telemetry tui-only">
                     <div class="tui-stat"><span class="tui-dim">ENGINE</span><span class="tui-val">ALSA/PCM</span></div>
                     <div class="tui-stat"><span class="tui-dim">RATE</span><span class="tui-val">48.0kHz</span></div>
                     <div class="tui-stat">
@@ -50,15 +75,23 @@
                         </button>
                     </div>
                 </div>
-                <div class="volume-wrap">
+                <div class="volume-wrap tui-only">
                     <input type="range" id="volume-slider" min="0" max="100" value="80" aria-label="Volume">
                 </div>
-                <div class="tui-side-keys">
+                <div class="tui-side-keys tui-only">
                     <div><kbd>SPC</kbd> PLAY/PAUSE</div>
                     <div><kbd>/</kbd> SEARCH</div>
                     <div><kbd>V</kbd> VISUALIZER</div>
                     <div><kbd>E</kbd> EQUALIZER</div>
                     <div><kbd>Q</kbd> QUEUE</div>
+                </div>
+
+                <!-- Modern Studio Volume Slider -->
+                <div class="modern-sidebar-volume modern-only-flex">
+                    <span class="modern-vol-icon"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></span>
+                    <div class="volume-wrap" style="flex: 1;">
+                        <input type="range" id="modern-volume-slider" min="0" max="100" value="80" aria-label="Volume" oninput="player.setVolume(this.value/100)">
+                    </div>
                 </div>
             </div>
         </aside>
@@ -66,15 +99,18 @@
         <main id="main-content">
             <header id="top-bar">
                 <div class="tui-prompt-wrap">
-                    <span class="term-prompt">user@pulseterm:~$</span>
+                    <span class="term-prompt tui-only">user@pulseterm:~$</span>
                     <div class="search-bar">
+                        <span class="modern-search-icon modern-only"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
                         <input type="text" id="search-input" placeholder="find track, artist, album... [/]" aria-label="Search YouTube Music" autocomplete="off" spellcheck="false">
                         <button id="search-clear-btn" class="tui-clear-btn hidden" onclick="window.clearSearch()" aria-label="Clear search" title="Clear input">[✕]</button>
-                        <span class="term-cursor" aria-hidden="true"></span>
-                        <button class="tui-btn search-go" onclick="doSearch()" aria-label="Execute search">[EXEC]</button>
+                        <span class="term-cursor tui-only" aria-hidden="true"></span>
+                        <button class="tui-btn search-go tui-only" onclick="doSearch()" aria-label="Execute search">[EXEC]</button>
                     </div>
                 </div>
-                <div class="top-bar-actions">
+
+                <!-- Retro TUI Top Actions -->
+                <div class="top-bar-actions tui-only">
                     <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
                     <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
                     <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
@@ -82,19 +118,57 @@
                     <button onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
                     <button onclick="toggleSettings()" class="tui-badge" title="Open terminal configuration">[CONFIG]</button>
                 </div>
+
+                <!-- Modern Studio Condensed Top Actions & Control Center -->
+                <div class="modern-top-actions modern-only-flex">
+                    <button id="modern-spatial-pill" onclick="spatial.cycleMode()" class="modern-pill-badge" title="Toggle 3D Spatial Audio Mode (X)">
+                        <span>✦ SPATIAL AUDIO</span>
+                    </button>
+                    <button id="modern-control-center-btn" onclick="window.toggleModernOptions(event)" class="modern-icon-btn" title="Studio Control Center (⌥ Audio & Settings)">
+                        <svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+                    </button>
+
+                    <!-- Studio Control Center Popover (Apple Style) -->
+                    <div id="modern-options-popover" class="hidden">
+                        <div class="popover-section-header">3D Spatial Audio (X)</div>
+                        <div class="popover-segmented" id="modern-spatial-segmented">
+                            <button class="popover-segmented-btn active" data-spatial-mode="off" onclick="spatial.setMode('off')">Off</button>
+                            <button class="popover-segmented-btn" data-spatial-mode="studio" onclick="spatial.setMode('studio')">Studio</button>
+                            <button class="popover-segmented-btn" data-spatial-mode="wide" onclick="spatial.setMode('wide')">Wide</button>
+                            <button class="popover-segmented-btn" data-spatial-mode="concert" onclick="spatial.setMode('concert')">Concert</button>
+                        </div>
+
+                        <div class="popover-section-header" style="margin-top: 4px;">Studio Audio DSP</div>
+                        <div class="popover-grid-2">
+                            <button onclick="toggleEqualizer()" class="popover-action-card">
+                                <span class="popover-action-title">🎛️ Equalizer</span>
+                                <span class="popover-action-desc" id="modern-eq-label">10-Band DSP</span>
+                            </button>
+                            <button onclick="toggleVisualizer()" class="popover-action-card">
+                                <span class="popover-action-title">📊 Visualizer</span>
+                                <span class="popover-action-desc" id="modern-viz-label">CAVA Spectrum</span>
+                            </button>
+                        </div>
+
+                        <div class="popover-section-header" style="margin-top: 4px;">Appearance & Controls</div>
+                        <div class="popover-grid-2">
+                            <button onclick="toggleSettings()" class="popover-action-card">
+                                <span class="popover-action-title">⚙️ Settings</span>
+                                <span class="popover-action-desc">Themes & Layout</span>
+                            </button>
+                            <button onclick="document.getElementById('shortcut-help').showModal()" class="popover-action-card">
+                                <span class="popover-action-title">⌨️ Shortcuts</span>
+                                <span class="popover-action-desc">Keymap Help (?)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </header>
 
             <div id="page-content"></div>
         </main>
 
         <div id="player-bar">
-            <!-- Expanded Seek Hit Target with Hover Time Tooltip -->
-            <div id="progress-bar" title="Click to seek position" role="slider" tabindex="0" aria-label="Track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                <div id="seek-tooltip" class="seek-tooltip hidden">0:00</div>
-                <div id="progress-buffered"></div>
-                <div id="progress-fill"></div>
-            </div>
-
             <div class="player-inner">
                 <div class="player-info">
                     <div class="cover-frame" onclick="toggleLyrics()" title="Click to view teletext lyrics and track artwork (L)" style="cursor: pointer;">
@@ -102,7 +176,7 @@
                     </div>
                     <div class="player-meta">
                         <div class="title-row">
-                            <span id="player-state-badge" class="tui-state-badge">[IDLE]</span>
+                            <span id="player-state-badge" class="tui-state-badge tui-only">[IDLE]</span>
                             <span id="player-title" onclick="toggleLyrics()" title="Click to view teletext lyrics">Nothing playing</span>
                         </div>
                         <span id="player-artist" class="player-subtitle">Press [/] to search or select a track</span>
@@ -111,34 +185,73 @@
                     <button onclick="toggleLike()" class="tui-icon-btn like-btn" id="like-btn" aria-label="Save to liked" title="Favorite track">
                         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19.4S4.6 14.7 4.6 9.9A4.15 4.15 0 0 1 12 7.5a4.15 4.15 0 0 1 7.4 2.4c0 4.8-7.4 9.5-7.4 9.5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
-                    <button onclick="toggleLyrics()" class="tui-btn lyrics-toggle" id="lyrics-toggle" title="View synchronized teletext lyrics (L)">[LYRICS]</button>
+                    <button onclick="toggleLyrics()" class="tui-btn lyrics-toggle tui-only" id="lyrics-toggle" title="View synchronized teletext lyrics (L)">[LYRICS]</button>
                 </div>
 
-                <div class="player-controls">
-                    <button onclick="cycleRepeat()" class="tui-btn toggle-btn" id="repeat-btn" data-state="none" aria-label="Repeat" title="Cycle repeat mode (R)">
-                        [REP: OFF]
-                    </button>
-                    <button onclick="prevSong()" class="tui-btn" aria-label="Previous track" title="Previous track (P / Shift + Left)">[◀◀]</button>
-                    <button onclick="togglePlay()" class="tui-btn play-btn" id="play-btn" data-state="paused" aria-label="Play or pause" title="Play / Pause (Space)">
-                        <span class="glyph-play">[▶ PLAY]</span>
-                        <span class="glyph-pause">[❚❚ PAUSE]</span>
-                    </button>
-                    <button onclick="nextSong()" class="tui-btn" aria-label="Next track" title="Next track (N / Shift + Right)">[▶▶]</button>
-                    <button onclick="toggleShuffle()" class="tui-btn toggle-btn" id="shuffle-btn" aria-label="Shuffle" title="Shuffle queue (S)">
-                        [SHUF]
-                    </button>
-                    <button onclick="toggleContinue()" class="tui-btn toggle-btn on" id="continue-btn" aria-label="Continuing playlist" title="Auto-recommendations on queue end" aria-pressed="true">
-                        [AUTOPLAY]
-                    </button>
+                <div class="player-controls-container">
+                    <div class="player-controls">
+                        <button onclick="cycleRepeat()" class="tui-btn toggle-btn" id="repeat-btn" data-state="none" aria-label="Repeat" title="Cycle repeat mode (R)">
+                            <span class="tui-only">[REP: OFF]</span>
+                            <span class="modern-only"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></span>
+                        </button>
+                        <button onclick="prevSong()" class="tui-btn" aria-label="Previous track" title="Previous track (P / Shift + Left)">
+                            <span class="tui-only">[◀◀]</span>
+                            <span class="modern-only"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></span>
+                        </button>
+                        <button onclick="togglePlay()" class="tui-btn play-btn" id="play-btn" data-state="paused" aria-label="Play or pause" title="Play / Pause (Space)">
+                            <span class="glyph-play tui-only">[▶ PLAY]</span>
+                            <span class="glyph-pause tui-only">[❚❚ PAUSE]</span>
+                            <span class="glyph-play modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span>
+                            <span class="glyph-pause modern-only"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></span>
+                        </button>
+                        <button onclick="nextSong()" class="tui-btn" aria-label="Next track" title="Next track (N / Shift + Right)">
+                            <span class="tui-only">[▶▶]</span>
+                            <span class="modern-only"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="m6 18 8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></span>
+                        </button>
+                        <button onclick="toggleShuffle()" class="tui-btn toggle-btn" id="shuffle-btn" aria-label="Shuffle" title="Shuffle queue (S)">
+                            <span class="tui-only">[SHUF]</span>
+                            <span class="modern-only"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></span>
+                        </button>
+                        <button onclick="toggleContinue()" class="tui-btn toggle-btn on tui-only" id="continue-btn" aria-label="Continuing playlist" title="Auto-recommendations on queue end" aria-pressed="true">
+                            [AUTOPLAY]
+                        </button>
+                    </div>
+
+                    <div class="modern-scrubber-row">
+                        <span id="modern-current-time" class="modern-only">0:00</span>
+                        <!-- Unified Progress Bar: In TUI mode, positioned absolutely at top of #player-bar. In Modern mode, forms the centered Apple scrubber -->
+                        <div id="progress-bar" title="Click to seek position" role="slider" tabindex="0" aria-label="Track position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="seek-tooltip" class="seek-tooltip hidden">0:00</div>
+                            <div id="progress-buffered"></div>
+                            <div id="progress-fill"></div>
+                        </div>
+                        <span id="modern-total-time" class="modern-only">0:00</span>
+                    </div>
                 </div>
 
-                <div class="player-right">
+                <!-- Retro TUI Player Right -->
+                <div class="player-right tui-only">
                     <div class="player-clock">
                         <span id="current-time">0:00</span><span class="clock-sep">/</span><span id="total-time">0:00</span>
                     </div>
                     <span id="player-audio-quality" class="tui-bitrate-badge is-hq" title="Audio Stream Quality Telemetry">[HQ · OPUS 160K]</span>
                     <button id="player-mini-viz" class="tui-mini-viz" onclick="toggleVisualizer()" title="Click to toggle audio visualizer HUD (V)">[ ░░░░░░░░ ]</button>
                     <button onclick="toggleQueue()" class="tui-btn queue-btn" title="View queue buffer (Q)">[QUEUE]</button>
+                </div>
+
+                <!-- Modern Studio Player Right -->
+                <div class="player-right modern-only-flex">
+                    <span class="modern-lossless-badge" title="Lossless Opus Audio Stream">LOSSLESS</span>
+                    <div class="modern-player-volume">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                        <input type="range" id="modern-player-vol" min="0" max="100" value="80" aria-label="Volume" oninput="player.setVolume(this.value/100)">
+                    </div>
+                    <button onclick="toggleLyrics()" class="modern-action-btn" id="modern-lyrics-btn" title="Live Synced Lyrics (L)">
+                        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    </button>
+                    <button onclick="toggleQueue()" class="modern-action-btn" id="modern-queue-btn" title="Up Next Queue (Q)">
+                        <svg viewBox="0 0 24 24"><path d="M4 10h12v2H4zm0-4h12v2H4zm0 8h8v2H4zm10 0v6l5-3z"/></svg>
+                    </button>
                 </div>
             </div>
         </div>

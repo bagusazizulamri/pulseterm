@@ -1033,10 +1033,17 @@ const player = {
             if (fill) fill.style.width = ((current / duration) * 100) + '%';
             const bar = document.getElementById('progress-bar');
             if (bar) bar.setAttribute('aria-valuenow', String(Math.round(current / duration * 100)));
+            const isModern = document.body.classList.contains('layout-modern');
             const c = document.getElementById('current-time');
             if (c) c.textContent = formatTime(current);
             const t = document.getElementById('total-time');
-            if (t) t.textContent = formatTime(duration);
+            if (t) t.textContent = isModern ? '-' + formatTime(Math.max(0, duration - current)) : formatTime(duration);
+
+            const mc = document.getElementById('modern-current-time');
+            if (mc) mc.textContent = formatTime(current);
+            const mt = document.getElementById('modern-total-time');
+            if (mt) mt.textContent = '-' + formatTime(Math.max(0, duration - current));
+
             this.updateMediaPosition();
             this.updateActiveLyric(current * 1000);
         }
@@ -1101,6 +1108,10 @@ const player = {
         if (slider) slider.value = vol * 100;
         const slider2 = document.getElementById('settings-volume');
         if (slider2) slider2.value = vol * 100;
+        const mSlider = document.getElementById('modern-volume-slider');
+        if (mSlider) mSlider.value = vol * 100;
+        const mSlider2 = document.getElementById('modern-player-vol');
+        if (mSlider2) mSlider2.value = vol * 100;
         const readout = document.getElementById('vol-readout');
         if (readout) readout.textContent = Math.round(vol * 100) + '%';
         const shell = document.getElementById('sidebar');

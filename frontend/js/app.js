@@ -684,12 +684,51 @@ function setLayoutMode(mode, btn) {
     });
 
     localStorage.setItem('pulseterm_layout_mode', layout);
+
+    // Sync volume sliders and spatial UI on mode switch
+    if (player && Number.isFinite(player.volume)) {
+        const mSlider = document.getElementById('modern-volume-slider');
+        if (mSlider) mSlider.value = player.volume * 100;
+        const mSlider2 = document.getElementById('modern-player-vol');
+        if (mSlider2) mSlider2.value = player.volume * 100;
+    }
+    if (spatial && typeof spatial.updateUI === 'function') {
+        spatial.updateUI();
+    }
 }
 
 window.setLayoutMode = function(mode, btn) {
     setLayoutMode(mode, btn);
     showToast(mode === 'modern' ? '✦ Layout: Modern Studio GUI' : '>_ Layout: Retro Monospace Terminal');
 };
+
+window.toggleModernOptions = function(event) {
+    if (event) event.stopPropagation();
+    const popover = document.getElementById('modern-options-popover');
+    if (!popover) return;
+    const isHidden = popover.classList.toggle('hidden');
+    if (!isHidden) {
+        if (spatial && typeof spatial.updateUI === 'function') spatial.updateUI();
+        const eqLabel = document.getElementById('modern-eq-label');
+        if (eqLabel && equalizer && equalizer.currentPreset) {
+            eqLabel.textContent = `${equalizer.currentPreset} · 10-Band`;
+        }
+        const vizLabel = document.getElementById('modern-viz-label');
+        if (vizLabel && visualizer && visualizer.mode) {
+            vizLabel.textContent = `${visualizer.mode.toUpperCase()} Spectrum`;
+        }
+    }
+};
+
+document.addEventListener('click', (e) => {
+    const popover = document.getElementById('modern-options-popover');
+    const trigger = document.getElementById('modern-control-center-btn');
+    if (popover && !popover.classList.contains('hidden')) {
+        if (!popover.contains(e.target) && !trigger?.contains(e.target)) {
+            popover.classList.add('hidden');
+        }
+    }
+});
 
 window.navigate = navigate;
 window.doSearch = doSearch;
