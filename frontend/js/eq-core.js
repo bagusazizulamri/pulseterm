@@ -248,3 +248,15 @@ export function computeTuneCorrections(bandDb) {
     return { gains, preamp, hint };
 }
 
+export function calculatePannerCoordinates(azimuthDeg, radius = 1.5) {
+    // Azimuth in degrees on horizontal plane (y = 0).
+    // Listener faces -Z with forward vector (0, 0, -1).
+    // 0 deg: directly in front (0, 0, -R)
+    // +deg: to the right (x > 0, z < 0)
+    // -deg: to the left (x < 0, z < 0)
+    const rad = (azimuthDeg * Math.PI) / 180;
+    const x = Number((radius * Math.sin(rad)).toFixed(4));
+    const z = Number((-radius * Math.cos(rad)).toFixed(4));
+    const y = 0.0;
+    return { x, y, z };
+}

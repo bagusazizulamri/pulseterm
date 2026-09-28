@@ -1,5 +1,4 @@
-// PulseTerm — Minimalist 3D Binaural Spatial Audio Engine
-// Zero-Bloat, Native Web Audio API HRTF Spatializer (Apple Music Spatialize Stereo style)
+import { calculatePannerCoordinates } from './eq-core.js';
 
 export const SPATIAL_MODES = ['off', 'studio', 'wide', 'concert'];
 
@@ -7,7 +6,9 @@ export const SPATIAL_CONFIGS = {
     off: {
         name: 'OFF',
         label: 'Stereo (Bypass)',
-        centerDist: 1.0,
+        azimuthDeg: 0,
+        radius: 1.5,
+        centerDist: 1.5,
         sideWidth: 1.0,
         roomGain: 0.0,
         roomDelay: 0.015,
@@ -16,8 +17,10 @@ export const SPATIAL_CONFIGS = {
     studio: {
         name: 'STUDIO',
         label: 'Studio Monitors 3D',
-        centerDist: 1.2,      // Front phantom center speaker
-        sideWidth: 1.3,       // Natural 30-degree studio acoustic spread
+        azimuthDeg: 30,       // Standard ITU-R BS.775 30-degree monitor azimuth
+        radius: 1.5,
+        centerDist: 1.5,      // Front center
+        sideWidth: 1.0,
         roomGain: 0.12,       // Subtle acoustic room crossfeed
         roomDelay: 0.014,     // 14ms early reflection
         cutoffFreq: 6500      // High-frequency absorption by room air
@@ -25,17 +28,21 @@ export const SPATIAL_CONFIGS = {
     wide: {
         name: 'WIDE',
         label: 'Wide 3D Stage',
-        centerDist: 1.1,      // Intimate center vocals
-        sideWidth: 2.2,       // Ultra-wide spherical lateral separation
+        azimuthDeg: 45,       // Ultra-wide 45-degree lateral spread
+        radius: 1.5,
+        centerDist: 1.5,
+        sideWidth: 1.25,
         roomGain: 0.18,       // Out-of-head immersive spatialization
         roomDelay: 0.020,     // 20ms early reflection
-        cutoffFreq: 8000      // Crisp 360-degree air extension
+        cutoffFreq: 8000      // Crisp air extension
     },
     concert: {
         name: 'CONCERT',
         label: 'Concert Hall',
-        centerDist: 1.8,      // Distant grand front stage
-        sideWidth: 2.5,       // Enveloping stadium diffusion
+        azimuthDeg: 40,       // Grand concert hall 40-degree stage
+        radius: 1.5,
+        centerDist: 1.5,
+        sideWidth: 1.3,
         roomGain: 0.32,       // Lush acoustic hall reflections
         roomDelay: 0.035,     // 35ms hall reflections
         cutoffFreq: 5000      // Warm acoustic hall roll-off
@@ -171,7 +178,7 @@ class SpatialAudioEngine {
         panner.distanceModel = 'inverse';
         panner.refDistance = 1;
         panner.maxDistance = 10000;
-        panner.rolloffFactor = 1;
+        panner.rolloffFactor = 0; // Pure ITD/HRTF directional modeling without unnatural 1/r distance attenuation
         panner.coneInnerAngle = 360;
 
         if (panner.positionX) {
@@ -227,7 +234,7 @@ class SpatialAudioEngine {
         const ramp = immediate ? 0.005 : 0.06;
 
         if (mode === 'off') {
-            // Pure bit-perfect stereo bypass
+            // Unity-gain stereo bypass
             this.directGain.gain.cancelScheduledValues(now);
             this.directGain.gain.linearRampToValueAtTime(1.0, now + ramp);
 
@@ -246,10 +253,13 @@ class SpatialAudioEngine {
             this.spatialBus.gain.cancelScheduledValues(now);
             this.spatialBus.gain.linearRampToValueAtTime(1.0, now + ramp);
 
-            // Reposition Virtual 3D Stage Panners
-            this._setPannerPosition(this.midPanner, 0, 0, -cfg.centerDist, ramp);
-            this._setPannerPosition(this.leftPanner, -cfg.sideWidth, 0.15, -0.6, ramp);
-            this._setPannerPosition(this.rightPanner, cfg.sideWidth, 0.15, -0.6, ramp);
+            // Reposition Virtual 3D Stage Panners on constant sphere radius (R = 1.5m, y = 0)
+            const radius = cfg.radius || 1.5;
+            const leftCoords = calculatePannerCoordinates(-cfg.azimuthDeg, radius);
+            const rightCoords = calculatePannerCoordinates(cfg.azimuthDeg, radius);
+            this._setPannerPosition(this.midPanner, 0, 0, -radius, ramp);
+            this._setPannerPosition(this.leftPanner, leftCoords.x, leftCoords.y, leftCoords.z, ramp);
+            this._setPannerPosition(this.rightPanner, rightCoords.x, rightCoords.y, rightCoords.z, ramp);
 
             // Early Reflection & Room Acoustics
             if (this.roomGain && this.roomDelay && this.roomFilter) {
