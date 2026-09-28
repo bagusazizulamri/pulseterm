@@ -1335,6 +1335,11 @@ const player = {
             el.classList.toggle('active', isActive);
             const dist = Math.abs(i - found);
             el.dataset.dist = String(Math.min(dist, 4));
+            // Reset fill on non-active lines
+            if (!isActive) {
+                const orig = el.querySelector('.lyric-orig');
+                if (orig) orig.style.removeProperty('--lyric-progress');
+            }
         });
         if (this.lyricAutoscroll !== false) {
             const activeEl = box.querySelector('.lyric-line.active');
@@ -1346,6 +1351,29 @@ const player = {
                 });
             }
         }
+        // ── Karaoke sweep fill via RAF ──
+        if (this._lyricFillRAF) cancelAnimationFrame(this._lyricFillRAF);
+        const lineStart  = Number(this.lyrics[found].start) || 0;
+        const lineEnd    = this.lyrics[found + 1]
+            ? Number(this.lyrics[found + 1].start)
+            : lineStart + 6000;
+        const lineDur    = Math.max(400, lineEnd - lineStart);
+        const activeEl   = lines[found];
+        const origEl     = activeEl?.querySelector('.lyric-orig');
+        const romanEl    = activeEl?.querySelector('.lyric-roman');
+        if (!origEl) return;
+        const fillTick = () => {
+            const nowMs  = (this.audio?.currentTime || 0) * 1000;
+            const pct    = Math.min(100, Math.max(0, ((nowMs - lineStart) / lineDur) * 100));
+            const val    = pct.toFixed(2) + '%';
+            origEl.style.setProperty('--lyric-progress', val);
+            if (romanEl) romanEl.style.setProperty('--lyric-progress', val);
+            if (pct < 100 && activeEl.classList.contains('active')) {
+                this._lyricFillRAF = requestAnimationFrame(fillTick);
+            }
+        };
+        this._lyricFillRAF = requestAnimationFrame(fillTick);
+
     },
 
     async refreshLiked() {
@@ -1882,6 +1910,16 @@ const player = {
         };
         window.addEventListener('beforeunload', onUnload);
         window.addEventListener('pagehide', onUnload);
+        // Cancel karaoke fill RAF when audio pauses
+        if (this.audio) {
+            this.audio.addEventListener('pause', () => {
+                if (this._lyricFillRAF) { cancelAnimationFrame(this._lyricFillRAF); this._lyricFillRAF = null; }
+            });
+            this.audio.addEventListener('seeked', () => {
+                // Resume fill from new position
+                if (this.activeLyric >= 0) this.updateActiveLyric((this.audio.currentTime * 1000) - 1);
+            });
+        }
     },
 };
 

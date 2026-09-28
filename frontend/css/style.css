@@ -2205,22 +2205,21 @@ dialog.artwork-modal::backdrop {
   animation: lrcPulse 1.8s ease-in-out infinite;
 }
 
-/* Active text: animated gradient shimmer */
+/* Karaoke fill sweep — sung portion (left) = theme color, unsung (right) = gray */
 .lyric-line[data-dist="0"] .lyric-orig {
+  --lyric-progress: 0%;
   background: linear-gradient(
     90deg,
-    var(--seal) 0%,
-    color-mix(in srgb, var(--seal) 60%, white) 30%,
-    var(--seal) 55%,
-    var(--ink-2) 80%,
-    var(--seal) 100%
+    var(--seal)   0%,
+    var(--seal)   calc(var(--lyric-progress) - 2%),
+    var(--ink-2)  calc(var(--lyric-progress) + 2%),
+    var(--ink-3)  100%
   );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: lrcScan 2.4s linear infinite;
+  animation: none;
   text-shadow: none;
 }
 
@@ -2231,16 +2230,27 @@ dialog.artwork-modal::backdrop {
 }
 
 .lyric-line[data-dist="0"] .lyric-roman {
-  color: color-mix(in srgb, var(--seal) 70%, var(--ink-2));
-  opacity: 0.92;
+  --lyric-progress: 0%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--seal) 70%, var(--ink-2)) 0%,
+    color-mix(in srgb, var(--seal) 70%, var(--ink-2)) calc(var(--lyric-progress) - 3%),
+    var(--ink-3) calc(var(--lyric-progress) + 3%),
+    var(--ink-3) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
   font-style: italic;
+  opacity: 0.9;
+  text-shadow: none;
 }
 
 .lyric-line[data-dist="0"] .lyric-jump-icon {
   opacity: 1;
   transform: translateX(0);
   color: var(--seal);
-  animation: lrcPulse 1.8s ease-in-out infinite;
 }
 
 /* dist 1: bright, fading in from below */
