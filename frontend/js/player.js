@@ -1320,7 +1320,9 @@ const player = {
             const orig = el.querySelector('.lyric-orig');
             if (orig) {
                 orig.replaceChildren();
-                const words = (l.text || '').trim().split(/\s+/).filter(Boolean);
+                const words = Array.isArray(l.words_orig) && l.words_orig.length > 0
+                    ? l.words_orig
+                    : (l.text || '').trim().split(/\s+/).filter(Boolean);
                 words.forEach((w, wIdx) => {
                     const span = document.createElement('span');
                     span.className = 'lrc-word unsung';
@@ -1333,7 +1335,9 @@ const player = {
             const rom = el.querySelector('.lyric-roman');
             if (rom && l.roman) {
                 rom.replaceChildren();
-                const words = (l.roman || '').trim().split(/\s+/).filter(Boolean);
+                const words = Array.isArray(l.words_roman) && l.words_roman.length > 0
+                    ? l.words_roman
+                    : (l.roman || '').trim().split(/\s+/).filter(Boolean);
                 words.forEach((w, wIdx) => {
                     const span = document.createElement('span');
                     span.className = 'lrc-word unsung';
@@ -1347,7 +1351,7 @@ const player = {
         this.updateActiveLyric(this.audio?.currentTime * 1000 || 0);
     },
 
-    computeLineWordTimings(curLyric, lineStart, lineDur) {
+    computeLineWordTimings(curLyric, lineStart, lineDur, isRoman = false) {
         if (!curLyric) return [];
         // 1. Explicit word-level timestamps from provider (Enhanced LRC)
         if (Array.isArray(curLyric.words) && curLyric.words.length > 0) {
@@ -1357,17 +1361,25 @@ const player = {
             }));
         }
 
-        // 2. Syllable-weighted pacing model for line-level timestamps
-        const text = String(curLyric.text || '').trim();
-        const words = text.split(/\s+/).filter(Boolean);
+        // 2. Word list selection: use morphological chunks if provided
+        let words = [];
+        if (isRoman) {
+            words = Array.isArray(curLyric.words_roman) && curLyric.words_roman.length > 0
+                ? curLyric.words_roman
+                : String(curLyric.roman || '').trim().split(/\s+/).filter(Boolean);
+        } else {
+            words = Array.isArray(curLyric.words_orig) && curLyric.words_orig.length > 0
+                ? curLyric.words_orig
+                : String(curLyric.text || '').trim().split(/\s+/).filter(Boolean);
+        }
         if (!words.length) return [];
 
         const weights = words.map(w => {
             const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
             const vowels = clean.match(/[aiueoy]+/g);
-            let weight = Math.max(1, vowels ? vowels.length : 1);
-            if (/[,;]/.test(w)) weight += 0.35; // breath pause
-            if (/[.!?]/.test(w)) weight += 0.70; // sentence boundary pause
+            let weight = Math.max(1, vowels ? vowels.length : (w.length || 1));
+            if (/[,;、]/.test(w)) weight += 0.35; // breath pause (including Japanese comma)
+            if (/[.!?。]/.test(w)) weight += 0.70; // clause boundary pause (including Japanese period)
             return weight;
         });
 
@@ -1435,8 +1447,8 @@ const player = {
         const romanEl    = activeEl?.querySelector('.lyric-roman');
         if (!origEl) return;
 
-        const origTimings = this.computeLineWordTimings(curLyric, lineStart, lineDur);
-        const romanTimings = romanEl ? this.computeLineWordTimings({ text: curLyric.roman }, lineStart, lineDur) : [];
+        const origTimings = this.computeLineWordTimings(curLyric, lineStart, lineDur, false);
+        const romanTimings = romanEl ? this.computeLineWordTimings(curLyric, lineStart, lineDur, true) : [];
 
         const fillTick = () => {
             const nowMs  = Math.max(0, ((this.audio?.currentTime || 0) * 1000) - 50);

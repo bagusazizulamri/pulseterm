@@ -166,8 +166,15 @@ async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, title: str
     except Exception:
         synced = []
 
-    # Upgrade old cached lyrics without romanization
-    if synced and not any("roman" in x for x in synced if isinstance(x, dict)):
+    # Upgrade old cached lyrics without romanization or outdated Japanese transliteration
+    import re as _re
+    is_japanese = any(bool(_re.search(r'[\u3040-\u309F\u30A0-\u30FF]', x.get("text", ""))) for x in synced if isinstance(x, dict))
+    needs_upgrade = (
+        (synced and not any("roman" in x for x in synced if isinstance(x, dict))) or
+        (is_japanese and not any("words_orig" in x for x in synced if isinstance(x, dict))) or
+        bool(refresh)
+    )
+    if needs_upgrade:
         try:
             from api.translit import enrich_lyrics
             enriched = enrich_lyrics({"plain": cached.get("plain", ""), "synced": synced})

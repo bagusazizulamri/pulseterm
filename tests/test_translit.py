@@ -59,5 +59,35 @@ class TranslitTests(unittest.TestCase):
         self.assertEqual(enriched["synced"][1]["roman"], "")
 
 
+    def test_japanese_particles_and_pronouns(self):
+        # Particle は -> wa, 君 -> kimi, 好き -> suki
+        res1 = romanize_line("私は君が好き")
+        self.assertIsNotNone(res1)
+        self.assertIn("wa", res1["roman"].lower().split())
+        self.assertIn("kimi", res1["roman"].lower().split())
+        self.assertNotIn("kun", res1["roman"].lower().split())
+        self.assertNotIn("ha", res1["roman"].lower().split())
+
+        # Particle へ -> e
+        res2 = romanize_line("どこへ行くの")
+        self.assertIsNotNone(res2)
+        self.assertIn("e", res2["roman"].lower().split())
+        self.assertNotIn("he", res2["roman"].lower().split())
+
+    def test_japanese_aligned_word_chunks(self):
+        raw = {
+            "plain": "沈むように溶けてゆくように",
+            "synced": [
+                {"text": "沈むように溶けてゆくように", "start": 1650, "end": 9130}
+            ]
+        }
+        enriched = enrich_lyrics(raw)
+        line = enriched["synced"][0]
+        self.assertTrue(line.get("words_orig"))
+        self.assertTrue(line.get("words_roman"))
+        self.assertEqual(len(line["words_orig"]), len(line["words_roman"]))
+        self.assertIn("shizumu", line["words_roman"][0].lower())
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,23 @@ Supports:
 import re
 
 _kakasi_instance = None
+_cutlet_instance = None
+
+
+def _get_cutlet():
+    global _cutlet_instance
+    if _cutlet_instance is None:
+        try:
+            import cutlet
+            katsu = cutlet.Cutlet()
+            katsu.use_foreign_spelling = False
+            katsu.add_exception("私", "watashi")
+            katsu.add_exception("何気ない", "nanigenai")
+            katsu.add_exception("何気なく", "nanigenaku")
+            _cutlet_instance = katsu
+        except Exception:
+            _cutlet_instance = None
+    return _cutlet_instance
 
 
 def _get_kakasi():
@@ -20,6 +37,75 @@ def _get_kakasi():
         except Exception:
             _kakasi_instance = None
     return _kakasi_instance
+
+
+def romanize_japanese(text: str) -> dict:
+    """Romanize Japanese text accurately using Cutlet (MeCab + UniDic).
+
+    Generates grammatically correct Hepburn Romaji with proper particle handling
+    (wa, e, o) and aligned word chunks for both original Japanese and Romaji.
+    """
+    if not text or not isinstance(text, str) or not text.strip():
+        return {"roman": "", "script": "japanese", "scriptLabel": "Romaji"}
+
+    cutlet_inst = _get_cutlet()
+    if cutlet_inst is not None:
+        try:
+            import cutlet
+            norm = cutlet.normalize_text(text)
+            words = cutlet_inst.tagger(norm)
+            tokens = cutlet_inst.romaji_tokens(words, capitalize=False)
+
+            chunks_orig = []
+            chunks_roma = []
+            cur_orig = ""
+            cur_roma = ""
+
+            for w, t in zip(words, tokens):
+                cur_orig += w.surface
+                cur_roma += str(t)
+                if t.space:
+                    co = cur_orig.strip()
+                    cr = cur_roma.strip()
+                    if co or cr:
+                        chunks_orig.append(co)
+                        chunks_roma.append(cr)
+                    cur_orig = ""
+                    cur_roma = ""
+
+            if cur_orig or cur_roma:
+                co = cur_orig.strip()
+                cr = cur_roma.strip()
+                if co or cr:
+                    chunks_orig.append(co)
+                    chunks_roma.append(cr)
+
+            full_roman = " ".join([c for c in chunks_roma if c]).strip()
+            if full_roman and full_roman[0].isalpha():
+                full_roman = full_roman[0].upper() + full_roman[1:]
+
+            return {
+                "roman": full_roman,
+                "script": "japanese",
+                "scriptLabel": "Romaji",
+                "words_orig": chunks_orig if chunks_orig else None,
+                "words_roman": chunks_roma if chunks_roma else None,
+            }
+        except Exception:
+            pass
+
+    # Fallback to pykakasi if cutlet is unavailable
+    k = _get_kakasi()
+    if k is not None:
+        try:
+            conv = k.convert(text)
+            roman = " ".join([item["hepburn"] for item in conv if item.get("hepburn")])
+            roman = re.sub(r"\s+", " ", roman).strip()
+            return {"roman": roman, "script": "japanese", "scriptLabel": "Romaji"}
+        except Exception:
+            pass
+
+    return {"roman": "", "script": "japanese", "scriptLabel": "Romaji"}
 
 
 # Revised Romanization of Korean tables
@@ -77,12 +163,7 @@ def romanize_line(text: str, default_cjk_script: str = "japanese") -> dict:
 
     # 2. Japanese Kana (Hiragana / Katakana)
     if re.search(r'[\u3040-\u309F\u30A0-\u30FF]', text):
-        k = _get_kakasi()
-        if k is not None:
-            conv = k.convert(text)
-            roman = ' '.join([item['hepburn'] for item in conv if item['hepburn']])
-            roman = re.sub(r'\s+', ' ', roman).strip()
-            return {"roman": roman, "script": "japanese", "scriptLabel": "Romaji"}
+        return romanize_japanese(text)
 
     # 3. Chinese Hanzi / Japanese Kanji without Kana
     if re.search(r'[\u4E00-\u9FFF]', text):
@@ -95,12 +176,7 @@ def romanize_line(text: str, default_cjk_script: str = "japanese") -> dict:
             except Exception:
                 pass
         else:
-            k = _get_kakasi()
-            if k is not None:
-                conv = k.convert(text)
-                roman = ' '.join([item['hepburn'] for item in conv if item['hepburn']])
-                roman = re.sub(r'\s+', ' ', roman).strip()
-                return {"roman": roman, "script": "japanese", "scriptLabel": "Romaji"}
+            return romanize_japanese(text)
 
     # 4. Cyrillic
     if re.search(r'[\u0400-\u04FF]', text):
@@ -165,6 +241,10 @@ def enrich_lyrics(lyrics_data: dict) -> dict:
         }
         if words:
             entry["words"] = words
+        if r and r.get("words_orig"):
+            entry["words_orig"] = r["words_orig"]
+        if r and r.get("words_roman"):
+            entry["words_roman"] = r["words_roman"]
         if r:
             has_any_roman = True
         enriched_synced.append(entry)

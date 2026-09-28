@@ -10,3 +10,6 @@ requests>=2.32.3
 httpx>=0.27
 pykakasi>=2.3.0
 pypinyin>=0.53.0
+cutlet>=0.5.2
+fugashi>=1.5.2
+unidic-lite>=1.0.8
