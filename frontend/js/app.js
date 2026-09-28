@@ -1078,7 +1078,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         document.getElementById('context-menu')?.classList.add('hidden');
         document.getElementById('visualizer-drawer')?.classList.add('hidden');
-        document.getElementById('equalizer-panel')?.classList.add('hidden');
+        equalizer.closePanel();
         document.getElementById('settings-panel')?.classList.add('hidden');
         document.getElementById('queue-panel')?.classList.add('hidden');
         document.getElementById('shortcut-help')?.close();
@@ -1099,7 +1099,6 @@ document.addEventListener('keydown', (e) => {
 
     // Track skip
     if (e.key.toLowerCase() === 'n') { e.preventDefault(); player.next(); return; }
-    if (e.key.toLowerCase() === 'p') { e.preventDefault(); player.prev(); return; }
 
     // Seeking (Left / Right) & Track Skip with Shift
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -1168,12 +1167,14 @@ document.addEventListener('keydown', (e) => {
         }
     }
     if (key === 'p') {
+        e.preventDefault();
         const eqPanel = document.getElementById('equalizer-panel');
         if (eqPanel && !eqPanel.classList.contains('hidden')) {
-            e.preventDefault();
             equalizer.perfectTune();
-            return;
+        } else {
+            player.prev();
         }
+        return;
     }
     if (key === 'x') { e.preventDefault(); spatial.cycleMode(); return; }
     if (key === 'c') { e.preventDefault(); visualizer.toggleCrt(); return; }
