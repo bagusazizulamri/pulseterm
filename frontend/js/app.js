@@ -768,13 +768,26 @@ window.setTheme = function(t, btn) {
 
 let currentUiScale = 1.0;
 
+function updateResponsiveZoom() {
+    const scale = currentUiScale || 1.0;
+    const effectiveW = window.innerWidth / scale;
+    const effectiveH = window.innerHeight / scale;
+    document.documentElement.classList.toggle('layout-compact-rail', effectiveW < 1260);
+    document.documentElement.classList.toggle('layout-compact-player-bar', effectiveW < 1320);
+    document.documentElement.classList.toggle('layout-stacked-player', effectiveW < 880 || effectiveH < 560);
+}
+
 function setUiScale(scale, notify = true) {
     const numericScale = Math.min(1.40, Math.max(0.70, Math.round(Number(scale) * 100) / 100));
     currentUiScale = numericScale;
+    window.currentUiScale = numericScale;
     
     // Apply zoom to documentElement for full page element scaling
     document.documentElement.style.zoom = numericScale;
     document.documentElement.style.setProperty('--ui-scale', String(numericScale));
+    
+    // Update responsive layout classes for zoomed coordinate system
+    updateResponsiveZoom();
     
     // Update label & slider
     const label = document.getElementById('zoom-value-label');
@@ -799,8 +812,11 @@ function changeUiScale(delta) {
     setUiScale(currentUiScale + delta, true);
 }
 
+window.currentUiScale = currentUiScale;
 window.setUiScale = setUiScale;
 window.changeUiScale = changeUiScale;
+window.updateResponsiveZoom = updateResponsiveZoom;
+window.addEventListener('resize', updateResponsiveZoom);
 
 window.savePlayerSettings = async function() {
     const activeThemeBtn = document.querySelector('.theme-btn.active');

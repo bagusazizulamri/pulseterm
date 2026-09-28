@@ -288,11 +288,16 @@ body.crt-active #crt-overlay {
 /* ============ APP GRID ============ */
 #app {
   display: grid;
-  grid-template-columns: var(--rail) 1fr;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
   grid-template-rows: 1fr var(--player);
   grid-template-areas: "rail main" "rail player";
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ============ SIDEBAR / RAIL ============ */
@@ -1067,11 +1072,11 @@ body.crt-active #crt-overlay {
 
 .player-inner {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto max-content;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   height: 100%;
-  padding: 0 var(--pad);
+  padding: 0 16px;
 }
 
 .player-info {
@@ -1365,7 +1370,7 @@ body.playing .tui-state-badge {
   z-index: 95;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 20px 20px 48px;
   overflow-y: auto;
   box-shadow: -4px 0 20px rgba(0,0,0,0.5);
   width: min(440px, 92vw);
@@ -1381,7 +1386,7 @@ body.playing .tui-state-badge {
   z-index: 120;
   display: flex;
   flex-direction: column;
-  padding: 20px 24px 44px;
+  padding: 20px 24px 60px;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: -6px 0 28px rgba(0,0,0,0.6);
@@ -2091,6 +2096,57 @@ select {
 #toast.hidden { display: none; }
 .tui-prompt-char { color: var(--seal); font-weight: 700; }
 
+/* ============ DYNAMIC RESPONSIVE ZOOM & SCALE LAYOUTS ============ */
+.layout-compact-rail {
+  --rail: 72px;
+}
+.layout-compact-rail .tui-brand,
+.layout-compact-rail .tui-telemetry,
+.layout-compact-rail .tui-side-keys,
+.layout-compact-rail .nav-btn .nav-text {
+  display: none !important;
+}
+.layout-compact-rail .nav-btn {
+  justify-content: center !important;
+  padding: 12px 0 !important;
+}
+.layout-compact-rail .nav-btn .key-badge {
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+}
+.layout-compact-rail .tui-bitrate-badge {
+  display: none !important;
+}
+
+.layout-compact-player-bar .tui-mini-viz {
+  display: none !important;
+}
+
+.layout-stacked-player {
+  --player: 108px !important;
+}
+.layout-stacked-player .player-inner {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-rows: auto auto !important;
+  grid-template-areas:
+    "info right"
+    "controls controls" !important;
+  align-items: center !important;
+  row-gap: 6px !important;
+  column-gap: 10px !important;
+  padding: 6px var(--pad) 4px !important;
+  height: auto !important;
+}
+.layout-stacked-player .player-info { grid-area: info !important; min-width: 0 !important; }
+.layout-stacked-player .player-right { grid-area: right !important; min-width: 0 !important; justify-content: flex-end !important; gap: 8px !important; }
+.layout-stacked-player .player-controls { grid-area: controls !important; justify-content: center !important; width: 100% !important; gap: 6px !important; }
+.layout-stacked-player .tui-mini-viz { display: none !important; }
+
 /* ============ RESPONSIVE BREAKPOINTS (ALL FORM FACTORS) ============ */
 
 /* 1. Large Screens & High-Resolution Displays (min-width: 1400px) */
@@ -2202,8 +2258,8 @@ select {
       "main"
       "player"
       "rail";
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
+    max-height: 100%;
     overflow: hidden;
   }
 
