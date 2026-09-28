@@ -38,6 +38,7 @@ const player = {
     crossfade: 0,
     sleepFadeTimer: null,
     nowPlayingVisible: false,
+    lyricAutoscroll: true,
     lyrics: [],
     activeLyric: -1,
     likedIds: new Set(),
@@ -1039,6 +1040,13 @@ const player = {
             if (t) t.textContent = formatTime(duration);
             this.updateMediaPosition();
             this.updateActiveLyric(current * 1000);
+
+            if (this.nowPlayingVisible) {
+                const nTime = document.getElementById('now-playback-time');
+                if (nTime) nTime.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+                const nProg = document.getElementById('now-progress-bar');
+                if (nProg) nProg.style.width = ((current / duration) * 100) + '%';
+            }
         }
         this.savedPosition = current;
         if (this.isPlaying && this.currentSong) {
@@ -1171,7 +1179,16 @@ const player = {
         this.activeLyric = -1;
         this.lyricsData = null;
         const box = document.getElementById('lyrics-lines');
-        if (box) box.innerHTML = '<p class="lyrics-empty">Looking for lyrics…</p>';
+        if (box) {
+            box.innerHTML = `
+                <div class="lyrics-loading-state">
+                    <span class="lyrics-spinner">[ ░▒▓▒░ ]</span>
+                    <p class="lyrics-load-text">CONNECTING TO LRCLIB & TELETEXT DECODER…</p>
+                </div>
+            `;
+        }
+        const stBadge = document.getElementById('lyrics-status-badge');
+        if (stBadge) stBadge.textContent = '[STATUS: SCANNING]';
         const rBtn = document.getElementById('lyrics-roman-btn');
         if (rBtn) rBtn.classList.add('hidden');
         if (!song?.videoId) return;
@@ -1183,12 +1200,57 @@ const player = {
             if (!this.lyrics.length && res?.data?.lyrics) this.plainLyrics = res.data.lyrics.split('\n');
             else this.plainLyrics = [];
 
+            if (stBadge) {
+                if (this.lyrics.length) stBadge.textContent = '[STATUS: SYNCED · LRCLIB]';
+                else if (this.plainLyrics.length) stBadge.textContent = '[STATUS: STATIC TEXT]';
+                else stBadge.textContent = '[STATUS: NOT FOUND]';
+            }
+
             if (rBtn && res?.data?.hasRoman) {
                 rBtn.classList.remove('hidden');
                 this.updateRomanButtonUI();
             }
             this.renderLyrics();
-        } catch { if (box) box.innerHTML = '<p class="lyrics-empty">Lyrics are unavailable for this track.</p>'; }
+        } catch {
+            if (stBadge) stBadge.textContent = '[STATUS: ERROR]';
+            if (box) {
+                box.innerHTML = `
+                    <div class="lyrics-empty-box">
+                        <div class="empty-icon">[ ∅ ]</div>
+                        <div class="empty-title">STREAM UNAVAILABLE</div>
+                        <p class="empty-desc">Lyrics could not be retrieved from remote indices for this frequency.</p>
+                    </div>
+                `;
+            }
+        }
+    },
+
+    toggleLyricAutoscroll() {
+        this.lyricAutoscroll = this.lyricAutoscroll === undefined ? false : !this.lyricAutoscroll;
+        const btn = document.getElementById('lyrics-autoscroll-btn');
+        if (btn) {
+            btn.textContent = this.lyricAutoscroll ? '[FOLLOW: ON]' : '[FOLLOW: OFF]';
+            btn.classList.toggle('active', this.lyricAutoscroll);
+        }
+        if (this.lyricAutoscroll) {
+            const box = document.getElementById('lyrics-lines');
+            const activeEl = box?.querySelector('.lyric-line.active');
+            if (box && activeEl) {
+                const targetTop = activeEl.offsetTop - (box.clientHeight / 2) + (activeEl.clientHeight / 2);
+                box.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+            }
+        }
+    },
+
+    seekToLyric(idx) {
+        if (!this.lyrics || !this.lyrics[idx]) return;
+        const item = this.lyrics[idx];
+        const sec = (Number(item.start) || 0) / 1000;
+        if (this.audio) {
+            this.audio.currentTime = sec;
+            this.onTimeUpdate();
+        }
+        this.updateActiveLyric(item.start);
     },
 
     cycleRomanMode() {
@@ -1216,17 +1278,35 @@ const player = {
         if (!box) return;
         box.className = 'mode-' + (this.romanMode || 'dual');
         if (!this.lyrics.length && this.plainLyrics?.length) {
-            box.innerHTML = this.plainLyrics.map(() => '<p class="lyric-line plain-lyric"></p>').join('');
+            box.innerHTML = '<div class="lyrics-plain-banner"><span class="banner-tag">┌─ [TELETEXT: STATIC TRANSCRIPTION] ─────────────────────┐</span><span class="banner-sub">Timestamps unavailable for dynamic synchronization</span></div>' +
+                this.plainLyrics.map(() => '<p class="lyric-line plain-lyric"></p>').join('');
             box.querySelectorAll('.plain-lyric').forEach((el, i) => { el.textContent = this.plainLyrics[i] || ''; });
             return;
         }
-        if (!this.lyrics.length) { box.innerHTML = '<p class="lyrics-empty">Lyrics are not available for this track.</p>'; return; }
+        if (!this.lyrics.length) {
+            box.innerHTML = `
+                <div class="lyrics-empty-box">
+                    <div class="empty-icon">[ ∅ ]</div>
+                    <div class="empty-title">NO SYNCHRONIZED TELETEXT STREAM</div>
+                    <p class="empty-desc">Lyrics could not be indexed from LRCLIB or YouTube metadata for this frequency.</p>
+                </div>
+            `;
+            return;
+        }
         box.innerHTML = this.lyrics.map((l, i) => {
             const hasRoman = Boolean(l.roman);
-            return '<div class="lyric-line" data-lyric="' + i + '">' +
-                '<span class="lyric-orig"></span>' +
-                (hasRoman ? '<span class="lyric-roman"></span>' : '') +
-            '</div>';
+            const timeSec = Math.floor((Number(l.start) || 0) / 1000);
+            const m = Math.floor(timeSec / 60);
+            const s = String(timeSec % 60).padStart(2, '0');
+            const timeFormatted = `${m}:${s}`;
+            return `<div class="lyric-line" data-lyric="${i}" onclick="player.seekToLyric(${i})" title="Seek to [${timeFormatted}]">` +
+                `<span class="lyric-timestamp">[${timeFormatted}]</span>` +
+                `<span class="lyric-content">` +
+                    `<span class="lyric-orig"></span>` +
+                    (hasRoman ? '<span class="lyric-roman"></span>' : '') +
+                `</span>` +
+                `<span class="lyric-jump-icon" aria-hidden="true">▶</span>` +
+            `</div>`;
         }).join('');
         box.querySelectorAll('.lyric-line').forEach((el, i) => {
             const l = this.lyrics[i];
@@ -1249,8 +1329,23 @@ const player = {
         this.activeLyric = found;
         const box = document.getElementById('lyrics-lines');
         if (!box) return;
-        box.querySelectorAll('.lyric-line').forEach((el, i) => el.classList.toggle('active', i === found));
-        box.querySelector('.lyric-line.active')?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        const lines = box.querySelectorAll('.lyric-line');
+        lines.forEach((el, i) => {
+            const isActive = i === found;
+            el.classList.toggle('active', isActive);
+            const dist = Math.abs(i - found);
+            el.dataset.dist = String(Math.min(dist, 4));
+        });
+        if (this.lyricAutoscroll !== false) {
+            const activeEl = box.querySelector('.lyric-line.active');
+            if (activeEl) {
+                const targetTop = activeEl.offsetTop - (box.clientHeight / 2) + (activeEl.clientHeight / 2);
+                box.scrollTo({
+                    top: Math.max(0, targetTop),
+                    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                });
+            }
+        }
     },
 
     async refreshLiked() {
@@ -1552,6 +1647,10 @@ const player = {
         this.nowPlayingVisible = !this.nowPlayingVisible;
         const panel = document.getElementById('now-playing');
         if (panel) panel.classList.toggle('hidden', !this.nowPlayingVisible);
+        if (this.nowPlayingVisible) {
+            this.updatePlayerUI();
+            this.onTimeUpdate();
+        }
         if (this.currentSong) this.loadLyrics(this.currentSong);
     },
 
@@ -1667,10 +1766,26 @@ const player = {
                     nCover.style.display = 'none';
                 }
             }
+            const backdrop = document.getElementById('lyrics-ambient-backdrop');
+            if (backdrop) {
+                if (this.currentSong?.thumbnail) {
+                    const hdSrc = this.getHdCoverUrl(this.currentSong.thumbnail, this.currentSong.videoId, 800);
+                    backdrop.style.backgroundImage = `url("${hdSrc}")`;
+                } else {
+                    backdrop.style.backgroundImage = 'none';
+                }
+            }
+            const specEq = document.getElementById('now-spec-eq');
+            if (specEq && window.equalizer) {
+                const preset = window.equalizer.currentPreset || 'FLAT';
+                specEq.textContent = `10-BAND [${preset.toUpperCase()}]`;
+            }
         } else {
             if (title) title.textContent = 'Nothing playing';
             if (artist) artist.textContent = '';
             if (playBtn) playBtn.dataset.state = 'paused';
+            const backdrop = document.getElementById('lyrics-ambient-backdrop');
+            if (backdrop) backdrop.style.backgroundImage = 'none';
         }
         const badge = document.getElementById('player-state-badge');
         if (badge) badge.textContent = this.currentSong ? (this.isPlaying ? '[PLAYING]' : '[PAUSED]') : '[IDLE]';

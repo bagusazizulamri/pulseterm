@@ -276,29 +276,60 @@
         <div id="equalizer-container"></div>
     </div>
 
-    <!-- TUI Now Playing / Lyrics Overlay -->
+    <!-- TUI Now Playing / Teletext Lyrics Overlay -->
     <section id="now-playing" class="hidden" aria-label="Now playing terminal teletext">
-        <div class="now-playing-head">
-            <div>
-                <span class="eyebrow-label">┌─ TELETEXT AUDIO STREAM ─┐</span>
-                <h2 id="now-title">Nothing playing</h2>
-                <p id="now-artist"></p>
-            </div>
-            <div class="lyrics-head-actions">
-                <button id="lyrics-roman-btn" onclick="player.cycleRomanMode()" class="tui-btn hidden" title="Toggle Romanization script mode (R)">[SCRIPT: DUAL]</button>
-                <button onclick="closeNowPlaying()" class="tui-btn">[RETURN ESC]</button>
-            </div>
-        </div>
-        <div class="now-playing-body">
-            <div class="now-cover-frame" onclick="player.openArtworkModal()" title="Click to view master artwork in Full Ultra-HD">
-                <img id="now-cover" alt="" class="now-cover-img" />
-                <div class="cover-telemetry">
-                    <span id="cover-res-badge">RES: 800×800 HD</span>
-                    <span class="cover-zoom-prompt">[ZOOM 🔍]</span>
+        <div id="lyrics-ambient-backdrop" class="lyrics-ambient-backdrop" aria-hidden="true"></div>
+        <div class="now-playing-content">
+            <div class="now-playing-head">
+                <div class="now-head-meta">
+                    <span class="eyebrow-label">┌─ TELETEXT AUDIO STREAM & REALTIME LYRICS</span>
+                    <h2 id="now-title">Nothing playing</h2>
+                    <p id="now-artist" class="now-artist-label"></p>
+                </div>
+                <div class="lyrics-head-actions">
+                    <span id="lyrics-status-badge" class="tui-badge">[STATUS: IDLE]</span>
+                    <button id="lyrics-autoscroll-btn" onclick="player.toggleLyricAutoscroll()" class="tui-btn active" title="Toggle automatic lyric scrolling follow mode">[FOLLOW: ON]</button>
+                    <button id="lyrics-roman-btn" onclick="player.cycleRomanMode()" class="tui-btn hidden" title="Toggle Romanization script mode (R)">[SCRIPT: DUAL]</button>
+                    <button onclick="closeNowPlaying()" class="tui-btn" title="Close lyrics overlay (Esc / L)">[CLOSE ESC]</button>
                 </div>
             </div>
-            <div id="lyrics-lines" aria-live="polite">
-                <p class="lyrics-empty">Waiting for synchronized teletext stream…</p>
+            <div class="now-playing-body">
+                <div class="now-deck-sidebar">
+                    <div class="now-cover-frame" onclick="player.openArtworkModal()" title="Click to view master artwork in Full Ultra-HD">
+                        <img id="now-cover" alt="" class="now-cover-img" />
+                        <div class="cover-telemetry">
+                            <span id="cover-res-badge">RES: 800×800 HD</span>
+                            <span class="cover-zoom-prompt">[ZOOM 🔍]</span>
+                        </div>
+                    </div>
+                    <div class="now-deck-telemetry">
+                        <div class="deck-telemetry-box">
+                            <div class="deck-tel-head">
+                                <span class="deck-tel-label">PLAYBACK POSITION</span>
+                                <span id="now-playback-time" class="deck-tel-time">0:00 / 0:00</span>
+                            </div>
+                            <div class="deck-progress-track">
+                                <div id="now-progress-bar" class="deck-progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="deck-telemetry-box deck-specs-box">
+                            <div class="deck-spec-row">
+                                <span class="spec-label">STREAM:</span>
+                                <span id="now-spec-codec" class="spec-val">OPUS 160K · 48.0kHz</span>
+                            </div>
+                            <div class="deck-spec-row">
+                                <span class="spec-label">DSP EQ:</span>
+                                <span id="now-spec-eq" class="spec-val">10-BAND [FLAT]</span>
+                            </div>
+                        </div>
+                        <button type="button" class="tui-btn now-art-zoom-btn" onclick="player.openArtworkModal()">[VIEW MASTER ART 🔍]</button>
+                    </div>
+                </div>
+                <div class="lyrics-scroll-wrap">
+                    <div id="lyrics-lines" aria-live="polite">
+                        <p class="lyrics-empty">Waiting for synchronized teletext stream…</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
