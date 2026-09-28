@@ -278,15 +278,7 @@ class SpatialAudioEngine {
             btn.setAttribute('title', `Spatial Audio Mode: ${SPATIAL_CONFIGS[this.mode]?.label || name} (Press x)`);
         });
 
-        // Synchronize Modern Apple-style Studio controls
-        const modernPill = document.getElementById('modern-spatial-pill');
-        if (modernPill) {
-            const isOff = this.mode === 'off';
-            const name = (SPATIAL_CONFIGS[this.mode]?.name || this.mode).toUpperCase();
-            modernPill.innerHTML = isOff ? '<span>✦ SPATIAL AUDIO</span>' : `<span>✦ SPATIAL: ${name}</span>`;
-            modernPill.classList.toggle('active', !isOff);
-            modernPill.classList.toggle('modern-spatial-active', !isOff);
-        }
+        // Removed legacy floating pill (Apple edition keeps spatial inside Control Center segmented).
         const segmentedBtns = document.querySelectorAll('#modern-spatial-segmented .popover-segmented-btn');
         segmentedBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.spatialMode === this.mode);

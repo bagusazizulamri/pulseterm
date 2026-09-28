@@ -2489,8 +2489,8 @@ select {
 .modern-only-grid { display: none !important; }
 .tui-only { display: inherit; }
 
-.player-controls-container,
-.modern-scrubber-row {
+body:not(.layout-modern) .player-controls-container,
+body:not(.layout-modern) .modern-scrubber-row {
   display: contents;
 }
 

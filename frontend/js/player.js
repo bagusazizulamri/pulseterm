@@ -1042,7 +1042,11 @@ const player = {
             const mc = document.getElementById('modern-current-time');
             if (mc) mc.textContent = formatTime(current);
             const mt = document.getElementById('modern-total-time');
-            if (mt) mt.textContent = '-' + formatTime(Math.max(0, duration - current));
+            if (mt) mt.textContent = '−' + formatTime(Math.max(0, duration - current));
+            const mcc = document.getElementById('modern-clock-cur');
+            if (mcc) mcc.textContent = formatTime(current);
+            const mce = document.getElementById('modern-clock-end');
+            if (mce) mce.textContent = formatTime(duration);
 
             this.updateMediaPosition();
             this.updateActiveLyric(current * 1000);
@@ -1285,7 +1289,8 @@ const player = {
         if (!b) return;
         const liked = !!this.currentSong && this.likedIds.has(this.currentSong.videoId);
         b.classList.toggle('active', liked);
-        b.setAttribute('aria-label', liked ? 'Remove from liked songs' : 'Add to liked songs');
+        b.classList.toggle('liked', liked);
+        b.setAttribute('aria-label', liked ? 'Loved' : 'Love');
     },
 
     async refreshOffline() {
@@ -1659,10 +1664,19 @@ const player = {
         const artist = document.getElementById('player-artist');
         const cover = document.getElementById('player-cover');
         const playBtn = document.getElementById('play-btn');
+        // Apple-style mirrors (same song, no extra listeners): sidebar mini card + clocks.
+        const mTitle = document.getElementById('modern-mini-title');
+        const mArtist = document.getElementById('modern-mini-artist');
+        const mCover = document.getElementById('modern-mini-cover');
+        const mState = document.getElementById('modern-mini-state');
         if (this.currentSong) {
             if (title) title.textContent = this.currentSong.title || 'Unknown';
             if (artist) artist.textContent = this.currentSong.artist || '';
             if (cover) { if (this.currentSong.thumbnail) { cover.src = this.currentSong.thumbnail; cover.style.display = 'block'; } else { cover.removeAttribute('src'); cover.style.display = 'none'; } }
+            if (mTitle) mTitle.textContent = this.currentSong.title || 'Unknown';
+            if (mArtist) mArtist.textContent = this.currentSong.artist || 'Unknown artist';
+            if (mCover) { if (this.currentSong.thumbnail) { mCover.src = this.currentSong.thumbnail; mCover.style.display = 'block'; } else { mCover.removeAttribute('src'); } }
+            if (mState) mState.textContent = this.isPlaying ? 'Playing' : 'Paused';
             if (playBtn) { playBtn.dataset.state = this.isPlaying ? 'playing' : 'paused'; playBtn.setAttribute('aria-label', this.isPlaying ? 'Pause' : 'Play'); }
             document.body.classList.toggle('playing', this.isPlaying);
             const nTitle = document.getElementById('now-title'); if (nTitle) nTitle.textContent = this.currentSong.title;
@@ -1685,7 +1699,10 @@ const player = {
             }
         } else {
             if (title) title.textContent = 'Nothing playing';
-            if (artist) artist.textContent = '';
+            if (artist) artist.textContent = 'Pick a track to start listening';
+            if (mTitle) mTitle.textContent = 'Nothing playing';
+            if (mArtist) mArtist.textContent = 'Pick a track';
+            if (mState) mState.textContent = '';
             if (playBtn) playBtn.dataset.state = 'paused';
         }
         const badge = document.getElementById('player-state-badge');

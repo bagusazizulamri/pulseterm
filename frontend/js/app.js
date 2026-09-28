@@ -53,18 +53,13 @@ async function openRemoteItem(item) {
         songs.forEach((song, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === song.videoId;
             const row = document.createElement('div'); row.className = 'list-item' + (isPlaying ? ' is-playing' : ''); row.dataset.videoId = song.videoId; row.dataset.title = song.title; row.dataset.artist = song.artist;
-            row.innerHTML = '<span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span><div class="list-info"><div class="list-title"></div><div class="list-artist"></div></div><span class="list-duration">' + (song.duration ? Math.floor(song.duration / 60) + ':' + String(song.duration % 60).padStart(2, '0') : '') + '</span>';
-            row.querySelector('.list-title').textContent = song.title; row.querySelector('.list-artist').textContent = song.artist || '';
+            row.innerHTML = '<div class="list-thumb-fallback">♪</div><div class="list-info"><div class="list-title"></div><div class="list-sub"></div></div><span class="list-duration">' + (song.duration ? Math.floor(song.duration / 60) + ':' + String(song.duration % 60).padStart(2, '0') : '') + '</span>';
+            row.querySelector('.list-title').textContent = song.title; row.querySelector('.list-sub').textContent = song.artist || '';
             row.addEventListener('pointerenter', () => {
                 if (song.videoId) prepareStreams([song.videoId]).catch(() => {});
             }, { once: true });
             row.addEventListener('click', async () => {
-                list.querySelectorAll('.list-item').forEach((item, idx) => {
-                    const active = idx === i;
-                    item.classList.toggle('is-playing', active);
-                    const rank = item.querySelector('.rank');
-                    if (rank) rank.textContent = active ? '▶' : '[' + String(idx + 1).padStart(2, '0') + ']';
-                });
+                list.querySelectorAll('.list-item').forEach((item, idx) => { item.classList.toggle('is-playing', idx === i); });
                 await player.play(songs, i, { contextName: r.data.name || item.title, isPlaylist: true });
             });
             list.appendChild(row);
@@ -105,13 +100,26 @@ async function renderHome(content) {
     const history = hres && hres.success ? hres.data : [];
 
     let secIndex = 1;
-    let html = '<div class="page-header"><h1 class="tui-only">┌─ PULSETERM AUDIO ARCHIVE ─┐</h1><h1 class="modern-only">Listen Now</h1></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ PULSETERM AUDIO ARCHIVE ─┐</h1><div class="modern-only"><h1>Listen Now</h1><p class="page-sub">New music, mixes and recent plays — picked for you.</p></div></div>';
+
+    // Apple-style editorial feature: first trending track becomes the hero card.
+    const hero = trending[0] || null;
+    if (hero) {
+        const hb = hero.album === 'artist' ? 'Artist' : hero.album === 'album' ? 'Album' : hero.album === 'playlist' ? 'Playlist' : 'Single';
+        html += '<section class="hero-panel">' +
+            '<div class="hero-art">' + (hero.thumbnail ? '<img src="' + esc(hero.thumbnail) + '" alt="" loading="lazy">' : '') + '</div>' +
+            '<div class="hero-body"><span class="hero-kicker">Featured · ' + esc(hb) + '</span>' +
+            '<div class="hero-title">' + esc(hero.title) + '</div>' +
+            '<div class="hero-desc">' + esc(hero.artist || 'Various artists') + '</div>' +
+            '<div class="hero-actions"><button class="hero-play-btn" data-hero-play="' + esc(hero.videoId) + '"><span aria-hidden="true">▶</span> Play</button>' +
+            '<span class="hero-hint">Tap a card below to start playback</span></div></div></section>';
+    }
 
     // 01: Trending Tracks
     if (trending.length > 0) {
         const secStr = String(secIndex++).padStart(2, '0');
         html += '<div class="eyebrow"><span class="tui-only">[ ' + secStr + ' // TRENDING TRACKS · YOUTUBE MUSIC ]</span><span class="modern-only">Trending Songs</span></div><div class="item-grid">';
-        trending.slice(0, 14).forEach(item => { html += renderCard(item); });
+        trending.slice(hero ? 1 : 0, hero ? 13 : 14).forEach(item => { html += renderCard(item); });
         html += '</div>';
     }
 
@@ -140,9 +148,11 @@ async function renderHome(content) {
         html += '<div class="eyebrow"><span class="tui-only">[ ' + secStr + ' // RECENT PLAYBACK BUFFER ]</span><span class="modern-only">Recently Played</span></div><div class="list">';
         history.slice(0, 8).forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
-            html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
+            html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '">' +
+                '<div class="list-thumb-fallback">♪</div>' +
                 '<div class="list-info"><div class="list-title">' + esc(item.title) + '</div>' +
-                '<div class="list-artist">' + esc(item.artist) + '</div></div></div>';
+                '<div class="list-sub">' + esc(item.artist || 'Unknown artist') + '</div></div>' +
+                '<button class="list-play" data-hist-play="' + i + '" aria-label="Play"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 5.5v13l11-6.5z"/></svg></button></div>';
         });
         html += '</div>';
     }
@@ -152,20 +162,33 @@ async function renderHome(content) {
     }
 
     content.innerHTML = html;
-    content.querySelectorAll('[data-hist]').forEach(el => el.addEventListener('click', () => playFromHistory(parseInt(el.dataset.hist))));
+    content.querySelectorAll('[data-hero-play]').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const vid = btn.dataset.heroPlay;
+        const idx = trending.findIndex(t => t.videoId === vid);
+        if (idx >= 0) player.play(trending, idx, { contextName: 'Featured · Listen Now' });
+    }));
+    content.querySelectorAll('[data-hist]').forEach(el => el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-hist-play]')) return;
+        playFromHistory(parseInt(el.dataset.hist));
+    }));
+    content.querySelectorAll('[data-hist-play]').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playFromHistory(parseInt(btn.dataset.histPlay));
+    }));
     bindCardClicks();
 }
 
 function renderSearch(content) {
-    content.innerHTML = '<div class="page-header"><h1 class="tui-only">┌─ SEARCH ENGINE QUERY BUFFER ─┐</h1><h1 class="modern-only">Search & Browse</h1></div>' +
-        '<div class="search-page"><div class="search-filters" id="search-filters">' +
+    content.innerHTML = '<div class="page-header"><h1 class="tui-only">┌─ SEARCH ENGINE QUERY BUFFER ─┐</h1><div class="modern-only"><h1>Search</h1><p class="page-sub">Songs, artists, albums and playlists.</p></div></div>' +
+        '<div class="search-page"><div class="search-filters filter-bar" id="search-filters">' +
         '<button class="filter-btn active" data-f="all"><span class="tui-only">[ALL]</span><span class="modern-only">All</span></button>' +
         '<button class="filter-btn" data-f="song"><span class="tui-only">[SONGS]</span><span class="modern-only">Songs</span></button>' +
         '<button class="filter-btn" data-f="artist"><span class="tui-only">[ARTISTS]</span><span class="modern-only">Artists</span></button>' +
         '<button class="filter-btn" data-f="playlist"><span class="tui-only">[PLAYLISTS]</span><span class="modern-only">Playlists</span></button>' +
         '<button class="filter-btn" data-f="album"><span class="tui-only">[ALBUMS]</span><span class="modern-only">Albums</span></button></div>' +
         '<div class="quick-tags">' +
-        '<span class="quick-tag-label">QUICK QUERY:</span>' +
+        '<span class="quick-tag-label"><span class="tui-only">QUICK QUERY:</span><span class="modern-only">Try:</span></span>' +
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Indonesian Hits\')">Indonesian Hits</button>' +
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Pop\')">Pop</button>' +
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Lofi Chill\')">Lofi Chill</button>' +
@@ -174,7 +197,7 @@ function renderSearch(content) {
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Jazz Lounge\')">Jazz</button>' +
         '<button class="quick-tag-btn" onclick="window.quickSearch(\'Acoustic Folk\')">Acoustic</button>' +
         '</div>' +
-        '<div id="search-suggestions-container"><div class="empty-state"><span class="label">[QUERY: READY]</span><p>Type a song, artist, or album, or select a quick query chip above.</p></div></div></div>';
+        '<div id="search-suggestions-container"><div class="empty-state"><span class="label"><span class="tui-only">[QUERY: READY]</span><span class="modern-only">Search your library</span></span><p>Type a song, artist, or album, or select a quick query chip above.</p></div></div></div>';
     content.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => setSearchFilter(b.dataset.f, b)));
     bindSuggestions();
     if (searchResults.length > 0) renderSearchResults();
@@ -267,7 +290,7 @@ function renderSearchResults() {
         container.innerHTML = '<div class="empty-state"><span class="label">[QUERY: ZERO-MATCH]</span><h3>NO MATCHING ENTRIES</h3><p>Verify search tokens or try searching artist name directly.</p></div>';
         return;
     }
-    let html = '<div class="search-results-info">>> QUERY COMPLETED: ' + searchResults.length + ' ENTRIES LOADED</div><div class="item-grid">';
+    let html = '<div class="search-results-info">' + searchResults.length + ' results</div><div class="item-grid">';
     searchResults.forEach(item => { html += renderCard(item); });
     html += '</div>';
     container.innerHTML = html;
@@ -279,7 +302,7 @@ async function renderLibrary(content) {
     const history = hres.success ? hres.data : [];
     const lres = await getLikedSongs();
     const liked = lres.success ? lres.data : [];
-    let html = '<div class="page-header"><h1 class="tui-only">┌─ SAVED AUDIO REPOSITORY ─┐</h1><h1 class="modern-only">My Library</h1><button id="clear-hist-btn" class="tui-btn"><span class="tui-only">[PURGE HISTORY]</span><span class="modern-only">Clear History</span></button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ SAVED AUDIO REPOSITORY ─┐</h1><div class="modern-only"><h1>Library</h1><p class="page-sub">Liked songs and your listening history.</p></div><button id="clear-hist-btn" class="tui-btn"><span class="tui-only">[PURGE HISTORY]</span><span class="modern-only">Clear</span></button></div>';
     if (liked.length) {
         html += '<div class="eyebrow"><span class="tui-only">[ 01 // FAVORITE CHANNELS · LIKED ]</span><span class="modern-only">Liked Songs</span></div><div class="item-grid">';
         liked.forEach(s => { html += renderCard({ ...s, videoId: s.videoId || s.video_id }); });
@@ -289,16 +312,19 @@ async function renderLibrary(content) {
         html += '<div class="eyebrow"><span class="tui-only">[ 02 // PLAYBACK LOG · HISTORY ]</span><span class="modern-only">Listening History</span></div><div class="list">';
         history.forEach((item, i) => {
             const isPlaying = player.currentSong && player.currentSong.videoId === item.video_id;
-            html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '"><span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
+            html += '<div class="list-item' + (isPlaying ? ' is-playing' : '') + '" data-hist="' + i + '" data-video-id="' + esc(item.video_id) + '">' +
+                '<div class="list-thumb-fallback">♪</div>' +
                 '<div class="list-info"><div class="list-title">' + esc(item.title) + '</div>' +
-                '<div class="list-artist">' + esc(item.artist) + '</div></div></div>';
+                '<div class="list-sub">' + esc(item.artist || 'Unknown artist') + '</div></div>' +
+                '<button class="list-play" data-hist-play="' + i + '" aria-label="Play"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 5.5v13l11-6.5z"/></svg></button></div>';
         });
         html += '</div>';
     } else {
         html += '<div class="empty-state"><span class="label">[REPOSITORY: CLEAN]</span><h3>NO AUDIO HISTORY LOGGED</h3><p>All played audio frames will be indexed here automatically.</p></div>';
     }
     content.innerHTML = html;
-    content.querySelectorAll('[data-hist]').forEach(el => el.addEventListener('click', () => playFromHistory(parseInt(el.dataset.hist))));
+    content.querySelectorAll('[data-hist]').forEach(el => el.addEventListener('click', (e) => { if (e.target.closest('[data-hist-play]')) return; playFromHistory(parseInt(el.dataset.hist)); }));
+    content.querySelectorAll('[data-hist-play]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); playFromHistory(parseInt(btn.dataset.histPlay)); }));
     const cb = document.getElementById('clear-hist-btn');
     if (cb) cb.addEventListener('click', async () => { await clearHistory(); renderLibrary(content); });
     bindCardClicks();
@@ -307,7 +333,7 @@ async function renderLibrary(content) {
 async function renderPlaylists(content) {
     const pres = await getPlaylists();
     const pls = pres.success ? pres.data : [];
-    let html = '<div class="page-header"><h1 class="tui-only">┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><h1 class="modern-only">Playlists</h1><button id="new-pl-btn" class="tui-btn"><span class="tui-only">[+ NEW PLAYLIST]</span><span class="modern-only">+ New Playlist</span></button></div>';
+    let html = '<div class="page-header"><h1 class="tui-only">┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><div class="modern-only"><h1>Playlists</h1><p class="page-sub">Collections you built.</p></div><button id="new-pl-btn" class="tui-btn"><span class="tui-only">[+ NEW PLAYLIST]</span><span class="modern-only">New Playlist</span></button></div>';
     if (pls.length === 0) {
         html += '<div class="empty-state"><span class="label">[REGISTRY: VOID]</span><h3>NO PLAYLISTS INITIALIZED</h3><p>Create a custom playlist to bundle audio streams.</p></div>';
     } else {
@@ -315,8 +341,9 @@ async function renderPlaylists(content) {
         pls.forEach(pl => {
             const n = pl.songs ? pl.songs.length : 0;
             html += '<div class="item-card" data-pl="' + pl.id + '">' +
-                '<div class="cover-wrap"><div class="cover cover-fallback"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" opacity="0.3"><path d="M19 9H2v2h17V9zm0-4H2v2h17V5zM2 15h11v-2H2v2zm14 0v6l5-3-5-3z"/></svg></div><div class="card-play-overlay"><span class="play-icon">▶</span><span class="play-text">OPEN</span></div></div>' +
-                '<div class="card-title">' + esc(pl.name) + '</div><div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[PL]</span><span class="modern-only">PLAYLIST</span></span> ' + n + ' tracks</div></div>';
+                '<div class="card-art"><div class="card-art-fallback">♪</div>' +
+                '<button class="card-play" aria-label="Open" tabindex="-1"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 5.5v13l11-6.5z"/></svg></button></div>' +
+                '<div class="card-body"><div class="card-title">' + esc(pl.name) + '</div><div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[PL]</span></span><span class="modern-sub">' + n + ' songs</span><span class="modern-kind">Playlist</span><span class="tui-sub"> ' + n + ' tracks</span></div></div></div>';
         });
         html += '</div>';
     }
@@ -334,15 +361,21 @@ function renderCard(item) {
                : item.album === 'album' || item.resultType === 'album' || item.result_type === 'album' ? 'album'
                : '';
     const badgeText = kind ? kind.toUpperCase() : (isVid ? 'VIDEO' : 'SONG');
-    const durStr = item.duration ? ` · ${Math.floor(item.duration / 60)}:${String(item.duration % 60).padStart(2, '0')}` : '';
+    const dur_secs = Number(item.duration) || 0;
+    const durStr = dur_secs ? ' · ' + Math.floor(dur_secs / 60) + ':' + String(dur_secs % 60).padStart(2, '0') : '';
+    const kindLabel = kind ? (kind.charAt(0).toUpperCase() + kind.slice(1)) : '';
+    const rawArtist = item.artist || 'Various artists';
+    const modernArtist = rawArtist.replace(/^(Playlist|Artist|Album|Song|Video) \u00b7\s*/i, '');
+    const modernSub = esc(modernArtist) + durStr;
+    const tuiSub = ' ' + esc(item.artist || vid || 'Various') + durStr;
 
     return '<div class="item-card" data-video-id="' + esc(vid) + '" data-title="' + esc(item.title) + '" data-artist="' + esc(item.artist) + '" data-thumbnail="' + esc(item.thumbnail || '') + '" data-duration="' + (item.duration || 0) + '" data-kind="' + esc(kind) + '" data-is-video="' + (isVid ? 'true' : 'false') + '">' +
-        '<div class="cover-wrap">' +
-            (item.thumbnail ? '<img class="cover" src="' + esc(item.thumbnail) + '" alt="' + esc(item.title) + '" loading="lazy" onerror="this.onerror=null; this.src=\'/assets/favicon.svg\';">' : '<div class="cover cover-fallback"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" opacity="0.3"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>') +
-            '<div class="card-play-overlay"><span class="play-icon">▶</span><span class="play-text">' + (kind ? 'OPEN' : 'PLAY') + '</span></div>' +
+        '<div class="card-art">' +
+            (item.thumbnail ? "<img src='" + esc(item.thumbnail) + "' alt='" + esc(item.title) + "' loading='lazy' onerror='this.onerror=null;this.remove();'>" : '<div class="card-art-fallback">♪</div>') +
+            '<button class="card-play" aria-label="Play" tabindex="-1"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 5.5v13l11-6.5z"/></svg></button>' +
         '</div>' +
-        '<div class="card-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div>' +
-        '<div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[' + badgeText + ']</span><span class="modern-only">' + badgeText + '</span></span> ' + esc(item.artist || vid || 'Various') + durStr + '</div>' +
+        '<div class="card-body"><div class="card-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div>' +
+        '<div class="card-subtitle"><span class="tui-state-badge"><span class="tui-only">[' + badgeText + ']</span></span><span class="modern-sub">' + modernSub + '</span>' + (kindLabel ? '<span class="modern-kind">' + esc(kindLabel) + '</span>' : '') + '<span class="tui-sub">' + tuiSub + '</span></div></div>' +
         '</div>';
 }
 
@@ -368,7 +401,7 @@ function bindCardClicks() {
             }
 
             // Direct play when clicking the play icon overlay on a playlist or album card
-            if (kind === 'playlist' && e.target.closest('.card-play-overlay')) {
+            if (kind === 'playlist' && e.target.closest('.card-play')) {
                 try {
                     const r = await fetch('/api/playlist/' + encodeURIComponent(vid)).then(x => x.json());
                     if (r?.success && r.data?.results?.length) {
@@ -501,10 +534,10 @@ async function openPlaylist(id) {
             row.dataset.index = i;
 
             const durStr = song.duration ? (Math.floor(song.duration / 60) + ':' + String(song.duration % 60).padStart(2, '0')) : '';
-            row.innerHTML = '<span class="rank">' + (isPlaying ? '▶' : '[' + String(i + 1).padStart(2, '0') + ']') + '</span>' +
+            row.innerHTML = '<div class="list-thumb-fallback">♪</div>' +
                 '<div class="list-info">' +
                 '<div class="list-title">' + esc(song.title) + '</div>' +
-                '<div class="list-artist">' + esc(song.artist) + '</div>' +
+                '<div class="list-sub">' + esc(song.artist || 'Unknown artist') + '</div>' +
                 '</div>' +
                 '<div class="list-meta-actions">' +
                 (durStr ? '<span class="list-duration">' + durStr + '</span>' : '') +
@@ -527,12 +560,7 @@ async function openPlaylist(id) {
             }, { once: true });
 
             row.addEventListener('click', async () => {
-                list.querySelectorAll('.list-item').forEach((item, idx) => {
-                    const active = idx === i;
-                    item.classList.toggle('is-playing', active);
-                    const rank = item.querySelector('.rank');
-                    if (rank) rank.textContent = active ? '▶' : '[' + String(idx + 1).padStart(2, '0') + ']';
-                });
+                list.querySelectorAll('.list-item').forEach((item, idx) => { item.classList.toggle('is-playing', idx === i); });
                 await player.play(songs, i, { contextName: pl.name, isPlaylist: true });
             });
 
