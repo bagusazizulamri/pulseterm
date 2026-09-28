@@ -336,3 +336,14 @@ export function generateSyntheticReverbIR(sampleRate, durationSec, decayTau, pre
     return { left, right };
 }
 
+export function computeLimiterGain(peak, threshold, currentGain, releaseAlpha) {
+    let targetGain = 1.0;
+    if (peak > threshold) {
+        targetGain = threshold / peak;
+    }
+    if (targetGain < currentGain) {
+        return targetGain;
+    }
+    return Math.min(1.0, currentGain + (1.0 - currentGain) * releaseAlpha);
+}
+

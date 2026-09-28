@@ -6,7 +6,7 @@ import { getGenre } from './api.js';
 import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
 
 export { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
-import { EQ_PRESETS } from './eq-core.js';
+import { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
 
 export const GENRE_RULES = [
     { preset: 'metal', words: ['metal', 'metalcore', 'deathcore', 'slipknot', 'metallica', 'megadeth', 'avenged', 'soad', 'pantera', 'iron maiden', 'bmth', 'rammstein', 'architect', 'lorna shore', 'bad omens'] },
@@ -28,6 +28,7 @@ class TerminalEqualizer {
         this.filters = [];
         this.preampNode = null;
         this.compressor = null;
+        this.limiterNode = null;
         this.analyser = null;
         this.inputNode = null;
 
@@ -111,8 +112,7 @@ class TerminalEqualizer {
                 this.filters.push(filter);
             });
 
-            // Dynamics compressor acts as a studio-grade transparent brickwall limiter
-            // to eliminate any digital clipping distortion even with heavy bass boost
+            // Dynamics compressor acts as a transparent fallback limiter
             this.compressor = this.audioCtx.createDynamicsCompressor();
             this.compressor.threshold.setValueAtTime(-1.0, this.audioCtx.currentTime);
             this.compressor.knee.setValueAtTime(6.0, this.audioCtx.currentTime);
@@ -132,6 +132,27 @@ class TerminalEqualizer {
 
             this.compressor.connect(this.analyser);
             this.analyser.connect(this.audioCtx.destination);
+
+            // True Peak Lookahead Limiter (AudioWorklet) with graceful fallback
+            if (this.audioCtx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
+                this.audioCtx.audioWorklet.addModule('/js/limiter.worklet.js')
+                    .then(() => {
+                        if (!this.audioCtx || this.limiterNode) return;
+                        try {
+                            const limiter = new AudioWorkletNode(this.audioCtx, 'brickwall-limiter');
+                            spatial.outputNode.disconnect(this.compressor);
+                            this.compressor.disconnect(this.analyser);
+                            spatial.outputNode.connect(limiter);
+                            limiter.connect(this.analyser);
+                            this.limiterNode = limiter;
+                        } catch (err) {
+                            console.debug('Limiter worklet instantiation fallback:', err);
+                        }
+                    })
+                    .catch(err => {
+                        console.debug('Limiter worklet module fallback to compressor:', err);
+                    });
+            }
 
             return true;
         } catch (e) {
