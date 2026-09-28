@@ -277,3 +277,62 @@ export function getMidSideGains(width = 1.0) {
     const b = 0.5 * (1 - width);
     return { a, b };
 }
+
+export function generateSyntheticReverbIR(sampleRate, durationSec, decayTau, predelaySec, cutoffHz = 5000) {
+    const totalSamples = Math.max(1, Math.floor(sampleRate * durationSec));
+    const predelaySamples = Math.min(totalSamples, Math.floor(sampleRate * predelaySec));
+
+    const left = new Float32Array(totalSamples);
+    const right = new Float32Array(totalSamples);
+
+    // Seeded LCG PRNG for repeatable stereo decorrelation
+    let sL = 13371337;
+    let sR = 73317331;
+    function randL() {
+        sL = (1664525 * sL + 1013904223) >>> 0;
+        return (sL / 4294967296) * 2 - 1;
+    }
+    function randR() {
+        sR = (1664525 * sR + 1013904223) >>> 0;
+        return (sR / 4294967296) * 2 - 1;
+    }
+
+    // 1-pole RC lowpass filter
+    const dt = 1 / sampleRate;
+    const rc = 1 / (2 * Math.PI * cutoffHz);
+    const alpha = dt / (rc + dt);
+
+    let prevL = 0;
+    let prevR = 0;
+
+    for (let i = predelaySamples; i < totalSamples; i++) {
+        const t = (i - predelaySamples) / sampleRate;
+        const env = Math.exp(-t / decayTau);
+
+        const rawL = randL() * env;
+        const rawR = randR() * env;
+
+        prevL = prevL + alpha * (rawL - prevL);
+        prevR = prevR + alpha * (rawR - prevR);
+
+        left[i] = prevL;
+        right[i] = prevR;
+    }
+
+    // Peak normalisation to avoid harsh clipping
+    let maxPeak = 0;
+    for (let i = 0; i < totalSamples; i++) {
+        if (Math.abs(left[i]) > maxPeak) maxPeak = Math.abs(left[i]);
+        if (Math.abs(right[i]) > maxPeak) maxPeak = Math.abs(right[i]);
+    }
+    if (maxPeak > 1e-6) {
+        const norm = 0.7 / maxPeak;
+        for (let i = 0; i < totalSamples; i++) {
+            left[i] *= norm;
+            right[i] *= norm;
+        }
+    }
+
+    return { left, right };
+}
+
