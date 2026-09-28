@@ -362,63 +362,109 @@ def _lyric_line_time(line, key):
     return getattr(line, key, None)
 
 
-async def get_song_lyrics_full(video_id: str) -> dict:
-    """Return {'plain': str, 'synced': [{text, start, end}]} for a track.
+async def get_song_lyrics_full(video_id: str, title: str = "", artist: str = "", duration: int = 0) -> dict:
+    """Return {'plain': str, 'synced': [{text, start, end, words?}]} for a track.
 
-    ytmusicapi hands back LyricLine objects (or dicts) when timestamps are requested;
-    plain lyrics are used as the fallback whenever timings are missing.
+    Tries LRCLIB first for community-vetted word-accurate / enhanced synced lyrics,
+    falling back to YouTube Music timed lyrics.
     """
     try:
-        yt = get_ytmusic()
-        loop = asyncio.get_running_loop()
+        from api.lrclib import fetch_lrclib
 
-        def _fetch():
+        raw = None
+        # 1. Try LRCLIB if title is provided
+        if title:
             try:
-                watch = yt.get_watch_playlist(videoId=video_id)
-            except Exception:
-                return {"plain": "", "synced": []}
-            lyrics_id = ((watch or {}) if isinstance(watch, dict) else {}).get("lyrics")
-            if not lyrics_id:
-                return {"plain": "", "synced": []}
-            synced = []
-            try:
-                timed = yt.get_lyrics(lyrics_id, timestamps=True)
-            except Exception:
-                timed = None
-            lines = None
-            if isinstance(timed, dict):
-                lines = timed.get("lyrics")
-            elif timed is not None:
-                lines = getattr(timed, "lyrics", None)
-            if isinstance(lines, list) and lines:
-                for ln in lines:
-                    text = _lyric_line_text(ln)
-                    try:
-                        start = int(_lyric_line_time(ln, "start_time") or 0)
-                    except (TypeError, ValueError):
-                        start = 0
-                    try:
-                        end = int(_lyric_line_time(ln, "end_time") or 0)
-                    except (TypeError, ValueError):
-                        end = 0
-                    if text:
-                        synced.append({"text": text, "start": start, "end": end})
-            plain = ""
-            if synced:
-                plain = "\n".join(x["text"] for x in synced)
-            else:
+                lrc = await fetch_lrclib(title, artist, duration)
+                if lrc and lrc.get("synced"):
+                    raw = lrc
+            except Exception as e:
+                logger.debug("LRCLIB lookup failed: %s", e)
+
+        # 2. Fallback to YouTube Music if no synced lyrics from LRCLIB
+        if not raw or not raw.get("synced"):
+            yt = get_ytmusic()
+            loop = asyncio.get_running_loop()
+
+            def _fetch():
                 try:
-                    res = yt.get_lyrics(lyrics_id)
-                    if isinstance(res, dict):
-                        plain = res.get("lyrics", "") or ""
-                    elif res is not None:
-                        val = getattr(res, "lyrics", None)
-                        plain = val if isinstance(val, str) else ""
+                    watch = yt.get_watch_playlist(videoId=video_id)
                 except Exception:
-                    plain = ""
-            return {"plain": plain or "", "synced": synced}
+                    return {"plain": "", "synced": []}
+                lyrics_id = ((watch or {}) if isinstance(watch, dict) else {}).get("lyrics")
+                synced = []
+                plain = ""
 
-        raw = await loop.run_in_executor(None, _fetch)
+                if lyrics_id:
+                    try:
+                        timed = yt.get_lyrics(lyrics_id, timestamps=True)
+                    except Exception:
+                        timed = None
+                    lines = None
+                    if isinstance(timed, dict):
+                        lines = timed.get("lyrics")
+                    elif timed is not None:
+                        lines = getattr(timed, "lyrics", None)
+                    if isinstance(lines, list) and lines:
+                        for ln in lines:
+                            text = _lyric_line_text(ln)
+                            try:
+                                start = int(_lyric_line_time(ln, "start_time") or 0)
+                            except (TypeError, ValueError):
+                                start = 0
+                            try:
+                                end = int(_lyric_line_time(ln, "end_time") or 0)
+                            except (TypeError, ValueError):
+                                end = 0
+                            if text:
+                                synced.append({"text": text, "start": start, "end": end})
+                    if synced:
+                        plain = "\n".join(x["text"] for x in synced)
+                    else:
+                        try:
+                            res = yt.get_lyrics(lyrics_id)
+                            if isinstance(res, dict):
+                                plain = res.get("lyrics", "") or ""
+                            elif res is not None:
+                                val = getattr(res, "lyrics", None)
+                                plain = val if isinstance(val, str) else ""
+                        except Exception:
+                            plain = ""
+
+                # If YT provided metadata but we still had no title, try LRCLIB as second chance
+                extracted_title = ""
+                extracted_artist = ""
+                if not synced and isinstance(watch, dict) and watch.get("tracks"):
+                    first_track = watch["tracks"][0]
+                    if isinstance(first_track, dict):
+                        extracted_title = first_track.get("title") or ""
+                        artists = first_track.get("artists") or []
+                        if isinstance(artists, list) and artists:
+                            extracted_artist = artists[0].get("name", "") if isinstance(artists[0], dict) else str(artists[0])
+
+                return {
+                    "plain": plain or "",
+                    "synced": synced,
+                    "extracted_title": extracted_title,
+                    "extracted_artist": extracted_artist
+                }
+
+            yt_res = await loop.run_in_executor(None, _fetch)
+
+            # If YT has synced lyrics, use them; otherwise try extracted metadata with LRCLIB if available
+            if yt_res.get("synced"):
+                raw = {"plain": yt_res.get("plain", ""), "synced": yt_res.get("synced", [])}
+            elif yt_res.get("extracted_title") and not raw:
+                try:
+                    lrc = await fetch_lrclib(yt_res["extracted_title"], yt_res.get("extracted_artist", ""), duration)
+                    if lrc and (lrc.get("synced") or lrc.get("plain")):
+                        raw = lrc
+                except Exception:
+                    pass
+
+            if not raw:
+                raw = {"plain": yt_res.get("plain", ""), "synced": yt_res.get("synced", [])}
+
         try:
             from api.translit import enrich_lyrics
             return enrich_lyrics(raw)

@@ -144,12 +144,21 @@ async def get_playlist(playlist_id: str):
     return {"success": True, "data": {"results": _ser(res.results), "query": playlist_id, "name": getattr(res, "name", "") or getattr(res, "title", "") or playlist_id}}
 
 @app.get("/api/lyrics/{video_id}")
-async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0):
+async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, title: str = "", artist: str = "", duration: int = 0):
     """Lyrics from cache when possible; `timed=1` adds per-line timings and romanization."""
     import json as _json
     cached = None if refresh else await get_cached_lyrics(video_id)
+    # If cached entry exists but has no synced lyrics and title was provided, allow upgrading via LRCLIB
+    if cached is not None and title and not refresh:
+        try:
+            cached_synced = _json.loads(cached.get("synced") or "[]")
+            if not cached_synced:
+                cached = None
+        except Exception:
+            cached = None
+
     if cached is None:
-        data = await music.get_song_lyrics_full(video_id)
+        data = await music.get_song_lyrics_full(video_id, title=title, artist=artist, duration=duration)
         await cache_lyrics(video_id, data.get("plain", ""), _json.dumps(data.get("synced", [])))
         cached = {"plain": data.get("plain", ""), "synced": _json.dumps(data.get("synced", []))}
     try:

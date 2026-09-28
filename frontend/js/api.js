@@ -112,8 +112,12 @@ export async function extendQueue(seed, limit = 15) {
     return apiPost('/api/player/extend', { seed, limit });
 }
 
-export async function getLyrics(id, timed = true) {
-    return apiGet(`/api/lyrics/${encodeURIComponent(id)}?timed=${timed ? 1 : 0}`);
+export async function getLyrics(id, timed = true, meta = {}) {
+    let url = `/api/lyrics/${encodeURIComponent(id)}?timed=${timed ? 1 : 0}`;
+    if (meta.title) url += `&title=${encodeURIComponent(meta.title)}`;
+    if (meta.artist) url += `&artist=${encodeURIComponent(meta.artist)}`;
+    if (meta.duration) url += `&duration=${encodeURIComponent(Math.round(meta.duration))}`;
+    return apiGet(url);
 }
 
 export async function getQueue() {

@@ -1197,7 +1197,7 @@ const player = {
         if (rBtn) rBtn.classList.add('hidden');
         if (!song?.videoId) return;
         try {
-            const res = await getLyrics(song.videoId, true);
+            const res = await getLyrics(song.videoId, true, { title: song.title, artist: song.artist, duration: song.duration });
             if (this.currentSong?.videoId !== song.videoId) return;
             this.lyricsData = res?.data || null;
             this.lyrics = res?.success ? (res.data?.synced || []) : [];
@@ -1205,7 +1205,10 @@ const player = {
             else this.plainLyrics = [];
 
             if (stBadge) {
-                if (this.lyrics.length) stBadge.textContent = '[STATUS: SYNCED · LRCLIB]';
+                if (this.lyrics.length) {
+                    const hasWordSync = this.lyrics.some(x => Array.isArray(x.words) && x.words.length > 0);
+                    stBadge.textContent = hasWordSync ? '[STATUS: SYNCED · WORD-SYNC]' : '[STATUS: SYNCED · LRCLIB]';
+                }
                 else if (this.plainLyrics.length) stBadge.textContent = '[STATUS: STATIC TEXT]';
                 else stBadge.textContent = '[STATUS: NOT FOUND]';
             }
@@ -1315,11 +1318,67 @@ const player = {
         box.querySelectorAll('.lyric-line').forEach((el, i) => {
             const l = this.lyrics[i];
             const orig = el.querySelector('.lyric-orig');
-            if (orig) orig.textContent = l.text || '';
+            if (orig) {
+                orig.replaceChildren();
+                const words = (l.text || '').trim().split(/\s+/).filter(Boolean);
+                words.forEach((w, wIdx) => {
+                    const span = document.createElement('span');
+                    span.className = 'lrc-word unsung';
+                    span.dataset.w = String(wIdx);
+                    span.textContent = w;
+                    orig.appendChild(span);
+                    if (wIdx < words.length - 1) orig.appendChild(document.createTextNode(' '));
+                });
+            }
             const rom = el.querySelector('.lyric-roman');
-            if (rom && l.roman) rom.textContent = l.roman;
+            if (rom && l.roman) {
+                rom.replaceChildren();
+                const words = (l.roman || '').trim().split(/\s+/).filter(Boolean);
+                words.forEach((w, wIdx) => {
+                    const span = document.createElement('span');
+                    span.className = 'lrc-word unsung';
+                    span.dataset.w = String(wIdx);
+                    span.textContent = w;
+                    rom.appendChild(span);
+                    if (wIdx < words.length - 1) rom.appendChild(document.createTextNode(' '));
+                });
+            }
         });
         this.updateActiveLyric(this.audio?.currentTime * 1000 || 0);
+    },
+
+    computeLineWordTimings(curLyric, lineStart, lineDur) {
+        if (!curLyric) return [];
+        // 1. Explicit word-level timestamps from provider (Enhanced LRC)
+        if (Array.isArray(curLyric.words) && curLyric.words.length > 0) {
+            return curLyric.words.map(w => ({
+                start: Number(w.start) || lineStart,
+                end: Number(w.end) || (lineStart + lineDur)
+            }));
+        }
+
+        // 2. Syllable-weighted pacing model for line-level timestamps
+        const text = String(curLyric.text || '').trim();
+        const words = text.split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+
+        const weights = words.map(w => {
+            const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const vowels = clean.match(/[aiueoy]+/g);
+            let weight = Math.max(1, vowels ? vowels.length : 1);
+            if (/[,;]/.test(w)) weight += 0.35; // breath pause
+            if (/[.!?]/.test(w)) weight += 0.70; // sentence boundary pause
+            return weight;
+        });
+
+        const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+        let current = lineStart;
+        return words.map((w, idx) => {
+            const dur = lineDur * (weights[idx] / totalWeight);
+            const start = current;
+            current += dur;
+            return { start, end: current };
+        });
     },
 
     updateActiveLyric(ms) {
@@ -1339,8 +1398,11 @@ const player = {
             el.classList.toggle('active', isActive);
             const dist = Math.abs(i - found);
             el.dataset.dist = String(Math.min(dist, 4));
-            // Reset fill on non-active lines
             if (!isActive) {
+                const past = i < found;
+                el.querySelectorAll('.lrc-word').forEach(sp => {
+                    sp.className = past ? 'lrc-word sung' : 'lrc-word unsung';
+                });
                 const orig = el.querySelector('.lyric-orig');
                 if (orig) orig.style.removeProperty('--lyric-progress');
             }
@@ -1355,7 +1417,7 @@ const player = {
                 });
             }
         }
-        // ── Karaoke sweep fill via RAF ──
+        // ── Karaoke word-by-word pacing & sweep fill via RAF ──
         if (this._lyricFillRAF) cancelAnimationFrame(this._lyricFillRAF);
         const curLyric   = this.lyrics[found];
         const lineStart  = Number(curLyric?.start) || 0;
@@ -1372,8 +1434,43 @@ const player = {
         const origEl     = activeEl?.querySelector('.lyric-orig');
         const romanEl    = activeEl?.querySelector('.lyric-roman');
         if (!origEl) return;
+
+        const origTimings = this.computeLineWordTimings(curLyric, lineStart, lineDur);
+        const romanTimings = romanEl ? this.computeLineWordTimings({ text: curLyric.roman }, lineStart, lineDur) : [];
+
         const fillTick = () => {
             const nowMs  = Math.max(0, ((this.audio?.currentTime || 0) * 1000) - 50);
+
+            // Update word classes for orig
+            const origSpans = origEl.querySelectorAll('.lrc-word');
+            origSpans.forEach((sp, idx) => {
+                const wt = origTimings[idx];
+                if (!wt) return;
+                if (nowMs >= wt.end) {
+                    if (sp.className !== 'lrc-word sung') sp.className = 'lrc-word sung';
+                } else if (nowMs >= wt.start) {
+                    if (sp.className !== 'lrc-word singing') sp.className = 'lrc-word singing';
+                } else {
+                    if (sp.className !== 'lrc-word unsung') sp.className = 'lrc-word unsung';
+                }
+            });
+
+            // Update word classes for roman
+            if (romanEl) {
+                const romSpans = romanEl.querySelectorAll('.lrc-word');
+                romSpans.forEach((sp, idx) => {
+                    const wt = romanTimings[idx] || origTimings[idx];
+                    if (!wt) return;
+                    if (nowMs >= wt.end) {
+                        if (sp.className !== 'lrc-word sung') sp.className = 'lrc-word sung';
+                    } else if (nowMs >= wt.start) {
+                        if (sp.className !== 'lrc-word singing') sp.className = 'lrc-word singing';
+                    } else {
+                        if (sp.className !== 'lrc-word unsung') sp.className = 'lrc-word unsung';
+                    }
+                });
+            }
+
             const pct    = Math.min(100, Math.max(0, ((nowMs - lineStart) / lineDur) * 100));
             const val    = pct.toFixed(2) + '%';
             origEl.style.setProperty('--lyric-progress', val);

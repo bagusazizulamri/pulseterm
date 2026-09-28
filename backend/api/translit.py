@@ -154,24 +154,20 @@ def enrich_lyrics(lyrics_data: dict) -> dict:
         text = str(item.get("text") or "").strip()
         start = item.get("start", 0)
         end = item.get("end", 0)
+        words = item.get("words")
         r = romanize_line(text, default_cjk_script=default_cjk)
+        entry = {
+            "text": text,
+            "roman": r["roman"] if r else "",
+            "script": r["script"] if r else "latin",
+            "start": start,
+            "end": end,
+        }
+        if words:
+            entry["words"] = words
         if r:
             has_any_roman = True
-            enriched_synced.append({
-                "text": text,
-                "roman": r["roman"],
-                "script": r["script"],
-                "start": start,
-                "end": end
-            })
-        else:
-            enriched_synced.append({
-                "text": text,
-                "roman": "",
-                "script": "latin",
-                "start": start,
-                "end": end
-            })
+        enriched_synced.append(entry)
 
     # Also handle plain lyrics fallback
     plain_roman_lines = []
