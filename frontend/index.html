@@ -78,6 +78,7 @@
                     <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
                     <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
                     <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
+                    <button id="spatial-toggle-btn" onclick="spatial.cycleMode()" class="tui-badge spatial-toggle-btn" title="Toggle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
                     <button onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
                     <button onclick="toggleSettings()" class="tui-badge" title="Open terminal configuration">[CONFIG]</button>
                 </div>
@@ -255,6 +256,7 @@
                 <h3>┌─ [DSP] 10-BAND EQUALIZER ─┐</h3>
             </div>
             <div class="drawer-head-actions">
+                <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn" title="Cycle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
                 <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn" title="Toggle Auto-EQ per song change">[AUTO: OFF]</button>
                 <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
                 <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">[EQ: ENABLED]</button>
@@ -331,6 +333,7 @@
             <dt>e</dt><dd>Toggle 10-band DSP equalizer & genre presets</dd>
             <dt>a</dt><dd>Toggle Auto-EQ per song (in EQ panel)</dd>
             <dt>p</dt><dd>Instant Perfect Tune calibration (in EQ panel)</dd>
+            <dt>x</dt><dd>Cycle 3D Spatial Audio mode (Off / Studio / Wide / Concert)</dd>
             <dt>c</dt><dd>Toggle CRT scanline raster effect</dd>
             <dt>t</dt><dd>Cycle terminal color palette</dd>
             <dt>q</dt><dd>Toggle playback queue drawer</dd>
@@ -344,6 +347,7 @@
     </dialog>
 
     <script type="module" src="/js/api.js"></script>
+    <script type="module" src="/js/spatial.js"></script>
     <script type="module" src="/js/equalizer.js"></script>
     <script type="module" src="/js/visualizer.js"></script>
     <script type="module" src="/js/player.js"></script>

@@ -1519,6 +1519,13 @@ body.playing .tui-state-badge {
   font-weight: 700;
 }
 
+.spatial-toggle-btn.active, #spatial-toggle-btn.active {
+  background: var(--seal);
+  color: var(--paper);
+  border-color: var(--seal);
+  font-weight: 700;
+}
+
 .eq-perfect-btn, #eq-perfect-btn {
   border-color: var(--seal);
   color: var(--seal);

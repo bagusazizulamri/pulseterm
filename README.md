@@ -32,6 +32,11 @@ A high-performance, lightweight terminal-style YouTube Music audio player. Built
 - **TUI Monospace Aesthetic**: Clean ASCII borders, retro CRT scanline raster mode, and customizable color schemes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **High-Fidelity Opus 48kHz Audio**: Direct Opus 160kbps audio stream extraction with lossless Web Audio API DSP processing chain and anti-clipping studio limiter.
 - **10-Band DSP Parametric Equalizer**: 32Hz to 16kHz faders with Pre-amp headroom and Bass Booster controls.
+- **3D Binaural Spatial Audio (Apple Music Spatialize Stereo style)**:
+  - Native Web Audio API HRTF (Head-Related Transfer Function) binaural spatializer running hardware-accelerated with zero latency and <1% CPU.
+  - Mid-Side (M/S) matrix decomposition anchoring lead vocals to the virtual front stage while dispersing stereo width into a 3D spherical soundstage.
+  - Studio room crossfeed and early reflections eliminating in-head headphone listening fatigue (*out-of-head localization*).
+  - 4 Modes: `OFF` (Pure Stereo Bypass), `STUDIO` (Virtual Studio Monitors), `WIDE` (Expansive 360° Spherical Stage), `CONCERT` (Acoustic Hall Diffusion).
 - **Autoset Perfect Equalizer (Smart Auto-EQ)**:
   - `[AUTO: ON/OFF]`: Instant zero-latency genre-aware profile auto-matching (Rock, Metal, Pop, EDM, Hip-Hop, R&B, Jazz, Classical, Acoustic, Vocal, Bass Boost) whenever the track changes.
   - `[⚡ PERFECT TUNE]`: Instant one-shot real-time spectral calibration (<1ms) analyzing the live audio FFT spectrum to balance deficient bass, scoop mud, and tame sibilance.
@@ -98,6 +103,7 @@ Access at **http://localhost:3000**
 | `1, 2, 3, 4` | Quick switch: Home, Search, Library, Playlists |
 | `/` | Focus search command prompt |
 | `e` | Toggle 10-Band DSP Equalizer panel |
+| `x` | Cycle 3D Spatial Audio mode (Off / Studio / Wide / Concert) |
 | `a` | Toggle Auto-EQ per song (in EQ panel) |
 | `p` | Instant Perfect Tune calibration (in EQ panel) |
 | `v` | Toggle CAVA spectrum visualizer HUD |

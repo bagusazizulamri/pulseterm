@@ -2,6 +2,7 @@ import { search, searchSuggestions, getSearchHistory, browseArtist, getAlbum, ge
 import { player, togglePlay, nextSong, prevSong, toggleQueue, removeFromQueue, clearQueue, toggleLyrics, closeNowPlaying } from './player.js';
 import { visualizer } from './visualizer.js';
 import { equalizer } from './equalizer.js';
+import { spatial } from './spatial.js';
 
 let currentPage = 'home';
 let searchResults = [];
@@ -671,6 +672,7 @@ window.toggleCrt = () => visualizer.toggleCrt();
 window.cycleCrt = () => visualizer.toggleCrt();
 window.cycleTheme = cycleTheme;
 window.player = player;
+window.spatial = spatial;
 
 window.clearSearch = () => {
     const sInput = document.getElementById('search-input');
@@ -946,6 +948,7 @@ document.addEventListener('keydown', (e) => {
             return;
         }
     }
+    if (key === 'x') { e.preventDefault(); spatial.cycleMode(); return; }
     if (key === 'c') { e.preventDefault(); visualizer.toggleCrt(); return; }
     if (key === 't') { e.preventDefault(); cycleTheme(); return; }
     if (key === 'q') { e.preventDefault(); toggleQueue(); return; }

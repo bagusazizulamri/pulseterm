@@ -1,6 +1,8 @@
 // PulseTerm — Minimalist TUI Audio Player Equalizer Engine
 // 10-Band Parametric Audio DSP with Genre Presets & Anti-Clipping Dynamics Limiter
 
+import { spatial } from './spatial.js';
+
 export const EQ_FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 export const EQ_LABELS = ['32Hz', '64Hz', '125Hz', '250Hz', '500Hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz'];
 
@@ -195,7 +197,10 @@ class TerminalEqualizer {
             this.compressor.attack.setValueAtTime(0.003, this.audioCtx.currentTime);
             this.compressor.release.setValueAtTime(0.15, this.audioCtx.currentTime);
 
-            prevNode.connect(this.compressor);
+            // Native 3D Spatial Audio processing
+            spatial.init(this.audioCtx);
+            prevNode.connect(spatial.inputNode);
+            spatial.outputNode.connect(this.compressor);
 
             // Analyser for visualizer CAVA
             this.analyser = this.audioCtx.createAnalyser();
@@ -673,6 +678,8 @@ class TerminalEqualizer {
         document.querySelectorAll('.eq-chip').forEach(chip => {
             chip.classList.toggle('active', chip.dataset.preset === this.currentPreset);
         });
+
+        spatial.updateUI();
 
         // Update values & curve
         const curveEl = document.querySelector('.eq-ascii-curve');
