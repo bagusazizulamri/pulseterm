@@ -189,6 +189,22 @@
                 </div>
             </div>
             <div class="setting-group">
+                <label>Terminal UI Scale & Zoom (<span id="zoom-value-label">100%</span>)</label>
+                <div class="zoom-stepper-row">
+                    <button type="button" onclick="changeUiScale(-0.05)" class="tui-btn" title="Zoom Out (Ctrl + -)">[ - ZOOM OUT ]</button>
+                    <button type="button" onclick="setUiScale(1.0)" class="tui-btn" title="Reset to standard 100% (Ctrl + 0)">[ 100% RESET ]</button>
+                    <button type="button" onclick="changeUiScale(0.05)" class="tui-btn" title="Zoom In (Ctrl + +)">[ + ZOOM IN ]</button>
+                </div>
+                <div class="zoom-presets-grid">
+                    <button type="button" onclick="setUiScale(0.85)" class="tui-btn zoom-preset-btn" data-scale="0.85">[85% COMPACT]</button>
+                    <button type="button" onclick="setUiScale(0.90)" class="tui-btn zoom-preset-btn" data-scale="0.9">[90% CONDENSED]</button>
+                    <button type="button" onclick="setUiScale(1.00)" class="tui-btn zoom-preset-btn active" data-scale="1">[100% STANDARD]</button>
+                    <button type="button" onclick="setUiScale(1.10)" class="tui-btn zoom-preset-btn" data-scale="1.1">[110% LARGE]</button>
+                    <button type="button" onclick="setUiScale(1.20)" class="tui-btn zoom-preset-btn" data-scale="1.2">[120% HI-DPI]</button>
+                </div>
+                <input type="range" id="zoom-slider" min="75" max="130" step="5" value="100" oninput="setUiScale(this.value / 100)" title="Drag to adjust UI Zoom scale">
+            </div>
+            <div class="setting-group">
                 <label>Master Output Gain</label>
                 <input type="range" id="settings-volume" min="0" max="100" value="80">
             </div>
@@ -253,16 +269,9 @@
     <div id="equalizer-panel" class="hidden">
         <div class="drawer-head">
             <div class="eq-head-title">
-                <h3>┌─ [DSP] 10-BAND EQUALIZER ─┐</h3>
+                <h3>┌─ [DSP] 10-BAND EQUALIZER & AUDIO LAB ─┐</h3>
             </div>
-            <div class="drawer-head-actions">
-                <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn" title="Cycle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
-                <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn" title="Toggle Auto-EQ per song change">[AUTO: OFF]</button>
-                <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
-                <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn" title="Toggle EQ DSP bypass">[EQ: ENABLED]</button>
-                <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
-                <button onclick="toggleEqualizer()" class="tui-btn" title="Close equalizer panel (Esc)">[CLOSE ×]</button>
-            </div>
+            <button onclick="toggleEqualizer()" class="tui-btn" title="Close equalizer panel (Esc)">[CLOSE ×]</button>
         </div>
         <div id="equalizer-container"></div>
     </div>
@@ -341,6 +350,8 @@
             <dt>m</dt><dd>Toggle audio mute</dd>
             <dt>s</dt><dd>Toggle shuffle mode</dd>
             <dt>r</dt><dd>Cycle repeat mode (none / all / one)</dd>
+            <dt>Ctrl + / Ctrl -</dt><dd>Adjust UI scale & page zoom in / out</dd>
+            <dt>Ctrl 0</dt><dd>Reset UI scale & page zoom to 100%</dd>
             <dt>Esc</dt><dd>Dismiss active drawer or modal</dd>
             <dt>?</dt><dd>Show this keymap reference</dd>
         </dl>

@@ -222,6 +222,26 @@ async function doSearch() {
         return;
     }
 
+    if (lowerQ.startsWith(':zoom') || lowerQ.startsWith(':scale')) {
+        const parts = lowerQ.split(/\s+/);
+        const arg = parts[1];
+        if (input) { input.value = ''; input.blur(); }
+        if (!arg || arg === 'reset' || arg === 'default') {
+            setUiScale(1.0);
+        } else if (arg === 'in' || arg === '+') {
+            changeUiScale(0.05);
+        } else if (arg === 'out' || arg === '-') {
+            changeUiScale(-0.05);
+        } else {
+            const val = parseFloat(arg.replace('%', ''));
+            if (!isNaN(val)) {
+                const s = val > 2 ? val / 100 : val;
+                setUiScale(s);
+            }
+        }
+        return;
+    }
+
     if (currentPage !== 'search') await navigate('search');
     const container = document.getElementById('search-suggestions-container');
     if (container) container.innerHTML = '<div class="empty-state"><span class="label">[QUERY: IN-PROGRESS]</span><p>Scanning YouTube Music frequency indices…</p></div>';
@@ -603,6 +623,13 @@ async function init() {
         });
     }
 
+    const localZoom = parseFloat(localStorage.getItem('pulseterm_zoom'));
+    if (!isNaN(localZoom) && localZoom >= 0.70 && localZoom <= 1.40) {
+        setUiScale(localZoom, false);
+    } else {
+        setUiScale(1.0, false);
+    }
+
     const localTheme = localStorage.getItem('pulseterm_theme');
     let themeToApply = localTheme || 'dark';
     try {
@@ -738,6 +765,43 @@ window.setTheme = function(t, btn) {
     localStorage.setItem('pulseterm_theme', themeName);
     saveSettings({ theme: themeName }).catch(() => {});
 };
+
+let currentUiScale = 1.0;
+
+function setUiScale(scale, notify = true) {
+    const numericScale = Math.min(1.40, Math.max(0.70, Math.round(Number(scale) * 100) / 100));
+    currentUiScale = numericScale;
+    
+    // Apply zoom to documentElement for full page element scaling
+    document.documentElement.style.zoom = numericScale;
+    document.documentElement.style.setProperty('--ui-scale', String(numericScale));
+    
+    // Update label & slider
+    const label = document.getElementById('zoom-value-label');
+    if (label) label.textContent = `${Math.round(numericScale * 100)}%`;
+    
+    const slider = document.getElementById('zoom-slider');
+    if (slider) slider.value = Math.round(numericScale * 100);
+    
+    // Update active preset button
+    document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
+        const btnScale = parseFloat(btn.dataset.scale);
+        btn.classList.toggle('active', Math.abs(btnScale - numericScale) < 0.02);
+    });
+    
+    localStorage.setItem('pulseterm_zoom', String(numericScale));
+    if (notify) {
+        showToast(`>> UI SCALE: ${Math.round(numericScale * 100)}%`);
+    }
+}
+
+function changeUiScale(delta) {
+    setUiScale(currentUiScale + delta, true);
+}
+
+window.setUiScale = setUiScale;
+window.changeUiScale = changeUiScale;
+
 window.savePlayerSettings = async function() {
     const activeThemeBtn = document.querySelector('.theme-btn.active');
     const theme = activeThemeBtn?.dataset.theme || (document.body.className.replace('theme-', '') || 'dark');
@@ -834,6 +898,25 @@ document.addEventListener('keydown', (e) => {
         showToast('>> VIEW BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
         navigate(currentPage);
         return;
+    }
+
+    // UI Scale & Zoom shortcuts: Ctrl + / Ctrl - / Ctrl 0
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+' || e.code === 'NumpadAdd') {
+            e.preventDefault();
+            changeUiScale(0.05);
+            return;
+        }
+        if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+            e.preventDefault();
+            changeUiScale(-0.05);
+            return;
+        }
+        if (e.key === '0' || e.code === 'Numpad0') {
+            e.preventDefault();
+            setUiScale(1.0);
+            return;
+        }
     }
 
     // Spacebar: immediate play/pause, prevent default, blur active button

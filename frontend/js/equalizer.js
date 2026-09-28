@@ -517,53 +517,75 @@ class TerminalEqualizer {
         const container = document.getElementById('equalizer-container');
         if (!container) return;
 
+        const isSpatialActive = window.spatial && window.spatial.mode !== 'off';
+        const spatialLabel = window.spatial ? (isSpatialActive ? `[SPATIAL: ${window.spatial.mode.toUpperCase()}]` : '[SPATIAL: OFF]') : '[SPATIAL: OFF]';
+
         let html = `
             <div class="eq-body">
-                <div class="eq-top-telemetry">
-                    <div class="eq-meta-info">
-                        <span class="eq-ascii-curve">[ ${this.getAsciiCurve()} ]</span>
-                        <span class="tui-dim">PROFILE:</span>
-                        <span class="eq-preset-indicator font-bold">${this.getPresetDisplayName()}</span>
+                <div class="eq-control-deck">
+                    <div class="eq-telemetry-row">
+                        <div class="eq-curve-wrap">
+                            <span class="eq-meta-tag">SPECTRUM:</span>
+                            <span class="eq-ascii-curve">[ ${this.getAsciiCurve()} ]</span>
+                        </div>
+                        <div class="eq-profile-wrap">
+                            <span class="eq-meta-tag">PROFILE:</span>
+                            <span class="eq-preset-indicator font-bold">${this.getPresetDisplayName()}</span>
+                        </div>
                         <span class="eq-state-badge ${this.enabled ? 'is-active' : 'is-bypassed'}">${this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]'}</span>
-                        <button class="tui-btn eq-auto-toggle ${this.autoMode ? 'active' : ''}" id="eq-auto-toggle-btn" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
-                        <button class="tui-btn eq-perfect-btn" id="eq-perfect-tune-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
                     </div>
-                    <div class="eq-sliders-macro">
-                        <div class="eq-macro-group">
-                            <label for="eq-preamp-slider">PRE-AMP: <span id="eq-preamp-val">${this.preamp >= 0 ? '+' : ''}${this.preamp.toFixed(1)}dB</span></label>
-                            <input type="range" id="eq-preamp-slider" min="-6" max="6" step="0.5" value="${this.preamp}">
+                    <div class="eq-action-buttons">
+                        <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn ${this.enabled ? '' : 'btn-danger'}" title="Toggle EQ DSP bypass">${this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]'}</button>
+                        <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
+                        <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn ${this.autoMode ? 'active' : ''}" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
+                        <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn ${isSpatialActive ? 'active' : ''}" title="Cycle 3D Spatial Audio Mode (X)">${spatialLabel}</button>
+                        <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
+                    </div>
+                </div>
+
+                <div class="eq-macro-deck">
+                    <div class="eq-macro-box">
+                        <div class="eq-macro-head">
+                            <span>PRE-AMP GAIN:</span>
+                            <span id="eq-preamp-val" class="eq-val-accent">${this.preamp >= 0 ? '+' : ''}${this.preamp.toFixed(1)}dB</span>
                         </div>
-                        <div class="eq-macro-group">
-                            <label for="eq-bassboost-slider">BASS BOOST: <span id="eq-bassboost-val">+${this.bassBoost.toFixed(1)}dB</span></label>
-                            <input type="range" id="eq-bassboost-slider" min="0" max="8" step="0.5" value="${this.bassBoost}">
+                        <input type="range" id="eq-preamp-slider" min="-6" max="6" step="0.5" value="${this.preamp}" title="Master pre-amp trim (-6dB to +6dB)">
+                    </div>
+                    <div class="eq-macro-box">
+                        <div class="eq-macro-head">
+                            <span>BASS BOOST DSP:</span>
+                            <span id="eq-bassboost-val" class="eq-val-accent">+${this.bassBoost.toFixed(1)}dB</span>
                         </div>
+                        <input type="range" id="eq-bassboost-slider" min="0" max="8" step="0.5" value="${this.bassBoost}" title="Harmonic bass boost (0dB to +8dB)">
                     </div>
                 </div>
 
                 <div class="eq-presets-ribbon">
-                    <span class="eq-ribbon-label">GENRES & PROFILES:</span>
+                    <div class="eq-section-title">┌─ GENRES & SOUND PROFILES ─────────────────────────────────────────┐</div>
                     <div class="eq-presets-chips">
         `;
 
         Object.keys(EQ_PRESETS).forEach(key => {
             const p = EQ_PRESETS[key];
             const isActive = this.currentPreset === key;
-            html += `<button class="tui-btn eq-chip ${isActive ? 'active' : ''}" data-preset="${key}">${p.name}</button>`;
+            html += `<button class="tui-btn eq-chip ${isActive ? 'active' : ''}" data-preset="${key}">[${p.name}]</button>`;
         });
 
         html += `
                     </div>
                 </div>
 
-                <div class="eq-rack">
-                    <div class="eq-scale">
-                        <span>+12</span>
-                        <span>+6</span>
-                        <span>0</span>
-                        <span>-6</span>
-                        <span>-12</span>
-                    </div>
-                    <div class="eq-faders">
+                <div class="eq-rack-section">
+                    <div class="eq-section-title">┌─ 10-BAND GRAPHIC EQUALIZER FREQUENCY RESPONSE ───────────────────┐</div>
+                    <div class="eq-rack">
+                        <div class="eq-scale">
+                            <span>+12</span>
+                            <span>+6</span>
+                            <span> 0</span>
+                            <span>-6</span>
+                            <span>-12</span>
+                        </div>
+                        <div class="eq-faders">
         `;
 
         this.gains.forEach((gain, idx) => {
@@ -581,6 +603,7 @@ class TerminalEqualizer {
         });
 
         html += `
+                        </div>
                     </div>
                 </div>
             </div>
