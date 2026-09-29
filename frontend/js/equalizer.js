@@ -1,7 +1,7 @@
 // PulseTerm — Minimalist TUI Audio Player Equalizer Engine
 // 10-Band Parametric Audio DSP with Genre Presets & Anti-Clipping Dynamics Limiter
 
-import { spatial } from './spatial.js?v=8';
+import { spatial } from './spatial.js?v=9';
 import { getGenre } from './api.js';
 import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
 
@@ -135,22 +135,29 @@ class TerminalEqualizer {
 
             // True Peak Lookahead Limiter (AudioWorklet) with graceful fallback
             if (this.audioCtx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
-                this.audioCtx.audioWorklet.addModule('/js/limiter.worklet.js')
+                const workletUrl = new URL('./limiter_worklet.js', import.meta.url).href;
+                this.audioCtx.audioWorklet.addModule(workletUrl)
                     .then(() => {
+                        console.log('Limiter worklet loaded successfully from', workletUrl);
                         if (!this.audioCtx || this.limiterNode) return;
                         try {
-                            const limiter = new AudioWorkletNode(this.audioCtx, 'brickwall-limiter');
+                            const limiter = new AudioWorkletNode(this.audioCtx, 'limiter-processor');
                             spatial.outputNode.disconnect(this.compressor);
-                            this.compressor.disconnect(this.analyser);
                             spatial.outputNode.connect(limiter);
-                            limiter.connect(this.analyser);
+                            limiter.connect(this.compressor);
                             this.limiterNode = limiter;
-                        } catch (err) {
-                            console.debug('Limiter worklet instantiation fallback:', err);
+                        } catch(err) {
+                            console.warn('Failed to construct limiter worklet', err);
                         }
                     })
-                    .catch(err => {
-                        console.debug('Limiter worklet module fallback to compressor:', err);
+                    .catch(e => {
+                        console.warn('Limiter worklet failed to load from', workletUrl, e);
+                        // Fallback DynamicsCompressor (already set up in compressor node, but we tighten it)
+                        this.compressor.threshold.value = -2;
+                        this.compressor.knee.value = 0;
+                        this.compressor.ratio.value = 20;
+                        this.compressor.attack.value = 0.001;
+                        this.compressor.release.value = 0.1;
                     });
             }
 
