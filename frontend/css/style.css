@@ -2240,57 +2240,56 @@ dialog.artwork-modal::backdrop {
 /* ── Word-by-word karaoke typography & pacing ── */
 .lrc-word {
   display: inline-block;
-  transition: color 0.1s ease-out, text-shadow 0.12s ease-out, transform 0.1s ease-out, opacity 0.1s ease-out;
+  position: relative;
+  will-change: transform, background-position;
 }
 
 .lyric-line:not([data-dist="0"]) .lrc-word {
   color: inherit;
 }
 
-/* Active line words */
-.lyric-line[data-dist="0"] .lyric-orig .lrc-word.unsung {
-  color: var(--ink-2);
-  opacity: 0.72;
-  font-weight: 500;
+/* Active line words base layer */
+.lyric-line[data-dist="0"] .lrc-word {
+  color: color-mix(in srgb, currentColor 60%, transparent);
+}
+.lyric-line[data-dist="0"] .lyric-orig .lrc-word { color: color-mix(in srgb, var(--ink-2) 50%, transparent); font-weight: 500; }
+.lyric-line[data-dist="0"] .lyric-roman .lrc-word { color: color-mix(in srgb, var(--ink-3) 50%, transparent); font-weight: 400; }
+
+/* The liquid sweep mask layer */
+.lyric-line[data-dist="0"] .lrc-word::after {
+  content: attr(data-w-text);
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  color: transparent;
+  background-image: linear-gradient(
+    to right,
+    var(--fill-color, var(--seal)) calc(var(--progress, 0) * 100% - 15%),
+    color-mix(in srgb, var(--fill-color, var(--seal)) 50%, transparent) calc(var(--progress, 0) * 100%),
+    transparent calc(var(--progress, 0) * 100% + 15%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 calc(var(--bounce, 0) * 8px) var(--seal-glow));
 }
 
-.lyric-line[data-dist="0"] .lyric-orig .lrc-word.singing {
-  color: var(--seal);
-  font-weight: 700;
-  text-shadow: 0 0 14px var(--seal-glow);
-  transform: translateY(-1px);
-}
+.lyric-line[data-dist="0"] .lyric-orig .lrc-word { --fill-color: var(--seal); }
+.lyric-line[data-dist="0"] .lyric-roman .lrc-word { --fill-color: color-mix(in srgb, var(--seal) 85%, #ffffff); }
 
-.lyric-line[data-dist="0"] .lyric-orig .lrc-word.sung {
-  color: var(--seal);
+/* Bounce animation */
+.lyric-line[data-dist="0"] .lrc-word.singing {
   font-weight: 700;
-  text-shadow: 0 0 6px var(--seal-glow);
+  transform: translateZ(0) translateY(calc(var(--bounce, 0) * -3px)) scale(calc(1 + (var(--bounce, 0) * 0.04)));
 }
+.lyric-line[data-dist="0"] .lrc-word.sung { font-weight: 700; transform: none; }
+.lyric-line[data-dist="0"] .lyric-roman .lrc-word.sung,
+.lyric-line[data-dist="0"] .lyric-roman .lrc-word.singing { font-weight: 600; }
 
 .lyric-line[data-dist="0"] .lyric-timestamp {
   color: var(--seal);
   opacity: 1;
   font-weight: 700;
 }
-
-/* Romanization script active line words */
-.lyric-line[data-dist="0"] .lyric-roman .lrc-word.unsung {
-  color: var(--ink-3);
-  opacity: 0.65;
-}
-
-.lyric-line[data-dist="0"] .lyric-roman .lrc-word.singing {
-  color: color-mix(in srgb, var(--seal) 85%, #ffffff);
-  font-weight: 700;
-  text-shadow: 0 0 10px var(--seal-glow);
-  transform: translateY(-1px);
-}
-
-.lyric-line[data-dist="0"] .lyric-roman .lrc-word.sung {
-  color: color-mix(in srgb, var(--seal) 75%, var(--ink-light));
-  font-weight: 600;
-}
-
 .lyric-line[data-dist="0"] .lyric-jump-icon {
   opacity: 1;
   transform: translateX(0);

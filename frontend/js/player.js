@@ -1350,6 +1350,7 @@ const player = {
                     const span = document.createElement('span');
                     span.className = 'lrc-word unsung';
                     span.dataset.w = String(wIdx);
+                    span.dataset.wText = w;
                     span.textContent = w;
                     orig.appendChild(span);
                     if (wIdx < words.length - 1) orig.appendChild(document.createTextNode(' '));
@@ -1365,6 +1366,7 @@ const player = {
                     const span = document.createElement('span');
                     span.className = 'lrc-word unsung';
                     span.dataset.w = String(wIdx);
+                    span.dataset.wText = w;
                     span.textContent = w;
                     rom.appendChild(span);
                     if (wIdx < words.length - 1) rom.appendChild(document.createTextNode(' '));
@@ -1476,41 +1478,40 @@ const player = {
         const fillTick = () => {
             const nowMs  = Math.max(0, ((this.audio?.currentTime || 0) * 1000) - 50);
 
-            // Update word classes for orig
-            const origSpans = origEl.querySelectorAll('.lrc-word');
-            origSpans.forEach((sp, idx) => {
-                const wt = origTimings[idx];
-                if (!wt) return;
-                if (nowMs >= wt.end) {
-                    if (sp.className !== 'lrc-word sung') sp.className = 'lrc-word sung';
-                } else if (nowMs >= wt.start) {
-                    if (sp.className !== 'lrc-word singing') sp.className = 'lrc-word singing';
-                } else {
-                    if (sp.className !== 'lrc-word unsung') sp.className = 'lrc-word unsung';
-                }
-            });
-
-            // Update word classes for roman
-            if (romanEl) {
-                const romSpans = romanEl.querySelectorAll('.lrc-word');
-                romSpans.forEach((sp, idx) => {
-                    const wt = romanTimings[idx] || origTimings[idx];
+            const updateSpans = (el, timings) => {
+                if (!el) return;
+                const spans = el.querySelectorAll('.lrc-word');
+                spans.forEach((sp, idx) => {
+                    const wt = timings[idx];
                     if (!wt) return;
                     if (nowMs >= wt.end) {
-                        if (sp.className !== 'lrc-word sung') sp.className = 'lrc-word sung';
+                        if (sp.className !== 'lrc-word sung') {
+                            sp.className = 'lrc-word sung';
+                            sp.style.setProperty('--progress', '1');
+                            sp.style.setProperty('--bounce', '0');
+                        }
                     } else if (nowMs >= wt.start) {
                         if (sp.className !== 'lrc-word singing') sp.className = 'lrc-word singing';
+                        const duration = Math.max(1, wt.end - wt.start);
+                        const progress = Math.min(1, Math.max(0, (nowMs - wt.start) / duration));
+                        const bounce = Math.sin(progress * Math.PI).toFixed(3);
+                        sp.style.setProperty('--progress', progress.toFixed(3));
+                        sp.style.setProperty('--bounce', bounce);
                     } else {
-                        if (sp.className !== 'lrc-word unsung') sp.className = 'lrc-word unsung';
+                        if (sp.className !== 'lrc-word unsung') {
+                            sp.className = 'lrc-word unsung';
+                            sp.style.setProperty('--progress', '0');
+                            sp.style.setProperty('--bounce', '0');
+                        }
                     }
                 });
-            }
+            };
 
-            const pct    = Math.min(100, Math.max(0, ((nowMs - lineStart) / lineDur) * 100));
-            const val    = pct.toFixed(2) + '%';
-            origEl.style.setProperty('--lyric-progress', val);
-            if (romanEl) romanEl.style.setProperty('--lyric-progress', val);
-            if (pct < 100 && activeEl.classList.contains('active')) {
+            updateSpans(origEl, origTimings);
+            if (romanEl) updateSpans(romanEl, romanTimings.length ? romanTimings : origTimings);
+
+            const pct = Math.min(100, Math.max(0, ((nowMs - lineStart) / lineDur) * 100));
+            if (pct < 100 && activeEl.classList.contains('active') && this.nowPlayingVisible) {
                 this._lyricFillRAF = requestAnimationFrame(fillTick);
             }
         };
