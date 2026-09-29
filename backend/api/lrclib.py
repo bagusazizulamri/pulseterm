@@ -163,12 +163,18 @@ async def fetch_lrclib(title: str, artist: str, duration: int = 0) -> Optional[D
                 if synced_lrc or lyricsfile:
                     synced = parse_enhanced_lrc(synced_lrc, lyricsfile)
                     if synced:
-                        return {
-                            "plain": plain or "\n".join(x["text"] for x in synced),
-                            "synced": synced,
-                            "source": "lrclib",
-                            "has_word_sync": bool(data.get("hasWordSync")) or any(bool(x.get("words")) for x in synced)
-                        }
+                        plain_text = plain or "
+".join(x["text"] for x in synced)
+                        is_jp_lyrics = bool(re.search(r'[u3040-u309Fu30A0-u30FF]', plain_text))
+                        is_jp_query = bool(re.search(r'[u3040-u309Fu30A0-u30FF]', clean_title + " " + clean_artist))
+                        # Prevent K-Pop Japanese version mismatch
+                        if not (is_jp_lyrics and not is_jp_query and "japanese" not in clean_title.lower()):
+                            return {
+                                "plain": plain_text,
+                                "synced": synced,
+                                "source": "lrclib",
+                                "has_word_sync": bool(data.get("hasWordSync")) or any(bool(x.get("words")) for x in synced)
+                            }
         except Exception as e:
             logger.debug("LRCLIB /get failed: %s", e)
 
@@ -183,6 +189,19 @@ async def fetch_lrclib(title: str, artist: str, duration: int = 0) -> Optional[D
                     candidates = [c for c in results if c.get("syncedLyrics") or c.get("lyricsfile")]
                     if not candidates:
                         candidates = results
+
+                    # Filter out Japanese mismatch
+                    is_jp_query = bool(re.search(r'[u3040-u309Fu30A0-u30FF]', clean_title + " " + clean_artist))
+                    if not is_jp_query and "japanese" not in clean_title.lower():
+                        valid_c = []
+                        for c in candidates:
+                            c_plain = c.get("plainLyrics") or ""
+                            if not bool(re.search(r'[u3040-u309Fu30A0-u30FF]', c_plain)):
+                                valid_c.append(c)
+                        if valid_c:
+                            candidates = valid_c
+
+                    best = candidates[0]
 
                     best = candidates[0]
                     if duration > 0:
