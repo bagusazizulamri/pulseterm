@@ -14,7 +14,7 @@
 
 ## Highlights
 
-- **Terminal-Like UI Style**: Browser-based web player designed with a retro terminal aesthetic (not a pure command-line/curses TUI app)—featuring monospace typography, ASCII borders/telemetry, CRT scanlines, keyboard-first navigation, and customizable color themes (Dark, Amber, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
+- **Terminal-Like UI Style**: Browser-based web player designed with a retro terminal aesthetic (not a pure command-line/curses TUI app)—featuring monospace typography, ASCII borders/telemetry, CRT scanlines, keyboard-first navigation, and customizable color themes (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **Studio Audio DSP (48 kHz Opus)**:
   - **10-Band Parametric EQ**: 32Hz–16kHz faders, preamp trim, harmonic bass boost, and 14 calibrated presets.
   - **Smart Auto-EQ**: Word-boundary genre classification that adapts EQ presets seamlessly on track changes without overwriting user manual settings.
