@@ -2,7 +2,7 @@ import { search, searchSuggestions, getSearchHistory, browseArtist, getAlbum, ge
 import { player, togglePlay, nextSong, prevSong, toggleQueue, removeFromQueue, clearQueue, toggleLyrics, closeNowPlaying } from './player.js';
 import { visualizer } from './visualizer.js';
 import { equalizer } from './equalizer.js';
-import { spatial } from './spatial.js?v=4';
+import { spatial } from './spatial.js?v=5';
 
 let currentPage = 'home';
 let searchResults = [];

@@ -16,52 +16,60 @@ export const SPATIAL_CONFIGS = {
         cutoffFreq: 5000,
         makeupDb: 0.0,
         eqHighDb: 0.0,
-        eqLowDb: 0.0
+        eqLowDb: 0.0,
+        sideWidth: 0.5,
+        sideEqPresence: 0.0
     },
     studio: {
         name: 'STUDIO',
         label: 'Studio Monitors 3D',
-        azimuthDeg: 35,       // Standard monitor azimuth
+        azimuthDeg: 35,
         radius: 1.5,
-        dryMix: 0.35,         // 35% original stereo clarity
-        roomGain: 0.02,       // Very dry, no mud
+        dryMix: 0.35,
+        roomGain: 0.02,
         reverbDuration: 0.35,
         decayTau: 0.10,
         predelay: 0.012,
         cutoffFreq: 5000,
-        makeupDb: 0.5,        // Gain makeup
-        eqHighDb: 3.5,        // Restore treble
-        eqLowDb: 2.0          // Restore bass
+        makeupDb: 0.5,
+        eqHighDb: 3.5,
+        eqLowDb: 2.0,
+        sideWidth: 0.58,
+        sideEqPresence: 2.5
     },
     wide: {
         name: 'WIDE',
         label: 'Wide 3D Stage',
-        azimuthDeg: 55,       // Ultra-wide
+        azimuthDeg: 55,
         radius: 1.5,
-        dryMix: 0.20,         // Less dry, more 3D
-        roomGain: 0.08,       // Out-of-head immersive spatialization
+        dryMix: 0.20,
+        roomGain: 0.08,
         reverbDuration: 0.50,
         decayTau: 0.15,
         predelay: 0.018,
         cutoffFreq: 5500,
         makeupDb: 1.0,
-        eqHighDb: 4.5,        // Extra treble for extreme width
-        eqLowDb: 2.5
+        eqHighDb: 4.5,
+        eqLowDb: 2.5,
+        sideWidth: 0.75,
+        sideEqPresence: 4.5
     },
     concert: {
         name: 'CONCERT',
         label: 'Concert Hall',
-        azimuthDeg: 45,       // Grand concert hall
+        azimuthDeg: 45,
         radius: 2.0,
-        dryMix: 0.10,         // Mostly wet
-        roomGain: 0.15,       // Lush acoustic hall reflections
+        dryMix: 0.10,
+        roomGain: 0.15,
         reverbDuration: 0.75,
         decayTau: 0.22,
         predelay: 0.024,
         cutoffFreq: 4500,
         makeupDb: 1.5,
         eqHighDb: 3.0,
-        eqLowDb: 2.0
+        eqLowDb: 2.0,
+        sideWidth: 0.65,
+        sideEqPresence: 1.5
     }
 };
 
