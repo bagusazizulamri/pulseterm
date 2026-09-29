@@ -1,5 +1,5 @@
 #!/bin/bash
-# PulseTerm - Minimalist TUI Audio Player Service Manager
+# PulseTerm - Minimalist Terminal-Like Audio Player Service Manager
 # Usage: ./manage.sh [start|stop|restart|status]
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
