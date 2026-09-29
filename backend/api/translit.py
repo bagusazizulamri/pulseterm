@@ -241,9 +241,24 @@ def enrich_lyrics(lyrics_data: dict) -> dict:
         }
         if words:
             entry["words"] = words
-        if r and r.get("words_orig"):
+            
+            # If word-level sync exists but romanizer didn't provide chunked romanization
+            if r and not r.get("words_roman"):
+                w_orig = []
+                w_roman = []
+                for w in words:
+                    w_text = str(w.get("text") or "").strip()
+                    if not w_text:
+                        continue
+                    w_r = romanize_line(w_text, default_cjk_script=default_cjk)
+                    w_orig.append(w_text)
+                    w_roman.append(w_r["roman"] if w_r else w_text)
+                entry["words_orig"] = w_orig
+                entry["words_roman"] = w_roman
+
+        if r and r.get("words_orig") and "words_orig" not in entry:
             entry["words_orig"] = r["words_orig"]
-        if r and r.get("words_roman"):
+        if r and r.get("words_roman") and "words_roman" not in entry:
             entry["words_roman"] = r["words_roman"]
         if r:
             has_any_roman = True
