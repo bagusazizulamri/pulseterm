@@ -346,8 +346,6 @@ class SpatialAudioEngine {
             this.makeupGain.gain.setTargetAtTime(dbToLinear, t, 0.1);
         }
     }
-
-    cycleMode() {
     updateUI() {
         const btn = document.getElementById('spatial-panel-btn');
         if (btn) {
@@ -355,15 +353,12 @@ class SpatialAudioEngine {
             btn.classList.toggle('active', this.mode !== 'off');
         }
     }
+
+    cycleMode() {
         const idx = SPATIAL_MODES.indexOf(this.mode);
         const nextMode = SPATIAL_MODES[(idx + 1) % SPATIAL_MODES.length];
         this.applyMode(nextMode);
-
-        const btn = document.getElementById('spatial-panel-btn');
-        if (btn) {
-            btn.textContent = `[SPATIAL: ${SPATIAL_CONFIGS[nextMode].name}]`;
-            btn.classList.toggle('active', nextMode !== 'off');
-        }
+        this.updateUI();
         return nextMode;
     }
 
