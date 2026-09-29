@@ -347,10 +347,18 @@ class SpatialAudioEngine {
         }
     }
     updateUI() {
-        const btn = document.getElementById('spatial-panel-btn');
-        if (btn) {
-            btn.textContent = `[SPATIAL: ${SPATIAL_CONFIGS[this.mode].name}]`;
-            btn.classList.toggle('active', this.mode !== 'off');
+        const panelBtn = document.getElementById('spatial-panel-btn');
+        const dashBtn = document.getElementById('spatial-toggle-btn');
+        const label = `[SPATIAL: ${SPATIAL_CONFIGS[this.mode].name}]`;
+        const isActive = this.mode !== 'off';
+        
+        if (panelBtn) {
+            panelBtn.textContent = label;
+            panelBtn.classList.toggle('active', isActive);
+        }
+        if (dashBtn) {
+            dashBtn.textContent = label;
+            dashBtn.classList.toggle('active', isActive);
         }
     }
 
@@ -373,4 +381,4 @@ class SpatialAudioEngine {
 }
 
 export const spatial = new SpatialAudioEngine();
-window.spatial = spatial; // For global access from inline handlers
+if (typeof window !== "undefined") window.spatial = spatial; // For global access from inline handlers
