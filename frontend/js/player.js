@@ -62,6 +62,7 @@ const player = {
         this.audio.removeAttribute('crossorigin');
         this.preloadAudio = new Audio();
         this.preloadAudio.preload = 'auto';
+        this.preloadAudio.volume = this.volume;
         this.preloadAudio.removeAttribute('crossorigin');
         this._bindActiveAudio();
         equalizer.initAudioContext();
@@ -1126,6 +1127,7 @@ const player = {
         this.volume = vol;
         if (vol > 0) { this.lastVolume = vol; this.muted = false; }
         if (this.audio) this.audio.volume = this.muted ? 0 : vol;
+        if (this.preloadAudio) this.preloadAudio.volume = this.muted ? 0 : vol;
         const slider = document.getElementById('volume-slider');
         if (slider) slider.value = vol * 100;
         const slider2 = document.getElementById('settings-volume');
@@ -1148,6 +1150,7 @@ const player = {
         this.muted = !this.muted;
         if (!this.muted && this.volume === 0) this.volume = this.lastVolume || .8;
         if (this.audio) this.audio.volume = this.muted ? 0 : this.volume;
+        if (this.preloadAudio) this.preloadAudio.volume = this.muted ? 0 : this.volume;
         const slider = document.getElementById('volume-slider');
         if (slider) slider.value = this.muted ? 0 : this.volume * 100;
         clearTimeout(this.volumeCommitTimer);
