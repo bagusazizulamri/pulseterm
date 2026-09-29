@@ -2,7 +2,7 @@ import { search, searchSuggestions, getSearchHistory, browseArtist, getAlbum, ge
 import { player, togglePlay, nextSong, prevSong, toggleQueue, removeFromQueue, clearQueue, toggleLyrics, closeNowPlaying } from './player.js';
 import { visualizer } from './visualizer.js';
 import { equalizer } from './equalizer.js';
-import { spatial } from './spatial.js?v=10';
+import { spatial } from './spatial.js?v=11';
 
 let currentPage = 'home';
 let searchResults = [];
@@ -735,8 +735,33 @@ function applySettings(d, syncInputs = true) {
     if (Number(d.sleepMinutes) > 0) {
         player.setSleepTimer(Number(d.sleepMinutes));
     }
+    
     if (typeof d.queueLimit !== 'undefined') {
         player.setQueueLimit(Number(d.queueLimit) || 20);
+    }
+    
+    // Experimental Features Check
+    if (typeof d.expSpatial !== 'undefined') {
+        window.expSpatialEnabled = d.expSpatial;
+        const navBtn = document.getElementById('spatial-toggle-btn');
+        const eqBtn = document.getElementById('spatial-panel-btn');
+        if (navBtn) navBtn.style.display = d.expSpatial ? 'inline-block' : 'none';
+        if (eqBtn) eqBtn.style.display = d.expSpatial ? 'inline-block' : 'none';
+        
+        // Turn off if disabled
+        if (!d.expSpatial && window.spatial && window.spatial.mode !== 'off') {
+            window.spatial.setMode('off');
+        }
+    } else {
+        window.expSpatialEnabled = true; // default true if not set
+    }
+    
+    if (typeof d.expPerfectTune !== 'undefined') {
+        window.expPerfectTuneEnabled = d.expPerfectTune;
+        const perfectBtn = document.getElementById('eq-perfect-btn');
+        if (perfectBtn) perfectBtn.style.display = d.expPerfectTune ? 'inline-block' : 'none';
+    } else {
+        window.expPerfectTuneEnabled = true; // default true if not set
     }
 
     // 4. Update Form Inputs if Settings Panel exists
@@ -745,9 +770,17 @@ function applySettings(d, syncInputs = true) {
         const rp = document.getElementById('settings-repeat'); if (rp) rp.value = player.repeatMode;
         const cf = document.getElementById('settings-crossfade'); if (cf) cf.value = player.crossfade;
         const sp = document.getElementById('settings-speed'); if (sp) sp.value = player.audio?.playbackRate || 1;
+        
         const sl = document.getElementById('settings-sleep'); if (sl) sl.value = String(d.sleepMinutes || 0);
         const ql = document.getElementById('settings-queue-limit'); if (ql) ql.value = String(player.queueLimit || 20);
         const sv = document.getElementById('settings-volume'); if (sv) sv.value = Math.round((player.volume ?? 0.8) * 100);
+        
+        const expSpatialEl = document.getElementById('settings-exp-spatial');
+        if (expSpatialEl) expSpatialEl.checked = d.expSpatial !== false;
+        
+        const expPerfectTuneEl = document.getElementById('settings-exp-perfect-tune');
+        if (expPerfectTuneEl) expPerfectTuneEl.checked = d.expPerfectTune !== false;
+
     }
 
     const vol = player.volume ?? 0.8;
@@ -937,10 +970,14 @@ window.savePlayerSettings = function() {
     const repeat = document.getElementById('settings-repeat')?.value || 'none';
     const crossfade = Number(document.getElementById('settings-crossfade')?.value || 0);
     const speed = Number(document.getElementById('settings-speed')?.value || 1);
+    
     const sleepMinutes = Number(document.getElementById('settings-sleep')?.value || 0);
     const queueLimit = Number(document.getElementById('settings-queue-limit')?.value || 20);
+    
+    const expSpatial = Boolean(document.getElementById('settings-exp-spatial')?.checked);
+    const expPerfectTune = Boolean(document.getElementById('settings-exp-perfect-tune')?.checked);
 
-    const newSettings = { theme, volume: vol, shuffle, repeat, crossfade, speed, sleepMinutes, queueLimit };
+    const newSettings = { theme, volume: vol, shuffle, repeat, crossfade, speed, sleepMinutes, queueLimit, expSpatial, expPerfectTune };
 
     // 1. Layer 1: Optimistic Local-First write (0ms)
     setLocalSettings(newSettings);
@@ -1178,7 +1215,7 @@ document.addEventListener('keydown', (e) => {
         }
         return;
     }
-    if (key === 'x') { e.preventDefault(); spatial.cycleMode(); return; }
+    if (key === 'x') { e.preventDefault(); if(window.expSpatialEnabled !== false) { spatial.cycleMode(); } return; }
     if (key === 'c') { e.preventDefault(); visualizer.toggleCrt(); return; }
     if (key === 't') { e.preventDefault(); cycleTheme(); return; }
     if (key === 'q') { e.preventDefault(); toggleQueue(); return; }

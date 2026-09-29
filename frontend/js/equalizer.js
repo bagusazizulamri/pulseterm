@@ -1,7 +1,7 @@
 // PulseTerm — Minimalist TUI Audio Player Equalizer Engine
 // 10-Band Parametric Audio DSP with Genre Presets & Anti-Clipping Dynamics Limiter
 
-import { spatial } from './spatial.js?v=10';
+import { spatial } from './spatial.js?v=11';
 import { getGenre } from './api.js';
 import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
 
@@ -556,9 +556,9 @@ class TerminalEqualizer {
                     </div>
                     <div class="eq-action-buttons">
                         <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn ${this.enabled ? '' : 'btn-danger'}" title="Toggle EQ DSP bypass">${this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]'}</button>
-                        <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune">[⚡ PERFECT TUNE]</button>
+                        <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune" style="display: ${window.expPerfectTuneEnabled !== false ? 'inline-block' : 'none'}">[⚡ PERFECT TUNE]</button>
                         <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn ${this.autoMode ? 'active' : ''}" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
-                        <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn ${isSpatialActive ? 'active' : ''}" title="Cycle 3D Spatial Audio Mode (X)">${spatialLabel}</button>
+                        <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn ${isSpatialActive ? 'active' : ''}" title="Cycle 3D Spatial Audio Mode (X)" style="display: ${window.expSpatialEnabled !== false ? 'inline-block' : 'none'}">${spatialLabel}</button>
                         <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
                     </div>
                 </div>

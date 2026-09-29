@@ -257,6 +257,13 @@
                     <option value="0">Disabled</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>
                 </select>
             </div>
+                        <div class="setting-group">
+                <label>Experimental DSP Features</label>
+                <div class="toggle-group" style="flex-direction: column; gap: 0.5rem; display: flex;">
+                    <label class="check"><input type="checkbox" id="settings-exp-spatial" onchange="savePlayerSettings()"> [x] Enable 3D Spatial Audio Engine</label>
+                    <label class="check"><input type="checkbox" id="settings-exp-perfect-tune" onchange="savePlayerSettings()"> [x] Enable Perfect Tune (Auto EQ)</label>
+                </div>
+            </div>
             <button onclick="savePlayerSettings()" class="save-btn">[COMMIT CONFIG TO FLASH]</button>
             <p class="keys">ASCII & Unicode terminal music client powered by FastAPI, SQLite-WAL & Web Audio.</p>
         </div>
