@@ -185,14 +185,32 @@ class SpatialAudioEngine {
             this.splitter.connect(this.sideRGain, 1); // R -> SideR (positive)
             this.invertL.connect(this.sideRGain); // -L -> SideR
 
-            // Binaural HRTF Panners (Center, Left, Right)
-            this.centerPanner = this._createHRTFPanner(0, 0, -1.0);
-            this.leftPanner = this._createHRTFPanner(-1.0, 0, -1.0);
-            this.rightPanner = this._createHRTFPanner(1.0, 0, -1.0);
-
-            this.midGain.connect(this.centerPanner);
-            this.sideLGain.connect(this.leftPanner);
-            this.sideRGain.connect(this.rightPanner);
+            // Side Presence EQ (Backing Vocal Goosebump Extractor)\
+            this.sideEqL = this.audioCtx.createBiquadFilter();\
+            this.sideEqL.type = 'peaking';\
+            this.sideEqL.frequency.value = 4000;\
+            this.sideEqL.Q.value = 1.0;\
+            this.sideEqL.gain.value = 0.0;\
+\
+            this.sideEqR = this.audioCtx.createBiquadFilter();\
+            this.sideEqR.type = 'peaking';\
+            this.sideEqR.frequency.value = 4000;\
+            this.sideEqR.Q.value = 1.0;\
+            this.sideEqR.gain.value = 0.0;\
+\
+            // Connect Side Gains -> Side EQs\
+            this.sideLGain.connect(this.sideEqL);\
+            this.sideRGain.connect(this.sideEqR);\
+\
+            // Binaural HRTF Panners (Center, Left, Right)\
+            this.centerPanner = this._createHRTFPanner(0, 0, -1.0);\
+            this.leftPanner = this._createHRTFPanner(-1.0, 0, -1.0);\
+            this.rightPanner = this._createHRTFPanner(1.0, 0, -1.0);\
+\
+            // Connect to Panners\
+            this.midGain.connect(this.centerPanner);\
+            this.sideEqL.connect(this.leftPanner);\
+            this.sideEqR.connect(this.rightPanner);
 
             // Reverb Network
             this.convolver = this.audioCtx.createConvolver();
@@ -295,6 +313,10 @@ class SpatialAudioEngine {
             if (this.reverbWetGain) this.reverbWetGain.gain.setTargetAtTime(0.0, t, 0.1);
             if (this.highShelf) this.highShelf.gain.setTargetAtTime(0.0, t, 0.1);
             if (this.lowShelf) this.lowShelf.gain.setTargetAtTime(0.0, t, 0.1);
+            if (this.sideLGain) this.sideLGain.gain.setTargetAtTime(0.5, t, 0.1);
+            if (this.sideRGain) this.sideRGain.gain.setTargetAtTime(0.5, t, 0.1);
+            if (this.sideEqL) this.sideEqL.gain.setTargetAtTime(0.0, t, 0.1);
+            if (this.sideEqR) this.sideEqR.gain.setTargetAtTime(0.0, t, 0.1);
         } else {
             this.spatialBus.gain.setTargetAtTime(1.0, t, 0.1);
             this.directGain.gain.setTargetAtTime(cfg.dryMix, t, 0.1);
@@ -324,9 +346,22 @@ class SpatialAudioEngine {
                 }
             }
 
-            // Update EQ Compensation
-            if (this.highShelf) this.highShelf.gain.setTargetAtTime(cfg.eqHighDb, t, 0.1);
+            // Update M/S Volume Balance (Backing Vocal Pop)\
+            if (this.midGain) this.midGain.gain.setTargetAtTime(0.5, t, 0.1);\
+            if (this.sideLGain) this.sideLGain.gain.setTargetAtTime(cfg.sideWidth, t, 0.1);\
+            if (this.sideRGain) this.sideRGain.gain.setTargetAtTime(cfg.sideWidth, t, 0.1);\
+\
+            // Update Side EQ (Backing Vocal Presence)\
+            if (this.sideEqL) this.sideEqL.gain.setTargetAtTime(cfg.sideEqPresence, t, 0.1);\
+            if (this.sideEqR) this.sideEqR.gain.setTargetAtTime(cfg.sideEqPresence, t, 0.1);\
+\
+            // Update EQ Compensation\
+            if (this.highShelf) this.highShelf.gain.setTargetAtTime(cfg.eqHighDb, t, 0.1);\
             if (this.lowShelf) this.lowShelf.gain.setTargetAtTime(cfg.eqLowDb, t, 0.1);
+            if (this.sideLGain) this.sideLGain.gain.setTargetAtTime(0.5, t, 0.1);
+            if (this.sideRGain) this.sideRGain.gain.setTargetAtTime(0.5, t, 0.1);
+            if (this.sideEqL) this.sideEqL.gain.setTargetAtTime(0.0, t, 0.1);
+            if (this.sideEqR) this.sideEqR.gain.setTargetAtTime(0.0, t, 0.1);
 
             // Reverb
             if (this.convolver && this.reverbWetGain) {
