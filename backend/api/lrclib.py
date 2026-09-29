@@ -186,8 +186,16 @@ async def fetch_lrclib(title: str, artist: str, duration: int = 0) -> Optional[D
 
                     best = candidates[0]
                     if duration > 0:
-                        # Pick candidate with closest duration
-                        candidates.sort(key=lambda c: abs((c.get("duration") or 0) - duration))
+                        def score_candidate(c):
+                            score = abs((c.get("duration") or 0) - duration)
+                            c_title = (c.get("trackName") or "").lower()
+                            q_title = clean_title.lower()
+                            if "japanese" in c_title and "japanese" not in q_title:
+                                score += 500
+                            if "inst" in c_title and "inst" not in q_title:
+                                score += 500
+                            return score
+                        candidates.sort(key=score_candidate)
                         best = candidates[0]
 
                     synced_lrc = best.get("syncedLyrics") or ""
