@@ -11,7 +11,7 @@ let searchTimer = null;
 let detailContext = null;
 
 const pageTitles = { home: 'Home', search: 'Search', library: 'Library', playlists: 'Playlists' };
-const THEME_LIST = ['dark', 'amber', 'oled', 'cyberpunk', 'nordic', 'light', 'liquidglass', 'softdark'];
+const THEME_LIST = ['maclight', 'ytsoft', 'oled', 'cyberpunk', 'nordic', 'light', 'liquidglass', 'softdark'];
 
 function esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
@@ -670,7 +670,7 @@ function getLocalSettings() {
     const zoom = parseFloat(localStorage.getItem('pulseterm_zoom'));
     if (theme || !isNaN(zoom)) {
         return {
-            theme: theme || 'dark',
+            theme: theme || 'maclight',
             uiScale: !isNaN(zoom) ? zoom : 1.0,
         };
     }
@@ -701,7 +701,7 @@ function applySettings(d, syncInputs = true) {
     }
 
     // 2. Theme
-    const themeToApply = d.theme && THEME_LIST.includes(d.theme) ? d.theme : (d.theme || 'dark');
+    const themeToApply = d.theme && THEME_LIST.includes(d.theme) ? d.theme : (d.theme || 'maclight');
     document.body.className = 'theme-' + themeToApply;
     document.querySelectorAll('.theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeToApply);
@@ -778,7 +778,7 @@ async function syncSettingsWithServer(localSettings) {
 async function init() {
     // LAYER 1 (Early 0ms): Apply theme and UI zoom before DOM renders to prevent any visual flash
     const localSettings = getLocalSettings();
-    applySettings(localSettings || { theme: localStorage.getItem('pulseterm_theme') || 'dark' });
+    applySettings(localSettings || { theme: localStorage.getItem('pulseterm_theme') || 'maclight' });
 
     player.init();
     equalizer.initAudioContext();
@@ -842,7 +842,7 @@ function cycleRepeat() {
 }
 
 function cycleTheme() {
-    const current = document.body.className.replace('theme-', '') || 'dark';
+    const current = document.body.className.replace('theme-', '') || 'maclight';
     const idx = THEME_LIST.indexOf(current);
     const nextTheme = THEME_LIST[(idx + 1) % THEME_LIST.length];
     window.setTheme(nextTheme);
@@ -918,7 +918,7 @@ window.toggleShuffle = function() {
 window.toggleLike = function() { player.toggleLike(); };
 window.toggleSettings = function() { document.getElementById('settings-panel').classList.toggle('hidden'); };
 window.setTheme = function(t, btn) {
-    const themeName = THEME_LIST.includes(t) ? t : 'dark';
+    const themeName = THEME_LIST.includes(t) ? t : 'maclight';
     document.body.className = 'theme-' + themeName;
     document.querySelectorAll('.theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeName || b === btn);
@@ -929,7 +929,7 @@ window.setTheme = function(t, btn) {
 
 window.savePlayerSettings = function() {
     const activeThemeBtn = document.querySelector('.theme-btn.active');
-    const theme = activeThemeBtn?.dataset.theme || (document.body.className.replace('theme-', '') || 'dark');
+    const theme = activeThemeBtn?.dataset.theme || (document.body.className.replace('theme-', '') || 'maclight');
     const vol = Number(document.getElementById('settings-volume')?.value || 80) / 100;
     const shuffle = Boolean(document.getElementById('settings-shuffle')?.checked);
     const repeat = document.getElementById('settings-repeat')?.value || 'none';

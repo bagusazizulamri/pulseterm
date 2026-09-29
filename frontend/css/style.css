@@ -31,42 +31,42 @@
 
 /* ============ PALETTES (HIGH-CONTRAST TERMINAL COLORWAYS) ============ */
 
-/* 1. Matrix Phosphor Green (Default) */
-body.theme-dark {
-  --paper: #060906;
-  --paper-2: #0b120b;
-  --paper-3: #121c12;
-  --wash: #0e190e;
-  --line: #1c381c;
-  --line-focus: #00ff66;
-  --ink: #f0fff0;
-  --ink-2: #8ae68a;
-  --ink-3: #5ca85c;
-  --seal: #00ff66;
-  --seal-glow: rgba(0, 255, 102, 0.35);
-  --glass: rgba(6, 9, 6, 0.96);
-  --card-hover: rgba(0, 255, 102, 0.1);
-  --highlight-bg: #00ff66;
-  --highlight-fg: #060906;
+/* 1. Light macOS Terminal Style */
+body.theme-maclight {
+  --paper: #ffffff;
+  --paper-2: #f2f2f7;
+  --paper-3: #e5e5ea;
+  --wash: #f2f2f7;
+  --line: #c7c7cc;
+  --line-focus: #007aff;
+  --ink: #000000;
+  --ink-2: #007aff;
+  --ink-3: #8e8e93;
+  --seal: #007aff;
+  --seal-glow: rgba(0, 122, 255, 0.2);
+  --glass: rgba(255, 255, 255, 0.95);
+  --card-hover: rgba(0, 122, 255, 0.08);
+  --highlight-bg: #007aff;
+  --highlight-fg: #ffffff;
 }
 
-/* 2. Vintage VT100 Amber CRT */
-body.theme-amber {
-  --paper: #0a0805;
-  --paper-2: #141009;
-  --paper-3: #1e170d;
-  --wash: #19130a;
-  --line: #3b2c15;
-  --line-focus: #ffb000;
-  --ink: #fff8e8;
-  --ink-2: #ffb000;
-  --ink-3: #b8832e;
-  --seal: #ffb000;
-  --seal-glow: rgba(255, 176, 0, 0.35);
-  --glass: rgba(10, 8, 5, 0.96);
-  --card-hover: rgba(255, 176, 0, 0.1);
-  --highlight-bg: #ffb000;
-  --highlight-fg: #0a0805;
+/* 2. Soft Colorful like YouTube */
+body.theme-ytsoft {
+  --paper: #0f0f0f;
+  --paper-2: #212121;
+  --paper-3: #3d3d3d;
+  --wash: #1a1a1a;
+  --line: #3f3f3f;
+  --line-focus: #ff0000;
+  --ink: #f1f1f1;
+  --ink-2: #ff0000;
+  --ink-3: #aaaaaa;
+  --seal: #ff0000;
+  --seal-glow: rgba(255, 0, 0, 0.35);
+  --glass: rgba(15, 15, 15, 0.96);
+  --card-hover: rgba(255, 255, 255, 0.1);
+  --highlight-bg: #ff0000;
+  --highlight-fg: #ffffff;
 }
 
 /* 3. Pure OLED Monolith (Black & White Hacker) */
@@ -1763,8 +1763,8 @@ body.playing .tui-state-badge {
   border: 1px solid rgba(255,255,255,0.3);
   flex-shrink: 0;
 }
-.theme-swatch.dark { background: #00ff66; }
-.theme-swatch.amber { background: #ffb000; }
+.theme-swatch.maclight { background: #ffffff; border: 1px solid #c7c7cc; }
+.theme-swatch.ytsoft { background: #ff0000; }
 .theme-swatch.oled { background: #ffffff; }
 .theme-swatch.cyberpunk { background: #ff0055; }
 .theme-swatch.nordic { background: #7aa2f7; }
