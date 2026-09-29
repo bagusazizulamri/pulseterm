@@ -370,5 +370,5 @@ class SpatialAudioEngine {
     }
 }
 
-export const spatialEngine = new SpatialAudioEngine();
-window.spatial = spatialEngine; // For global access from inline handlers
+export const spatial = new SpatialAudioEngine();
+window.spatial = spatial; // For global access from inline handlers
