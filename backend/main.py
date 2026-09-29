@@ -144,7 +144,7 @@ async def get_playlist(playlist_id: str):
     return {"success": True, "data": {"results": _ser(res.results), "query": playlist_id, "name": getattr(res, "name", "") or getattr(res, "title", "") or playlist_id}}
 
 @app.get("/api/lyrics/{video_id}")
-async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, title: str = "", artist: str = "", duration: int = 0):
+async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, translate: int = 0, title: str = "", artist: str = "", duration: int = 0):
     """Lyrics from cache when possible; `timed=1` adds per-line timings and romanization."""
     import json as _json
     cached = None if refresh else await get_cached_lyrics(video_id)
@@ -168,7 +168,7 @@ async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, title: str
 
     # Upgrade old cached lyrics without romanization or outdated Japanese transliteration
     import re as _re
-    is_japanese = any(bool(_re.search(r'[\u3040-\u309F\u30A0-\u30FF]', x.get("text", ""))) for x in synced if isinstance(x, dict))
+    is_japanese = any(bool(_re.search(r'[u3040-u309Fu30A0-u30FF]', x.get("text", ""))) for x in synced if isinstance(x, dict))
     needs_upgrade = (
         (synced and not any("roman" in x for x in synced if isinstance(x, dict))) or
         (is_japanese and not any("words_orig" in x for x in synced if isinstance(x, dict))) or
@@ -192,8 +192,18 @@ async def get_lyrics(video_id: str, timed: int = 0, refresh: int = 0, title: str
         script = next((x.get("script") for x in synced if isinstance(x, dict) and x.get("roman")), "latin")
         script_label = "Romaja" if script == "korean" else ("Romaji" if script == "japanese" else ("Pinyin" if script == "chinese" else ("Translit" if script == "cyrillic" else "Latin")))
 
+    if translate:
+        try:
+            from api.translit import translate_lyrics_batch
+            import asyncio
+            loop = asyncio.get_running_loop()
+            synced = await loop.run_in_executor(None, translate_lyrics_batch, synced, "id")
+            # Cache the translated lyrics
+            await cache_lyrics(video_id, cached.get("plain", ""), _json.dumps(synced))
+        except Exception:
+            pass
+
     out = {
-        "lyrics": cached.get("plain", ""),
         "hasRoman": has_roman,
         "script": script,
         "scriptLabel": script_label

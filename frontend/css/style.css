@@ -2357,7 +2357,13 @@ dialog.artwork-modal::backdrop {
 }
 
 /* Romanization display modes */
-#lyrics-lines.mode-roman .lyric-orig {
+#lyrics-lines.mode-native .lyric-roman,
+#lyrics-lines.mode-native .lyric-trans,
+#lyrics-lines.mode-dual .lyric-trans {
+  display: none;
+}
+#lyrics-lines.mode-roman .lyric-orig,
+#lyrics-lines.mode-roman .lyric-trans {
   display: none;
 }
 #lyrics-lines.mode-roman .lyric-roman {
@@ -2367,8 +2373,25 @@ dialog.artwork-modal::backdrop {
   width: fit-content;
   max-width: 100%;
 }
-#lyrics-lines.mode-native .lyric-roman {
+#lyrics-lines.mode-translate .lyric-orig,
+#lyrics-lines.mode-translate .lyric-roman {
   display: none;
+}
+
+.lyric-trans {
+  display: block;
+  font-size: clamp(13px, 1.3vw, 17px);
+  color: var(--ink-3);
+  margin-top: 8px;
+  font-weight: 400;
+  opacity: 0.8;
+  font-style: italic;
+  transition: opacity 0.3s;
+}
+.lyric-line[data-dist="0"] .lyric-trans {
+  color: var(--seal);
+  font-weight: 500;
+  opacity: 1;
 }
 
 /* Plain un-synced lyrics banner */

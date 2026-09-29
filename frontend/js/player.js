@@ -1283,12 +1283,28 @@ const player = {
         this.updateActiveLyric(item.start);
     },
 
-    cycleRomanMode() {
-        const modes = ['dual', 'roman', 'native'];
+    async cycleRomanMode() {
+        const modes = ['dual', 'all', 'native', 'translate'];
         const currentIdx = modes.indexOf(this.romanMode || 'dual');
         this.romanMode = modes[(currentIdx + 1) % modes.length];
         try { localStorage.setItem('pulseterm_roman_mode', this.romanMode); } catch {}
         this.updateRomanButtonUI();
+        
+        // Fetch translation if needed
+        if ((this.romanMode === 'all' || this.romanMode === 'translate') && this.currentSong) {
+            const needsTranslation = this.lyrics.length && !this.lyrics.some(x => x.translation);
+            if (needsTranslation) {
+                this.showToast('Translating lyrics...', 'translate');
+                try {
+                    const res = await getLyrics(this.currentSong.videoId, true, { translate: 1 });
+                    if (res?.success && res?.data?.synced && this.currentSong.videoId === res.data.videoId) {
+                        this.lyrics = res.data.synced;
+                    }
+                } catch (e) {
+                    this.showToast('Translation failed');
+                }
+            }
+        }
         this.renderLyrics();
     },
 
@@ -1297,10 +1313,13 @@ const player = {
         if (!rBtn) return;
         const scriptName = this.lyricsData?.scriptLabel || 'ROMAN';
         const mode = this.romanMode || 'dual';
-        const modeLabel = mode === 'dual' ? `[${scriptName.toUpperCase()}: DUAL]` :
-                          (mode === 'roman' ? `[${scriptName.toUpperCase()}: ONLY]` : `[${scriptName.toUpperCase()}: OFF]`);
+        let modeLabel = `[${scriptName.toUpperCase()}: DUAL]`;
+        if (mode === 'all') modeLabel = `[${scriptName.toUpperCase()} + TRANSLATION]`;
+        else if (mode === 'translate') modeLabel = `[TRANSLATION ONLY]`;
+        else if (mode === 'native') modeLabel = `[${scriptName.toUpperCase()}: OFF]`;
+        else if (mode === 'roman') modeLabel = `[${scriptName.toUpperCase()}: ONLY]`;
         rBtn.textContent = modeLabel;
-        rBtn.title = `Toggle ${scriptName} romanization display mode (R) - Currently: ${mode.toUpperCase()}`;
+        rBtn.title = `Toggle lyrics display mode (R) - Currently: ${mode.toUpperCase()}`;
     },
 
     renderLyrics() {
@@ -1325,6 +1344,7 @@ const player = {
         }
         box.innerHTML = this.lyrics.map((l, i) => {
             const hasRoman = Boolean(l.roman);
+            const hasTrans = Boolean(l.translation);
             const timeSec = Math.floor((Number(l.start) || 0) / 1000);
             const m = Math.floor(timeSec / 60);
             const s = String(timeSec % 60).padStart(2, '0');
@@ -1334,6 +1354,7 @@ const player = {
                 `<span class="lyric-content">` +
                     `<span class="lyric-orig"></span>` +
                     (hasRoman ? '<span class="lyric-roman"></span>' : '') +
+                    (hasTrans ? `<span class="lyric-trans">${l.translation}</span>` : '') +
                 `</span>` +
                 `<span class="lyric-jump-icon" aria-hidden="true">▶</span>` +
             `</div>`;

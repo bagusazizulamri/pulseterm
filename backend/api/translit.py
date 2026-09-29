@@ -268,3 +268,50 @@ def enrich_lyrics(lyrics_data: dict) -> dict:
         "script_label": script_label,
         "plain_roman": "\n".join(plain_roman_lines) if has_any_roman else ""
     }
+
+def translate_lyrics_batch(synced_lyrics: list, target_lang="id") -> list:
+    """Translates synced lyrics lines in batches using a unique separator."""
+    if not synced_lyrics:
+        return synced_lyrics
+
+    try:
+        from deep_translator import GoogleTranslator
+    except ImportError:
+        return synced_lyrics
+
+    separator = " | "
+    lines = [ln.get("text", "") for ln in synced_lyrics]
+    
+    # We can batch translate 20 lines at a time to avoid limits/errors
+    batch_size = 20
+    translator = GoogleTranslator(source='auto', target=target_lang)
+    
+    translated_lines = []
+    
+    for i in range(0, len(lines), batch_size):
+        batch = lines[i:i+batch_size]
+        joined_text = separator.join(batch)
+        try:
+            translated_text = translator.translate(joined_text)
+            # Split back
+            translated_batch = [s.strip() for s in translated_text.split(separator)]
+            # Cleanup and handle translation mismatch
+            if len(translated_batch) == len(batch):
+                translated_lines.extend(translated_batch)
+            else:
+                # Fallback: line by line if chunking breaks separator
+                for line in batch:
+                    try:
+                        translated_lines.append(translator.translate(line) or "")
+                    except Exception:
+                        translated_lines.append("")
+        except Exception:
+            # Add empty strings if fails
+            translated_lines.extend(["" for _ in batch])
+            
+    # Mutate the input list
+    for idx, ln in enumerate(synced_lyrics):
+        if isinstance(ln, dict) and idx < len(translated_lines):
+            ln["translation"] = translated_lines[idx]
+
+    return synced_lyrics
