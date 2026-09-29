@@ -1,4 +1,4 @@
-import { calculatePannerCoordinates, getMidSideGains, generateSyntheticReverbIR } from './eq-core.js';
+import { calculatePannerCoordinates, generateSyntheticReverbIR } from './eq-core.js';
 
 export const SPATIAL_MODES = ['off', 'studio', 'wide', 'concert'];
 
@@ -8,52 +8,60 @@ export const SPATIAL_CONFIGS = {
         label: 'Stereo (Bypass)',
         azimuthDeg: 0,
         radius: 1.5,
-        sideWidth: 1.0,
+        dryMix: 1.0,
         roomGain: 0.0,
         reverbDuration: 0.3,
         decayTau: 0.1,
         predelay: 0.015,
         cutoffFreq: 5000,
-        makeupDb: 0.0
+        makeupDb: 0.0,
+        eqHighDb: 0.0,
+        eqLowDb: 0.0
     },
     studio: {
         name: 'STUDIO',
         label: 'Studio Monitors 3D',
-        azimuthDeg: 30,       // Standard ITU-R BS.775 30-degree monitor azimuth
+        azimuthDeg: 35,       // Standard monitor azimuth
         radius: 1.5,
-        sideWidth: 1.0,       // Natural width
-        roomGain: 0.08,       // Subtle acoustic room crossfeed
+        dryMix: 0.35,         // 35% original stereo clarity
+        roomGain: 0.02,       // Very dry, no mud
         reverbDuration: 0.35,
         decayTau: 0.10,
-        predelay: 0.012,      // 12ms early reflection
-        cutoffFreq: 5000,     // High-frequency absorption by room air
-        makeupDb: -1.2        // Measured RMS loudness compensation (<= 0.5dB match)
+        predelay: 0.012,
+        cutoffFreq: 5000,
+        makeupDb: 0.5,        // Gain makeup
+        eqHighDb: 3.5,        // Restore treble
+        eqLowDb: 2.0          // Restore bass
     },
     wide: {
         name: 'WIDE',
         label: 'Wide 3D Stage',
-        azimuthDeg: 45,       // Ultra-wide 45-degree lateral spread
+        azimuthDeg: 55,       // Ultra-wide
         radius: 1.5,
-        sideWidth: 1.25,      // Controlled 25% side expansion
-        roomGain: 0.12,       // Out-of-head immersive spatialization
+        dryMix: 0.20,         // Less dry, more 3D
+        roomGain: 0.08,       // Out-of-head immersive spatialization
         reverbDuration: 0.50,
         decayTau: 0.15,
-        predelay: 0.018,      // 18ms reflection
-        cutoffFreq: 5500,     // Crisp air extension
-        makeupDb: -2.0        // Measured RMS loudness compensation (<= 0.5dB match)
+        predelay: 0.018,
+        cutoffFreq: 5500,
+        makeupDb: 1.0,
+        eqHighDb: 4.5,        // Extra treble for extreme width
+        eqLowDb: 2.5
     },
     concert: {
         name: 'CONCERT',
         label: 'Concert Hall',
-        azimuthDeg: 40,       // Grand concert hall 40-degree stage
-        radius: 1.5,
-        sideWidth: 1.3,       // Enveloping stadium diffusion
-        roomGain: 0.20,       // Lush acoustic hall reflections
+        azimuthDeg: 45,       // Grand concert hall
+        radius: 2.0,
+        dryMix: 0.10,         // Mostly wet
+        roomGain: 0.15,       // Lush acoustic hall reflections
         reverbDuration: 0.75,
         decayTau: 0.22,
-        predelay: 0.024,      // 24ms hall reflection
-        cutoffFreq: 4500,     // Warm acoustic hall roll-off
-        makeupDb: -2.0        // Measured RMS loudness compensation (<= 0.5dB match)
+        predelay: 0.024,
+        cutoffFreq: 4500,
+        makeupDb: 1.5,
+        eqHighDb: 3.0,
+        eqLowDb: 2.0
     }
 };
 
@@ -67,14 +75,22 @@ class SpatialAudioEngine {
         this.directGain = null;
         this.spatialBus = null;
 
-        // Mid-Side & 3D Panners
+        // Splitter
         this.splitter = null;
-        this.gainLL = null;
-        this.gainRL = null;
-        this.gainLR = null;
-        this.gainRR = null;
+        
+        // Mid-Side nodes
+        this.midGain = null;
+        this.sideLGain = null;
+        this.sideRGain = null;
+
+        // 3D Panners
+        this.centerPanner = null;
         this.leftPanner = null;
         this.rightPanner = null;
+
+        // HRTF Compensation EQ
+        this.highShelf = null;
+        this.lowShelf = null;
 
         // Synthetic Convolver Reverb & Loudness Compensation
         this.convolver = null;
@@ -100,9 +116,9 @@ class SpatialAudioEngine {
             this.outputNode = this.audioCtx.createGain();
             this.outputNode.gain.value = 1.0;
 
-            // Direct stereo bypass bus
+            // Direct stereo bypass / Dry blend bus
             this.directGain = this.audioCtx.createGain();
-            this.directGain.gain.value = this.mode === 'off' ? 1.0 : 0.0;
+            this.directGain.gain.value = this.mode === 'off' ? 1.0 : SPATIAL_CONFIGS[this.mode].dryMix;
             this.inputNode.connect(this.directGain);
             this.directGain.connect(this.outputNode);
 
@@ -133,49 +149,82 @@ class SpatialAudioEngine {
             }
 
             // True Mid/Side Stereo Matrix
-            // L' = a*L + b*R
-            // R' = b*L + a*R
-            this.gainLL = this.audioCtx.createGain();
-            this.gainRL = this.audioCtx.createGain();
-            this.gainLR = this.audioCtx.createGain();
-            this.gainRR = this.audioCtx.createGain();
+            // Mid = (L + R) * 0.5
+            // SideL = (L - R) * 0.5
+            // SideR = (R - L) * 0.5
+            this.midGain = this.audioCtx.createGain();
+            this.sideLGain = this.audioCtx.createGain();
+            this.sideRGain = this.audioCtx.createGain();
 
-            this.gainLL.gain.value = 1.0;
-            this.gainRR.gain.value = 1.0;
-            this.gainRL.gain.value = 0.0;
-            this.gainLR.gain.value = 0.0;
+            this.midGain.gain.value = 0.5;
+            this.sideLGain.gain.value = 0.5;
+            this.sideRGain.gain.value = 0.5;
 
-            // Connect Splitter -> Matrix Gains
-            this.splitter.connect(this.gainLL, 0); // L -> L'
-            this.splitter.connect(this.gainLR, 0); // L -> R'
-            this.splitter.connect(this.gainRL, 1); // R -> L'
-            this.splitter.connect(this.gainRR, 1); // R -> R'
+            // Connect Mid (L+R)
+            this.splitter.connect(this.midGain, 0); // L -> Mid
+            this.splitter.connect(this.midGain, 1); // R -> Mid
 
-            // Binaural HRTF Panners (Left & Right)
-            this.leftPanner = this._createHRTFPanner(-0.75, 0, -1.3);
-            this.rightPanner = this._createHRTFPanner(0.75, 0, -1.3);
+            // Connect Side Left (L-R)
+            this.splitter.connect(this.sideLGain, 0); // L -> SideL (positive)
+            
+            // To subtract R, we need a phase inversion. 
+            // Web Audio API doesn't have a direct phase invert without a DelayNode or custom Gain.
+            // Let's create phase invert nodes for Side L and Side R.
+            this.invertL = this.audioCtx.createGain();
+            this.invertL.gain.value = -1.0;
+            this.splitter.connect(this.invertL, 0); // L -> invertL
 
-            this.gainLL.connect(this.leftPanner);
-            this.gainRL.connect(this.leftPanner);
-            this.gainLR.connect(this.rightPanner);
-            this.gainRR.connect(this.rightPanner);
+            this.invertR = this.audioCtx.createGain();
+            this.invertR.gain.value = -1.0;
+            this.splitter.connect(this.invertR, 1); // R -> invertR
 
-            // 3. Synthetic Stereo Convolver Reverb Network & Loudness Makeup Gain
+            // SideL = L + (-R)
+            this.invertR.connect(this.sideLGain);
+            
+            // SideR = R + (-L)
+            this.splitter.connect(this.sideRGain, 1); // R -> SideR (positive)
+            this.invertL.connect(this.sideRGain); // -L -> SideR
+
+            // Binaural HRTF Panners (Center, Left, Right)
+            this.centerPanner = this._createHRTFPanner(0, 0, -1.0);
+            this.leftPanner = this._createHRTFPanner(-1.0, 0, -1.0);
+            this.rightPanner = this._createHRTFPanner(1.0, 0, -1.0);
+
+            this.midGain.connect(this.centerPanner);
+            this.sideLGain.connect(this.leftPanner);
+            this.sideRGain.connect(this.rightPanner);
+
+            // Reverb Network
             this.convolver = this.audioCtx.createConvolver();
             this.reverbWetGain = this.audioCtx.createGain();
             this.reverbWetGain.gain.value = 0.0;
+            
+            // Send Side and Mid to convolver
+            this.spatialBus.connect(this.convolver);
+            this.convolver.connect(this.reverbWetGain);
+
+            // HRTF Compensation EQ
+            this.highShelf = this.audioCtx.createBiquadFilter();
+            this.highShelf.type = 'highshelf';
+            this.highShelf.frequency.value = 4000;
+            this.highShelf.gain.value = 0.0;
+
+            this.lowShelf = this.audioCtx.createBiquadFilter();
+            this.lowShelf.type = 'lowshelf';
+            this.lowShelf.frequency.value = 150;
+            this.lowShelf.gain.value = 0.0;
 
             this.makeupGain = this.audioCtx.createGain();
             this.makeupGain.gain.value = 1.0;
 
-            // Connect spatialBus -> convolver -> reverbWetGain -> makeupGain
-            this.spatialBus.connect(this.convolver);
-            this.convolver.connect(this.reverbWetGain);
-            this.reverbWetGain.connect(this.makeupGain);
+            // Connect Panners -> EQ -> Makeup -> Output
+            this.centerPanner.connect(this.lowShelf);
+            this.leftPanner.connect(this.lowShelf);
+            this.rightPanner.connect(this.lowShelf);
+            this.reverbWetGain.connect(this.lowShelf);
 
-            // Connect panners -> makeupGain -> outputNode
-            this.leftPanner.connect(this.makeupGain);
-            this.rightPanner.connect(this.makeupGain);
+            this.lowShelf.connect(this.highShelf);
+            this.highShelf.connect(this.makeupGain);
             this.makeupGain.connect(this.outputNode);
 
             this.applyMode(this.mode, true);
@@ -213,143 +262,113 @@ class SpatialAudioEngine {
         panner.distanceModel = 'inverse';
         panner.refDistance = 1;
         panner.maxDistance = 10000;
-        panner.rolloffFactor = 0; // Pure ITD/HRTF directional modeling without unnatural 1/r distance attenuation
+        panner.rolloffFactor = 1;
         panner.coneInnerAngle = 360;
+        panner.coneOuterAngle = 360;
+        panner.coneOuterGain = 1;
 
         if (panner.positionX) {
-            panner.positionX.setValueAtTime(x, this.audioCtx.currentTime);
-            panner.positionY.setValueAtTime(y, this.audioCtx.currentTime);
-            panner.positionZ.setValueAtTime(z, this.audioCtx.currentTime);
+            panner.positionX.value = x;
+            panner.positionY.value = y;
+            panner.positionZ.value = z;
         } else if (panner.setPosition) {
             panner.setPosition(x, y, z);
         }
         return panner;
     }
 
-    _setPannerPosition(panner, x, y, z, tau = 0.05) {
-        if (!panner || !this.audioCtx) return;
-        const now = this.audioCtx.currentTime;
-        if (panner.positionX) {
-            panner.positionX.setTargetAtTime(x, now, tau);
-            panner.positionY.setTargetAtTime(y, now, tau);
-            panner.positionZ.setTargetAtTime(z, now, tau);
-        } else if (panner.setPosition) {
-            panner.setPosition(x, y, z);
+    applyMode(modeName, force = false) {
+        if (this.mode === modeName && !force) return;
+        if (!SPATIAL_MODES.includes(modeName)) modeName = 'off';
+        this.mode = modeName;
+
+        try { localStorage.setItem('pulseterm_spatial_mode', this.mode); } catch {}
+
+        if (!this.audioCtx || !this.spatialBus) return; // Not initialized yet
+
+        const cfg = SPATIAL_CONFIGS[this.mode];
+        const t = this.audioCtx.currentTime + 0.05; // 50ms fade
+
+        if (this.mode === 'off') {
+            this.spatialBus.gain.setTargetAtTime(0.0, t, 0.1);
+            this.directGain.gain.setTargetAtTime(1.0, t, 0.1);
+            if (this.reverbWetGain) this.reverbWetGain.gain.setTargetAtTime(0.0, t, 0.1);
+            if (this.highShelf) this.highShelf.gain.setTargetAtTime(0.0, t, 0.1);
+            if (this.lowShelf) this.lowShelf.gain.setTargetAtTime(0.0, t, 0.1);
+        } else {
+            this.spatialBus.gain.setTargetAtTime(1.0, t, 0.1);
+            this.directGain.gain.setTargetAtTime(cfg.dryMix, t, 0.1);
+
+            const { x, z } = calculatePannerCoordinates(cfg.azimuthDeg, cfg.radius);
+            
+            // Center stays at (0, 0, -radius)
+            if (this.centerPanner) {
+                if (this.centerPanner.positionZ) {
+                    this.centerPanner.positionX.setTargetAtTime(0, t, 0.1);
+                    this.centerPanner.positionZ.setTargetAtTime(-cfg.radius, t, 0.1);
+                } else {
+                    this.centerPanner.setPosition(0, 0, -cfg.radius);
+                }
+            }
+
+            if (this.leftPanner && this.rightPanner) {
+                if (this.leftPanner.positionX) {
+                    this.leftPanner.positionX.setTargetAtTime(-x, t, 0.1);
+                    this.leftPanner.positionZ.setTargetAtTime(z, t, 0.1);
+                    
+                    this.rightPanner.positionX.setTargetAtTime(x, t, 0.1);
+                    this.rightPanner.positionZ.setTargetAtTime(z, t, 0.1);
+                } else {
+                    this.leftPanner.setPosition(-x, 0, z);
+                    this.rightPanner.setPosition(x, 0, z);
+                }
+            }
+
+            // Update EQ Compensation
+            if (this.highShelf) this.highShelf.gain.setTargetAtTime(cfg.eqHighDb, t, 0.1);
+            if (this.lowShelf) this.lowShelf.gain.setTargetAtTime(cfg.eqLowDb, t, 0.1);
+
+            // Reverb
+            if (this.convolver && this.reverbWetGain) {
+                const buffer = this._getReverbBuffer(cfg);
+                if (buffer) {
+                    this.convolver.buffer = buffer;
+                    this.reverbWetGain.gain.setTargetAtTime(cfg.roomGain, t, 0.1);
+                } else {
+                    this.reverbWetGain.gain.setTargetAtTime(0.0, t, 0.1);
+                }
+            }
+        }
+
+        // Makeup gain
+        if (this.makeupGain) {
+            const dbToLinear = Math.pow(10, cfg.makeupDb / 20);
+            this.makeupGain.gain.setTargetAtTime(dbToLinear, t, 0.1);
         }
     }
 
     cycleMode() {
-        const currentIdx = SPATIAL_MODES.indexOf(this.mode);
-        const nextMode = SPATIAL_MODES[(currentIdx + 1) % SPATIAL_MODES.length];
-        this.setMode(nextMode);
-        return this.mode;
-    }
+        const idx = SPATIAL_MODES.indexOf(this.mode);
+        const nextMode = SPATIAL_MODES[(idx + 1) % SPATIAL_MODES.length];
+        this.applyMode(nextMode);
 
-    setMode(mode) {
-        if (!SPATIAL_CONFIGS[mode]) mode = 'off';
-        this.mode = mode;
-        this.applyMode(mode);
-        this.saveState();
-        this.updateUI();
-
-        if (window.player?.showToast) {
-            const cfg = SPATIAL_CONFIGS[mode];
-            const hint = mode === 'off'
-                ? '[SPATIAL: OFF · DIRECT STEREO]'
-                : `[SPATIAL: ${cfg.name} · DIOPTIMALKAN UNTUK HEADPHONE]`;
-            window.player.showToast(hint);
+        const btn = document.getElementById('spatial-panel-btn');
+        if (btn) {
+            btn.textContent = `[SPATIAL: ${SPATIAL_CONFIGS[nextMode].name}]`;
+            btn.classList.toggle('active', nextMode !== 'off');
         }
-    }
-
-    applyMode(mode, immediate = false) {
-        if (!this.audioCtx || !this.directGain) return;
-        const cfg = SPATIAL_CONFIGS[mode] || SPATIAL_CONFIGS.off;
-        const now = this.audioCtx.currentTime;
-        const tau = 0.05;
-
-        const setVal = (param, target) => {
-            if (!param) return;
-            if (immediate) {
-                param.cancelScheduledValues(now);
-                param.setValueAtTime(target, now);
-            } else {
-                param.setTargetAtTime(target, now, tau);
-            }
-        };
-
-        if (mode === 'off') {
-            // Unity-gain stereo bypass
-            setVal(this.directGain.gain, 1.0);
-            setVal(this.spatialBus.gain, 0.0);
-            if (this.reverbWetGain) setVal(this.reverbWetGain.gain, 0.0);
-            if (this.makeupGain) setVal(this.makeupGain.gain, 1.0);
-        } else {
-            // Activate 3D Binaural Spatializer
-            setVal(this.directGain.gain, 0.0);
-            setVal(this.spatialBus.gain, 1.0);
-
-            // Apply Mid/Side Matrix stereo width
-            const width = typeof cfg.sideWidth === 'number' ? cfg.sideWidth : 1.0;
-            const { a, b } = getMidSideGains(width);
-            if (this.gainLL && this.gainRR && this.gainRL && this.gainLR) {
-                setVal(this.gainLL.gain, a);
-                setVal(this.gainRR.gain, a);
-                setVal(this.gainRL.gain, b);
-                setVal(this.gainLR.gain, b);
-            }
-
-            // Reposition Virtual 3D Stage Panners on constant sphere radius (R = 1.5m, y = 0)
-            const radius = cfg.radius || 1.5;
-            const leftCoords = calculatePannerCoordinates(-cfg.azimuthDeg, radius);
-            const rightCoords = calculatePannerCoordinates(cfg.azimuthDeg, radius);
-            this._setPannerPosition(this.leftPanner, leftCoords.x, leftCoords.y, leftCoords.z, tau);
-            this._setPannerPosition(this.rightPanner, rightCoords.x, rightCoords.y, rightCoords.z, tau);
-
-            // Update Synthetic Stereo Convolver Reverb
-            if (this.convolver) {
-                const buf = this._getReverbBuffer(cfg);
-                if (buf && this.convolver.buffer !== buf) {
-                    this.convolver.buffer = buf;
-                }
-            }
-            if (this.reverbWetGain) {
-                setVal(this.reverbWetGain.gain, cfg.roomGain || 0.0);
-            }
-
-            // Loudness makeup gain compensation
-            if (this.makeupGain) {
-                const makeupLinear = Math.pow(10, (cfg.makeupDb || 0) / 20);
-                setVal(this.makeupGain.gain, makeupLinear);
-            }
-        }
-    }
-
-    updateUI() {
-        const btns = document.querySelectorAll('#spatial-toggle-btn, .spatial-toggle-btn');
-        btns.forEach(btn => {
-            const isOff = this.mode === 'off';
-            const name = (SPATIAL_CONFIGS[this.mode]?.name || this.mode).toUpperCase();
-            btn.textContent = isOff ? '[SPATIAL: OFF]' : `[SPATIAL: ${name}]`;
-            btn.classList.toggle('active', !isOff);
-            btn.setAttribute('title', `Spatial Audio: ${SPATIAL_CONFIGS[this.mode]?.label || name} (Dioptimalkan untuk headphone) [x]`);
-        });
-    }
-
-    saveState() {
-        try {
-            localStorage.setItem('pulseterm_spatial', this.mode);
-        } catch {}
+        return nextMode;
     }
 
     loadState() {
         try {
-            const stored = localStorage.getItem('pulseterm_spatial');
-            if (stored && SPATIAL_CONFIGS[stored]) {
+            const stored = localStorage.getItem('pulseterm_spatial_mode');
+            if (stored && SPATIAL_MODES.includes(stored)) {
                 this.mode = stored;
             }
         } catch {}
     }
 }
 
-export const spatial = new SpatialAudioEngine();
-window.spatial = spatial;
+export const spatialEngine = new SpatialAudioEngine();
+window.spatial = spatialEngine; // For global access from inline handlers
