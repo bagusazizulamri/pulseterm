@@ -6,25 +6,25 @@ export const SPATIAL_CONFIGS = {
     off: {
         name: 'OFF', label: 'Stereo (Bypass)', sideAzDeg: 0, sideElev: 0, radius: 1.5,
         dryMix: 1.0, roomGain: 0.0, reverbDuration: 0.3, decayTau: 0.1, predelay: 0.015, cutoffFreq: 5000,
-        makeupDb: 0.0, eqHighDb: 0.0, eqLowDb: 0.0, sideWidth: 0.5, sideEqPresence: 0.0, sideAirDb: 0.0, sideHpHz: 180, sideReverbGain: 0.0,
+        makeupDb: 0.0, eqHighDb: 0.0, bassMonoGain: 0.0, sideWidth: 0.5, sideEqPresence: 0.0, sideAirDb: 0.0, sideHpHz: 180, sideReverbGain: 0.0,
         midGain: 0.5, midBodyDb: -100, haloDb: -100, haloAzDeg: 90, haloElev: 0, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -100
     },
     studio: {
         name: 'STUDIO', label: 'Studio Monitors 3D', sideAzDeg: 65, sideElev: 0.15, radius: 1.5,
         dryMix: 0.45, roomGain: 0.02, reverbDuration: 0.35, decayTau: 0.10, predelay: 0.012, cutoffFreq: 5000,
-        makeupDb: -4, eqHighDb: 0.5, eqLowDb: 3.5, sideWidth: 1.3, sideEqPresence: 2.0, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.05,
+        makeupDb: -4, eqHighDb: 0.5, bassMonoGain: 0.45, sideWidth: 1.0, sideEqPresence: 2.0, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.05,
         midGain: 1.2, midBodyDb: 0, haloDb: -15, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -24
     },
     wide: {
         name: 'WIDE', label: 'Wide 3D Stage', sideAzDeg: 95, sideElev: 0.25, radius: 1.5,
         dryMix: 0.35, roomGain: 0.08, reverbDuration: 0.50, decayTau: 0.15, predelay: 0.018, cutoffFreq: 5500,
-        makeupDb: -5, eqHighDb: 0.5, eqLowDb: 4.5, sideWidth: 1.4, sideEqPresence: 2.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.10,
+        makeupDb: -5, eqHighDb: 0.5, bassMonoGain: 0.65, sideWidth: 1.4, sideEqPresence: 2.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.10,
         midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 100, haloElev: 0.37, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -20
     },
     concert: {
         name: 'CONCERT', label: 'Concert Hall', sideAzDeg: 105, sideElev: 0.25, radius: 2.0,
         dryMix: 0.25, roomGain: 0.15, reverbDuration: 0.75, decayTau: 0.22, predelay: 0.024, cutoffFreq: 4500,
-        makeupDb: -5, eqHighDb: 0.5, eqLowDb: 5, sideWidth: 1.5, sideEqPresence: 2.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.18,
+        makeupDb: -5, eqHighDb: 0.5, bassMonoGain: 0.75, sideWidth: 1.5, sideEqPresence: 2.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.18,
         midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 110, haloElev: 0.50, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -18
     }
 };
@@ -67,6 +67,28 @@ class SpatialAudioEngine {
             this.directGain.gain.value = this.mode === 'off' ? 1.0 : SPATIAL_CONFIGS[this.mode].dryMix;
             this.inputNode.connect(this.directGain);
             this.directGain.connect(this.outputNode);
+
+            
+            
+            this.bassLPF = this.audioCtx.createBiquadFilter();
+            this.bassLPF.type = 'lowpass';
+            this.bassLPF.frequency.value = 150;
+            this.bassLPF.Q.value = 0.707;
+            this.bassLPF.channelCount = 1;
+            this.bassLPF.channelCountMode = 'explicit';
+
+            
+            this.bassMonoGain = this.audioCtx.createGain();
+            this.bassMonoGain.gain.value = 0.0;
+            
+            this.inputNode.connect(this.bassLPF);
+            this.bassLPF.connect(this.bassMonoGain);
+            this.bassMonoGain.connect(this.outputNode);
+
+            this.spatialBusHPF = this.audioCtx.createBiquadFilter();
+            this.spatialBusHPF.type = 'highpass';
+            this.spatialBusHPF.frequency.value = 150;
+            this.spatialBusHPF.Q.value = 0.707;
 
             this.spatialBus = this.audioCtx.createGain();
             this.spatialBus.gain.value = this.mode === 'off' ? 0.0 : 1.0;
@@ -269,24 +291,21 @@ class SpatialAudioEngine {
             this.highShelf.frequency.value = 4000;
             this.highShelf.gain.value = 0.0;
 
-            this.lowShelf = this.audioCtx.createBiquadFilter();
-            this.lowShelf.type = 'lowshelf';
-            this.lowShelf.frequency.value = 150;
-            this.lowShelf.gain.value = 0.0;
+            
 
             this.makeupGain = this.audioCtx.createGain();
             this.makeupGain.gain.value = 1.0;
 
-            this.centerPanner.connect(this.lowShelf);
-            this.leftPanner.connect(this.lowShelf);
-            this.rightPanner.connect(this.lowShelf);
-            this.haloPannerL.connect(this.lowShelf);
-            this.haloPannerR.connect(this.lowShelf);
-            this.erMasterGain.connect(this.lowShelf);
-            this.reverbWetGain.connect(this.lowShelf);
-            this.sideReverbGain.connect(this.lowShelf);
+            this.centerPanner.connect(this.highShelf);
+            this.leftPanner.connect(this.highShelf);
+            this.rightPanner.connect(this.highShelf);
+            this.haloPannerL.connect(this.highShelf);
+            this.haloPannerR.connect(this.highShelf);
+            this.erMasterGain.connect(this.highShelf);
+            this.reverbWetGain.connect(this.highShelf);
+            this.sideReverbGain.connect(this.highShelf);
 
-            this.lowShelf.connect(this.highShelf);
+            
             this.highShelf.connect(this.makeupGain);
             this.makeupGain.connect(this.outputNode);
 
@@ -301,8 +320,9 @@ class SpatialAudioEngine {
 
     _connectSpatialBuses() {
         if (!this._isSpatialBusConnected && this.spatialBus) {
-            this.spatialBus.connect(this.splitter);
-            this.spatialBus.connect(this.convolver);
+            this.spatialBus.connect(this.spatialBusHPF);
+            this.spatialBusHPF.connect(this.splitter);
+            this.spatialBusHPF.connect(this.convolver);
             this._isSpatialBusConnected = true;
         }
     }
@@ -310,6 +330,7 @@ class SpatialAudioEngine {
     _disconnectSpatialBuses() {
         if (this._isSpatialBusConnected && this.spatialBus) {
             this.spatialBus.disconnect();
+            this.spatialBusHPF.disconnect();
             this._isSpatialBusConnected = false;
         }
     }
@@ -380,7 +401,7 @@ class SpatialAudioEngine {
             this._setParam(this.spatialBus.gain, 0.0, t, tc);
             this._setParam(this.directGain.gain, 1.0, t, tc);
             this._setParam(this.highShelf?.gain, 0.0, t, tc);
-            this._setParam(this.lowShelf?.gain, 0.0, t, tc);
+            this._setParam(this.bassMonoGain?.gain, 0.0, t, tc);
             this._setParam(this.makeupGain?.gain, 1.0, t, tc);
             this._setParam(this.reverbWetGain?.gain, 0.0, t, tc);
             this._setParam(this.sideReverbGain?.gain, 0.0, t, tc);
@@ -457,7 +478,7 @@ class SpatialAudioEngine {
             }
 
             this._setParam(this.highShelf?.gain, cfg.eqHighDb, t, tc);
-            this._setParam(this.lowShelf?.gain, cfg.eqLowDb, t, tc);
+            this._setParam(this.bassMonoGain?.gain, cfg.bassMonoGain || 0, t, tc);
             
             const dbToLinear = Math.pow(10, cfg.makeupDb / 20);
             this._setParam(this.makeupGain?.gain, dbToLinear, t, tc);
