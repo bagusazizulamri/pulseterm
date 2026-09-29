@@ -348,6 +348,13 @@ class SpatialAudioEngine {
     }
 
     cycleMode() {
+    updateUI() {
+        const btn = document.getElementById('spatial-panel-btn');
+        if (btn) {
+            btn.textContent = `[SPATIAL: ${SPATIAL_CONFIGS[this.mode].name}]`;
+            btn.classList.toggle('active', this.mode !== 'off');
+        }
+    }
         const idx = SPATIAL_MODES.indexOf(this.mode);
         const nextMode = SPATIAL_MODES[(idx + 1) % SPATIAL_MODES.length];
         this.applyMode(nextMode);
