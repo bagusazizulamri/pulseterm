@@ -144,7 +144,7 @@ class TerminalEqualizer {
                             const limiter = new AudioWorkletNode(this.audioCtx, 'limiter-processor');
                             spatial.outputNode.disconnect(this.compressor);
                             spatial.outputNode.connect(limiter);
-                            limiter.connect(this.compressor);
+                            limiter.connect(this.analyser);
                             this.limiterNode = limiter;
                         } catch(err) {
                             console.warn('Failed to construct limiter worklet', err);
