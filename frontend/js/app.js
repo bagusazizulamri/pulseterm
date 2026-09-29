@@ -846,6 +846,8 @@ function cycleTheme() {
     const idx = THEME_LIST.indexOf(current);
     const nextTheme = THEME_LIST[(idx + 1) % THEME_LIST.length];
     window.setTheme(nextTheme);
+    const names = { maclight: "MAC LIGHT", ytsoft: "YOUTUBE SOFT", oled: "OLED MONO", cyberpunk: "CYBERPUNK", nordic: "TOKYO SLATE", light: "SOLARIZED", liquidglass: "MAC LIQUID GLASS", softdark: "SOFT DARK" };
+    if (window.showToast) window.showToast(`>> THEME: ${names[nextTheme] || nextTheme.toUpperCase()}`);
 }
 
 window.navigate = navigate;
