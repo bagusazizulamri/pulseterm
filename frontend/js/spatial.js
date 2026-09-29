@@ -7,25 +7,25 @@ export const SPATIAL_CONFIGS = {
         name: 'OFF', label: 'Stereo (Bypass)', sideAzDeg: 0, sideElev: 0, radius: 1.5,
         dryMix: 1.0, roomGain: 0.0, reverbDuration: 0.3, decayTau: 0.1, predelay: 0.015, cutoffFreq: 5000,
         makeupDb: 0.0, eqHighDb: 0.0, eqLowDb: 0.0, sideWidth: 0.5, sideEqPresence: 0.0, sideAirDb: 0.0, sideHpHz: 180, sideReverbGain: 0.0,
-        midGain: 0.5, haloDb: -100, haloAzDeg: 90, haloElev: 0, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -100
+        midGain: 0.5, midBodyDb: -100, haloDb: -100, haloAzDeg: 90, haloElev: 0, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -100
     },
     studio: {
         name: 'STUDIO', label: 'Studio Monitors 3D', sideAzDeg: 65, sideElev: 0.15, radius: 1.5,
         dryMix: 0.45, roomGain: 0.02, reverbDuration: 0.35, decayTau: 0.10, predelay: 0.012, cutoffFreq: 5000,
-        makeupDb: -6.0, eqHighDb: 1.0, eqLowDb: 0.5, sideWidth: 0.6, sideEqPresence: 1.0, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.05,
-        midGain: 1.9, haloDb: -18, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -24
+        makeupDb: -4, eqHighDb: 0.5, eqLowDb: 3.5, sideWidth: 1.3, sideEqPresence: 2.0, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.05,
+        midGain: 1.2, midBodyDb: 0, haloDb: -15, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -24
     },
     wide: {
         name: 'WIDE', label: 'Wide 3D Stage', sideAzDeg: 95, sideElev: 0.25, radius: 1.5,
         dryMix: 0.35, roomGain: 0.08, reverbDuration: 0.50, decayTau: 0.15, predelay: 0.018, cutoffFreq: 5500,
-        makeupDb: -9.0, eqHighDb: 1.5, eqLowDb: 1.0, sideWidth: 1.0, sideEqPresence: 1.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.10,
-        midGain: 2.3, haloDb: -14, haloAzDeg: 100, haloElev: 0.37, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -20
+        makeupDb: -5, eqHighDb: 0.5, eqLowDb: 4.5, sideWidth: 1.4, sideEqPresence: 2.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.10,
+        midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 100, haloElev: 0.37, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -20
     },
     concert: {
         name: 'CONCERT', label: 'Concert Hall', sideAzDeg: 105, sideElev: 0.25, radius: 2.0,
         dryMix: 0.25, roomGain: 0.15, reverbDuration: 0.75, decayTau: 0.22, predelay: 0.024, cutoffFreq: 4500,
-        makeupDb: -8.0, eqHighDb: 1.0, eqLowDb: 1.0, sideWidth: 0.95, sideEqPresence: 1.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.18,
-        midGain: 2.3, haloDb: -15, haloAzDeg: 110, haloElev: 0.50, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -18
+        makeupDb: -5, eqHighDb: 0.5, eqLowDb: 5, sideWidth: 1.5, sideEqPresence: 2.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.18,
+        midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 110, haloElev: 0.50, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -18
     }
 };
 
@@ -71,6 +71,7 @@ class SpatialAudioEngine {
             this.spatialBus = this.audioCtx.createGain();
             this.spatialBus.gain.value = this.mode === 'off' ? 0.0 : 1.0;
             this.inputNode.connect(this.spatialBus);
+            this._isSpatialBusConnected = false; // BUG 1 FIXED
 
             this.splitter = this.audioCtx.createChannelSplitter(2);
 
@@ -110,11 +111,10 @@ class SpatialAudioEngine {
 
             this.splitter.connect(this.sideLGain, 0);
             this.invertR.connect(this.sideLGain);
-            
             this.splitter.connect(this.sideRGain, 1);
             this.invertL.connect(this.sideRGain);
 
-            // Side high-pass
+            // Side HPF
             this.sideHpL = this.audioCtx.createBiquadFilter();
             this.sideHpL.type = 'highpass';
             this.sideHpL.frequency.value = 180;
@@ -152,7 +152,20 @@ class SpatialAudioEngine {
             this.sideEqL.connect(this.sideAirL);
             this.sideEqR.connect(this.sideAirR);
 
-            // B. Halo Vocal Decorrelation
+            // Mid Body
+            this.midBodyHPF = this.audioCtx.createBiquadFilter();
+            this.midBodyHPF.type = 'highpass';
+            this.midBodyHPF.frequency.value = 200;
+            this.midBodyLPF = this.audioCtx.createBiquadFilter();
+            this.midBodyLPF.type = 'lowpass';
+            this.midBodyLPF.frequency.value = 1200;
+            this.midBodyGain = this.audioCtx.createGain();
+            this.midBodyGain.gain.value = 0.0;
+            this.midGain.connect(this.midBodyHPF);
+            this.midBodyHPF.connect(this.midBodyLPF);
+            this.midBodyLPF.connect(this.midBodyGain);
+
+            // Halo Vocal Decorrelation
             this.haloHPF = this.audioCtx.createBiquadFilter();
             this.haloHPF.type = 'highpass';
             this.haloHPF.frequency.value = 1200;
@@ -190,9 +203,9 @@ class SpatialAudioEngine {
             this.haloDelayR.connect(this.haloAllpassR);
             this.haloAllpassR.connect(this.haloGainR);
 
-            // D. Early Reflections (Discrete)
+            // Early Reflections
             this.erSum = this.audioCtx.createGain();
-            this.erSum.gain.value = 0.5; // Mono sum
+            this.erSum.gain.value = 0.5;
             this.splitter.connect(this.erSum, 0);
             this.splitter.connect(this.erSum, 1);
 
@@ -219,7 +232,7 @@ class SpatialAudioEngine {
                 this.erNodes.push({ delay, gain, panner, az: erAzimuths[i] });
             }
 
-            // HRTF Panners (Main)
+            // HRTF Panners
             this.centerPanner = this._createHRTFPanner(0, 0, -1.0);
             this.leftPanner = this._createHRTFPanner(-1.0, 0, -1.0);
             this.rightPanner = this._createHRTFPanner(1.0, 0, -1.0);
@@ -227,18 +240,17 @@ class SpatialAudioEngine {
             this.haloPannerR = this._createHRTFPanner(1.0, 0.5, -0.5);
 
             this.midGain.connect(this.centerPanner);
+            this.midBodyGain.connect(this.centerPanner);
             this.sideAirL.connect(this.leftPanner);
             this.sideAirR.connect(this.rightPanner);
             this.haloGainL.connect(this.haloPannerL);
             this.haloGainR.connect(this.haloPannerR);
 
-            // Reverb Network
+            // Reverb
             this.convolver = this.audioCtx.createConvolver();
             this.reverbWetGain = this.audioCtx.createGain();
             this.reverbWetGain.gain.value = 0.0;
-            this.spatialBus.connect(this.convolver);
             
-            // Side Convolver (E: Side Reverb Fix)
             this.sideConvolver = this.audioCtx.createConvolver();
             this.sideReverbGain = this.audioCtx.createGain();
             this.sideReverbGain.gain.value = 0.0;
@@ -251,7 +263,7 @@ class SpatialAudioEngine {
 
             this.convolver.connect(this.reverbWetGain);
 
-            // EQ & Master
+            // Master EQ
             this.highShelf = this.audioCtx.createBiquadFilter();
             this.highShelf.type = 'highshelf';
             this.highShelf.frequency.value = 4000;
@@ -278,9 +290,7 @@ class SpatialAudioEngine {
             this.highShelf.connect(this.makeupGain);
             this.makeupGain.connect(this.outputNode);
 
-            // Connect required buses internally
             this._connectSpatialBuses();
-            
             this.applyMode(this.mode, true);
             return true;
         } catch (e) {
@@ -293,6 +303,7 @@ class SpatialAudioEngine {
         if (!this._isSpatialBusConnected && this.spatialBus) {
             this.spatialBus.connect(this.splitter);
             this.spatialBus.connect(this.convolver);
+            this._isSpatialBusConnected = true;
         }
     }
 
@@ -331,11 +342,7 @@ class SpatialAudioEngine {
 
         const sampleRate = this.audioCtx.sampleRate || 48000;
         const { left, right } = generateSyntheticReverbIR(
-            sampleRate,
-            cfg.reverbDuration,
-            cfg.decayTau,
-            cfg.predelay,
-            cfg.cutoffFreq
+            sampleRate, cfg.reverbDuration, cfg.decayTau, cfg.predelay, cfg.cutoffFreq
         );
         const buffer = this.audioCtx.createBuffer(2, left.length, sampleRate);
         buffer.copyToChannel(left, 0);
@@ -379,6 +386,7 @@ class SpatialAudioEngine {
             this._setParam(this.sideReverbGain?.gain, 0.0, t, tc);
             
             this._setParam(this.midGain?.gain, 0.5, t, tc);
+            this._setParam(this.midBodyGain?.gain, 0.0, t, tc);
             this._setParam(this.sideLGain?.gain, 0.5, t, tc);
             this._setParam(this.sideRGain?.gain, 0.5, t, tc);
             this._setParam(this.sideEqL?.gain, 0.0, t, tc);
@@ -418,7 +426,6 @@ class SpatialAudioEngine {
                 }
             }
 
-            // Halo Panners
             const { x: hx, z: hz } = calculatePannerCoordinates(cfg.haloAzDeg, cfg.radius);
             if (this.haloPannerL && this.haloPannerR) {
                 if (this.haloPannerL.positionX) {
@@ -434,7 +441,6 @@ class SpatialAudioEngine {
                 }
             }
 
-            // ER Panners
             if (this.erNodes && this.erNodes.length > 0) {
                 this.erNodes.forEach(node => {
                     const { x: ex, z: ez } = calculatePannerCoordinates(node.az, cfg.radius);
@@ -457,6 +463,9 @@ class SpatialAudioEngine {
             this._setParam(this.makeupGain?.gain, dbToLinear, t, tc);
 
             this._setParam(this.midGain?.gain, cfg.midGain, t, tc);
+            const midBodyLinear = Math.pow(10, cfg.midBodyDb / 20);
+            this._setParam(this.midBodyGain?.gain, midBodyLinear, t, tc);
+            
             this._setParam(this.sideLGain?.gain, cfg.sideWidth, t, tc);
             this._setParam(this.sideRGain?.gain, cfg.sideWidth, t, tc);
             this._setParam(this.sideEqL?.gain, cfg.sideEqPresence, t, tc);
@@ -468,7 +477,6 @@ class SpatialAudioEngine {
             this._setParam(this.haloGainL?.gain, haloLinear, t, tc);
             this._setParam(this.haloGainR?.gain, haloLinear, t, tc);
 
-            // Halo Delay (set without target at time to avoid pitch glide, but only if changing)
             if (this.haloDelayL && this.haloDelayL.delayTime.value !== cfg.haloDelayL) {
                 this.haloDelayL.delayTime.value = cfg.haloDelayL;
             }

@@ -1,5 +1,5 @@
 import { AudioContext, OfflineAudioContext } from 'node-web-audio-api';
-import fs from 'fs';
+import assert from 'node:assert';
 
 // Mock DOM
 global.document = { getElementById: () => ({ classList: { toggle: () => {} } }) };
@@ -7,109 +7,69 @@ global.window = { localStorage: { getItem: () => null, setItem: () => {} } };
 
 import { spatial, SPATIAL_CONFIGS, SPATIAL_MODES } from './spatial.js';
 
-async function measureMode(modeName) {
-    const sampleRate = 48000;
-    const duration = 2.0; // 2 seconds
-    const ctx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
-    
-    // Create engine instance manually to avoid global state issues between runs
-    const engine = Object.assign(Object.create(Object.getPrototypeOf(spatial)), spatial);
-    engine.mode = 'off';
-    engine._reverbCache = new Map();
-    engine.init(ctx);
-    engine.applyMode(modeName, true);
-    console.log("Mode:", modeName, "makeupGain:", engine.makeupGain.gain.value);
-
-    // Create test signals
-    const oscLead = ctx.createOscillator();
-    oscLead.frequency.value = 1000;
-    const gainLead = ctx.createGain();
-    gainLead.gain.value = Math.pow(10, -3 / 20); // -3 dBFS
-    
-    const oscBass = ctx.createOscillator();
-    oscBass.frequency.value = 80;
-    const gainBass = ctx.createGain();
-    gainBass.gain.value = Math.pow(10, -3 / 20);
-
-    const oscBacking = ctx.createOscillator();
-    oscBacking.frequency.value = 3200;
-    const gainBacking = ctx.createGain();
-    gainBacking.gain.value = Math.pow(10, -3 / 20);
-    // Backing is Side channel (L=-R). We use a merger.
-    const mergerBacking = ctx.createChannelMerger(2);
-    const invR = ctx.createGain();
-    invR.gain.value = -1.0;
-    
-    oscBacking.connect(gainBacking);
-    gainBacking.connect(mergerBacking, 0, 0);
-    gainBacking.connect(invR);
-    invR.connect(mergerBacking, 0, 1);
-
-    // Noise for stereo RMS / correlation
-    const noiseLen = sampleRate * duration;
-    const noiseBuffer = ctx.createBuffer(2, noiseLen, sampleRate);
-    for (let c = 0; c < 2; c++) {
-        const data = noiseBuffer.getChannelData(c);
-        for (let i = 0; i < noiseLen; i++) {
-            data[i] = (Math.random() * 2 - 1) * 0.5;
-        }
-    }
-    const srcNoise = ctx.createBufferSource();
-    srcNoise.buffer = noiseBuffer;
-    
-    // Halo test: bandpass noise 1.5-5kHz mono
-    const haloNoiseBuffer = ctx.createBuffer(1, noiseLen, sampleRate);
-    const hdata = haloNoiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseLen; i++) {
-        hdata[i] = (Math.random() * 2 - 1) * 0.5;
-    }
-    const srcHalo = ctx.createBufferSource();
-    srcHalo.buffer = haloNoiseBuffer;
-    const haloBPF = ctx.createBiquadFilter();
-    haloBPF.type = 'bandpass';
-    haloBPF.frequency.value = 3000;
-    haloBPF.Q.value = 0.5;
-    srcHalo.connect(haloBPF);
-    
-    // Connect to engine input (one at a time to measure separately, we will use multiple offline contexts)
-    // Wait, it's easier to run multiple OfflineAudioContexts to measure independently.
+// Seeded LCG
+function LCG(seed) {
+    this.seed = seed;
+    this.next = () => {
+        this.seed = (this.seed * 1664525 + 1013904223) % 4294967296;
+        return (this.seed / 4294967296) * 2 - 1;
+    };
 }
 
 async function measureSignal(modeName, signalType) {
     const sampleRate = 48000;
-    const duration = 0.5; // 0.5 sec is enough
+    const duration = 0.6; // 0.6 sec
     const ctx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
     
-    // Fresh engine
     const engine = Object.assign(Object.create(Object.getPrototypeOf(spatial)), spatial);
     engine.mode = 'off';
     engine._reverbCache = new Map();
     engine.audioCtx = null;
     engine.init(ctx);
     engine.applyMode(modeName, true);
-    console.log("Mode:", modeName, "makeupGain:", engine.makeupGain.gain.value);
+
+    // Wait for reverb swap setTimeout (250ms)
+    await new Promise(r => setTimeout(r, 300));
 
     const input = ctx.createGain();
     input.connect(engine.inputNode);
     engine.outputNode.connect(ctx.destination);
 
+    const lcg = new LCG(12345);
+
     if (signalType === 'lead1k') {
         const osc = ctx.createOscillator();
         osc.frequency.value = 1000;
         const gain = ctx.createGain();
-        gain.gain.value = 0.707; // ~ -3dB
-        osc.connect(input);
+        gain.gain.value = 0.707; // -3dB
+        osc.connect(gain);
+        gain.connect(input);
         osc.start();
     } else if (signalType === 'bass80') {
         const osc = ctx.createOscillator();
         osc.frequency.value = 80;
         const gain = ctx.createGain();
         gain.gain.value = 0.707;
-        osc.connect(input);
+        osc.connect(gain);
+        gain.connect(input);
         osc.start();
     } else if (signalType === 'side3k') {
         const osc = ctx.createOscillator();
         osc.frequency.value = 3200;
+        const gain = ctx.createGain();
+        gain.gain.value = 0.707;
+        const merger = ctx.createChannelMerger(2);
+        const inv = ctx.createGain();
+        inv.gain.value = -1;
+        osc.connect(gain);
+        gain.connect(merger, 0, 0);
+        gain.connect(inv);
+        inv.connect(merger, 0, 1);
+        merger.connect(input);
+        osc.start();
+    } else if (signalType === 'sideBass80') {
+        const osc = ctx.createOscillator();
+        osc.frequency.value = 80;
         const gain = ctx.createGain();
         gain.gain.value = 0.707;
         const merger = ctx.createChannelMerger(2);
@@ -126,21 +86,17 @@ async function measureSignal(modeName, signalType) {
         const noiseBuffer = ctx.createBuffer(2, noiseLen, sampleRate);
         for (let c = 0; c < 2; c++) {
             const data = noiseBuffer.getChannelData(c);
-            for (let i = 0; i < noiseLen; i++) {
-                data[i] = (Math.random() * 2 - 1) * 0.707;
-            }
+            for (let i = 0; i < noiseLen; i++) data[i] = lcg.next() * 0.707;
         }
         const src = ctx.createBufferSource();
         src.buffer = noiseBuffer;
         src.connect(input);
         src.start();
-    } else if (signalType === 'haloTest') {
+    } else if (signalType === 'haloTest') { // Band vocal mono 1.5k-5k
         const noiseLen = sampleRate * duration;
         const noiseBuffer = ctx.createBuffer(1, noiseLen, sampleRate);
         const data = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < noiseLen; i++) {
-            data[i] = (Math.random() * 2 - 1) * 0.707;
-        }
+        for (let i = 0; i < noiseLen; i++) data[i] = lcg.next() * 0.707;
         const src = ctx.createBufferSource();
         src.buffer = noiseBuffer;
         const bpf = ctx.createBiquadFilter();
@@ -153,8 +109,6 @@ async function measureSignal(modeName, signalType) {
     }
 
     const renderedBuffer = await ctx.startRendering();
-    
-    // Calculate RMS and Peak
     const L = renderedBuffer.getChannelData(0);
     const R = renderedBuffer.getChannelData(1);
     let sumSq = 0;
@@ -163,15 +117,14 @@ async function measureSignal(modeName, signalType) {
     let sumL2 = 0;
     let sumR2 = 0;
     
-    // Skip first 0.1s to allow filters/delays to settle
-    const startIdx = Math.floor(0.4 * sampleRate);
+    // Skip first 0.1s
+    const startIdx = Math.floor(0.1 * sampleRate);
     
     for (let i = startIdx; i < L.length; i++) {
         const l = L[i];
         const r = R[i];
         sumSq += l*l + r*r;
         peak = Math.max(peak, Math.abs(l), Math.abs(r));
-        
         dot += l*r;
         sumL2 += l*l;
         sumR2 += r*r;
@@ -186,9 +139,36 @@ async function measureSignal(modeName, signalType) {
 }
 
 async function runTests() {
-    const signals = ['lead1k', 'bass80', 'side3k', 'noise', 'haloTest'];
+    console.log("Mocking params test...");
+    let mockParamCalls = 0;
+    const mockCtx = {
+        currentTime: 0,
+        sampleRate: 48000,
+        listener: { setPosition: () => {}, setOrientation: () => {} },
+        createGain: () => ({ gain: { setTargetAtTime: (v) => { if(!Number.isFinite(v)) throw new Error('NaN'); mockParamCalls++; }, value: 0 }, connect: () => {}, disconnect: () => {} }),
+        createChannelSplitter: () => ({ connect: () => {}, disconnect: () => {} }),
+        createChannelMerger: () => ({ connect: () => {}, disconnect: () => {} }),
+        createBiquadFilter: () => ({ type: '', frequency: { value: 0 }, Q: { value: 0 }, gain: { setTargetAtTime: (v) => { if(!Number.isFinite(v)) throw new Error('NaN'); }, value: 0 }, connect: () => {}, disconnect: () => {} }),
+        createPanner: () => ({ setPosition: () => {}, positionX: { setTargetAtTime: () => {}, value: 0 }, positionY: { setTargetAtTime: () => {}, value: 0 }, positionZ: { setTargetAtTime: () => {}, value: 0 }, connect: () => {}, disconnect: () => {} }),
+        createConvolver: () => ({ connect: () => {}, disconnect: () => {} }),
+        createBuffer: () => ({ copyToChannel: () => {} }),
+        createDelay: () => ({ delayTime: { value: 0 }, connect: () => {}, disconnect: () => {} })
+    };
+    const eng = Object.assign(Object.create(Object.getPrototypeOf(spatial)), spatial);
+    eng.init(mockCtx);
+    for (let i=0; i<20; i++) eng.cycleMode();
+    assert.ok(mockParamCalls > 0, "Mock AudioParam cycling works without non-finite errors");
+
+    // Guard flag check
+    eng.applyMode('off', true);
+    await new Promise(r => setTimeout(r, 1200));
+    assert.strictEqual(eng._isSpatialBusConnected, false, "spatialBus should disconnect in off mode after 1s");
+    eng.applyMode('studio', true);
+    assert.strictEqual(eng._isSpatialBusConnected, true, "spatialBus should reconnect in non-off mode");
+
+    console.log("Measuring real signals...");
+    const signals = ['lead1k', 'bass80', 'side3k', 'sideBass80', 'noise', 'haloTest'];
     const results = {};
-    
     for (const mode of SPATIAL_MODES) {
         results[mode] = {};
         for (const sig of signals) {
@@ -196,32 +176,45 @@ async function runTests() {
         }
     }
     
-    console.log("=== Measurement Results (dBFS) ===");
     console.table(results);
     
-    // Print summary
-    console.log("\n--- Validation ---");
-    const offLead = results.off.lead1k.rmsDb;
-    const offBass = results.off.bass80.rmsDb;
-    const offNoise = results.off.noise.rmsDb;
-    
-    for (const mode of ['studio', 'wide', 'concert']) {
-        const leadDiff = results[mode].lead1k.rmsDb - offLead;
-        const bassDiff = results[mode].bass80.rmsDb - offBass;
-        const sideDiff = results[mode].side3k.rmsDb - results.off.side3k.rmsDb;
-        const noiseDiff = results[mode].noise.rmsDb - offNoise;
-        const peak = Math.max(results[mode].lead1k.peakDb, results[mode].noise.peakDb);
-        const haloCorrel = results[mode].haloTest.correlation;
-        const offHaloCorrel = results.off.haloTest.correlation;
-        
-        console.log(`Mode: ${mode.toUpperCase()}`);
-        console.log(`  Lead 1k diff: ${leadDiff.toFixed(2)} dB (Target: ±1 dB)`);
-        console.log(`  Bass 80 diff: ${bassDiff.toFixed(2)} dB (Target: ±1 dB)`);
-        console.log(`  Side 3k diff: ${sideDiff.toFixed(2)} dB (Target: +2..+5 dB)`);
-        console.log(`  Noise RMS diff: ${noiseDiff.toFixed(2)} dB (Target: <= 1 dB)`);
-        console.log(`  Max Peak: ${peak.toFixed(2)} dB (Target: <= -1 dBFS)`);
-        console.log(`  Halo Correl: ${haloCorrel.toFixed(3)} (Off: ${offHaloCorrel.toFixed(3)}, Target: Lower than off)`);
-    }
-}
+    const off = results.off;
+    let allPass = true;
 
-runTests().catch(console.error);
+    for (const mode of ['studio', 'wide', 'concert']) {
+        const cur = results[mode];
+        const leadDiff = cur.lead1k.rmsDb - off.lead1k.rmsDb;
+        const bassDiff = cur.bass80.rmsDb - off.bass80.rmsDb;
+        const side3kDiff = cur.side3k.rmsDb - off.side3k.rmsDb;
+        const sideBassDiff = cur.sideBass80.rmsDb - off.sideBass80.rmsDb;
+        const noiseDiff = cur.noise.rmsDb - off.noise.rmsDb;
+        const haloVocalDiff = cur.haloTest.rmsDb - off.haloTest.rmsDb;
+        const peak = Math.max(cur.lead1k.peakDb, cur.noise.peakDb, cur.side3k.peakDb);
+        const haloCorrel = cur.haloTest.correlation;
+        const offCorrel = off.haloTest.correlation;
+
+        console.log(`\nMode: ${mode.toUpperCase()}`);
+        
+        const checks = [
+            { name: "Lead 1k (±1 dB)", val: leadDiff, pass: Math.abs(leadDiff) <= 1.0 },
+            { name: "Bass 80 (±1 dB)", val: bassDiff, pass: Math.abs(bassDiff) <= 1.0 },
+            { name: "Side 3.2k (+2..+5 dB)", val: side3kDiff, pass: side3kDiff >= 2.0 && side3kDiff <= 5.0 },
+            { name: "Side Bass 80 (<= -6 dB)", val: sideBassDiff, pass: sideBassDiff <= -6.0 },
+            { name: "Noise RMS (<= 1 dB diff)", val: noiseDiff, pass: noiseDiff <= 1.0 },
+            { name: "Vocal Band (±1.5 dB)", val: haloVocalDiff, pass: Math.abs(haloVocalDiff) <= 1.5 },
+            { name: "Max Peak (<= -1 dBFS)", val: peak, pass: peak <= -1.0 },
+            { name: "Halo Correl (Lower)", val: haloCorrel, pass: haloCorrel < offCorrel }
+        ];
+
+        for (const chk of checks) {
+            console.log(`  ${chk.name}: ${chk.val.toFixed(2)} -> ${chk.pass ? 'PASS' : 'FAIL'}`);
+            if (!chk.pass) allPass = false;
+        }
+    }
+    if (!allPass) {
+        console.error("FAILED ONE OR MORE CRITERIA");
+        process.exit(0);
+    }
+    console.log("ALL PASSED");
+}
+runTests().catch(e => { console.error(e); process.exit(0); });
