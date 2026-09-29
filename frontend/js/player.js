@@ -429,6 +429,7 @@ const player = {
         const token = ++this.playToken;
         const resumeAt = Number(options.position) || 0;
         const shouldExtendHistory = !options.fromHistory && (!this.history.length || this.history[this.history.length - 1].videoId !== song.videoId);
+        this.crossfadeStarted = false;
         this.currentSong = song;
         equalizer.attachMediaElements(this.audio, this.preloadAudio);
         equalizer.resetGains();
@@ -797,7 +798,8 @@ const player = {
             this.currentKind = 'user';
             this.updateQueueUI();
             this.saveState();
-            this.currentSong = song;
+            this.crossfadeStarted = false;
+        this.currentSong = song;
             if (manual) this.history = [...this.history, song].slice(-50);
             await this._start(song);
             return;
@@ -823,6 +825,7 @@ const player = {
         if (!song) { this.isPlaying = false; this.updatePlayerUI(); return; }
         this.currentKind = 'context';
         setQueueOrder(this.playOrder, this.orderPos).catch(() => {});
+        this.crossfadeStarted = false;
         this.currentSong = song;
         if (song?.autoAdded) this.autoIds.delete(song.videoId);
         // Evolve the seed with the playlist flow (Spotify Radio model)
@@ -981,7 +984,7 @@ const player = {
                 }
             }, Math.max(0, (this.crossfade * 1000) / 2));
             setTimeout(() => {
-                if (this.preloadAudio.paused) return;
+                if (this.preloadAudio.paused) { this.crossfadeStarted = false; return; }
                 const old = this.audio;
                 this.audio = this.preloadAudio;
                 this.preloadAudio = old;
@@ -1645,7 +1648,8 @@ const player = {
             const song = this.userQueue[idx] || row.song;
             this.userQueue.splice(0, idx + 1);
             this.currentKind = 'user';
-            this.currentSong = song;
+            this.crossfadeStarted = false;
+        this.currentSong = song;
             this.history = [...this.history, song].slice(-50);
             this.updateQueueUI();
             this.saveState();
@@ -1660,7 +1664,8 @@ const player = {
                     : row.song;
                 this.currentKind = 'context';
                 setQueueOrder(this.playOrder, this.orderPos).catch(() => {});
-                this.currentSong = song;
+                this.crossfadeStarted = false;
+        this.currentSong = song;
                 this.history = [...this.history, song].slice(-50);
                 if (song?.autoAdded) this.autoIds.delete(song.videoId);
                 if (song) this._adoptContinueSeed(song);
