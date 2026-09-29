@@ -1,7 +1,7 @@
 // PulseTerm — Minimalist TUI Audio Player Equalizer Engine
 // 10-Band Parametric Audio DSP with Genre Presets & Anti-Clipping Dynamics Limiter
 
-import { spatial } from './spatial.js?v=5';
+import { spatial } from './spatial.js?v=6';
 import { getGenre } from './api.js';
 import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
 
