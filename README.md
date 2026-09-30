@@ -1,32 +1,31 @@
 # PulseTerm
 
-> Minimalist, lightweight web YouTube Music player with a terminal-like UI style, studio-grade Web Audio DSP, 3D Spatial Audio, and synchronized multi-script lyrics. Zero telemetry, zero bloat.
-
----
-
-## Screenshots
-
-| Dashboard & Taste Profiler | 10-Band Equalizer & DSP | Synced Teletext Lyrics |
-| :---: | :---: | :---: |
-| ![Dashboard](docs/screenshots/home.png) | ![Equalizer](docs/screenshots/equalizer.png) | ![Lyrics](docs/screenshots/lyrics.png) |
-
----
+A browser-based music player with a retro terminal-inspired interface and a focus on local playback, keyboard control, synchronized lyrics, and real-time audio processing.
 
 ## Highlights
 
-- **Terminal-Like UI Style**: Browser-based web player designed with a retro terminal aesthetic (not a pure command-line/curses TUI app)—featuring monospace typography, ASCII borders/telemetry, CRT scanlines, keyboard-first navigation, and customizable color themes (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
-- **Studio Audio DSP (48 kHz Opus)**:
-  - **10-Band Parametric EQ**: 32 Hz–16 kHz bands with preamp trim, harmonic bass enhancement, and 14 calibrated presets.
-  - **SmartEQ** — a 3-phase adaptive equalizer that combines metadata-driven spectral targeting with real-time audio analysis:
-    1. **Metadata → Archetype Selection**: Maps genre, vibe, and artist/title metadata to a spectral archetype containing target tilt, per-band priorities, and base gains. Uses word-boundary matching across 200+ artists and songs spanning K-Pop, J-Pop, Metal, Hip-Hop, R&B, EDM, and more.
-    2. **Real-Time Spectral Reclassification**: After ~1.8 s of playback, analyzes 20 consecutive 8192-point FFT frames and computes octave-band power. If the measured spectral profile disagrees with the metadata-derived archetype, SmartEQ automatically reclassifies the audio.
-    3. **Dynamic Spectral Compensation**: Compares each octave band against the selected archetype's target spectral tilt, then applies bounded boosts to under-represented frequencies and cuts to over-represented frequencies. Three-point smoothing and gain clamps prevent excessive correction. Diagnostic hints such as `+PUNCH`, `+VOCAL`, `+AIR`, `TAME HARSH`, and `BALANCED` expose the current spectral correction.
-  - **Perfect Tune**: Pre-EQ 8192-point FFT spectral analysis using a pink-noise-derived reference curve with a -4.5 dB/oct target tilt, followed by automatic gain staging.
-  - **3D Binaural Spatial Audio**: Mid/Side processing with HRTF-based panning, synthetic stereo convolution reverb, and RMS-normalized loudness matching across `OFF`, `STUDIO`, `WIDE`, and `CONCERT` modes.
-  - **Brickwall Lookahead Limiter**: 5 ms lookahead AudioWorklet limiter with a -1.0 dBFS ceiling and a transparent compressor fallback for unsupported processing paths.
-- **Synced Multi-Script Lyrics**: Real-time timed lyrics with automatic dual-script Romanization:
-  - Japanese (Romaji), Korean (Romaja), Chinese (Pinyin), Cyrillic.
-- **Privacy & Performance**: Personal/local use, zero external CDN dependencies, SQLite WAL storage, <1% CPU footprint.
+* **Terminal-Like UI**: Browser-based player with a retro terminal-inspired interface rather than a traditional command-line TUI. Includes monospace typography, ASCII-style borders and telemetry, CRT scanlines, keyboard-first navigation, and customizable themes (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
+
+* **Studio Audio DSP (48 kHz Opus)**:
+
+  * **10-Band EQ**: 32 Hz–16 kHz bands with preamp control, harmonic bass enhancement, and 14 built-in presets.
+  * **SmartEQ** — a 3-stage adaptive EQ system that uses track metadata and measured audio characteristics:
+
+    1. **Metadata → Archetype**: Uses genre, vibe, and artist/title metadata to select an initial spectral profile. Matching uses word boundaries across a collection of 200+ artists and songs covering genres such as K-Pop, J-Pop, Metal, Hip-Hop, R&B, and EDM.
+    2. **Spectral Reclassification**: After approximately 1.8 seconds of playback, SmartEQ analyzes 20 FFT frames using an 8192-point FFT and compares the measured octave-band distribution with the initial profile. A different profile can be selected when the measured spectrum does not match the initial classification.
+    3. **Spectral Compensation**: Applies limited frequency boosts or cuts based on the difference between the measured spectrum and the selected target profile. Three-point smoothing and gain limits are used to reduce abrupt or excessive corrections. The UI reports the detected adjustment with hints such as `+PUNCH`, `+VOCAL`, `+AIR`, `TAME HARSH`, and `BALANCED`.
+  * **Perfect Tune**: Performs an 8192-point FFT analysis before EQ processing and uses a reference spectral curve with a -4.5 dB/oct target tilt to determine initial gain adjustments.
+  * **Binaural Spatial Audio**: Uses Mid/Side processing, HRTF-based panning, synthetic stereo convolution reverb, and RMS-based loudness matching. Available modes are `OFF`, `STUDIO`, `WIDE`, and `CONCERT`.
+  * **Lookahead Limiter**: AudioWorklet-based limiter with approximately 5 ms lookahead and a -1.0 dBFS ceiling. A compressor-based fallback is available for processing paths where the limiter is not used.
+
+* **Synced Multi-Script Lyrics**: Timed lyrics with automatic secondary-script conversion for supported languages:
+
+  * Japanese → Romaji
+  * Korean → Romaja
+  * Chinese → Pinyin
+  * Cyrillic → Latin transliteration
+
+* **Local & Lightweight**: Designed for personal/local use with no external CDN dependencies. Uses SQLite in WAL mode for local application data and is intended to keep resource usage low during normal playback.
 
 ---
 
@@ -55,26 +54,30 @@ Open **http://localhost:3000** in your browser.
 
 ## Keybindings
 
-| Key | Action | Key | Action |
-| :--- | :--- | :--- | :--- |
-| `Space` | Play / Pause | `e` | Toggle Equalizer panel |
-| `n` / `p` | Next / Prev track *(or Perfect Tune when EQ open)* | `x` | Cycle Spatial Audio mode |
-| `←` / `→` | Seek ±5s | `a` | Toggle Auto-EQ *(in EQ panel)* |
-| `↑` / `↓` | Volume ±5% | `p` | Perfect Tune *(in EQ panel)* |
-| `m` | Toggle Mute | `l` | Toggle Lyrics overlay |
-| `s` | Toggle Shuffle | `v` | Toggle CAVA visualizer |
-| `r` | Cycle Repeat (none / all / one) | `c` | Toggle CRT scanlines |
-| `/` | Search command prompt | `q` | Toggle Queue drawer |
-| `1`–`4` | Switch tab (Home / Search / Library / Playlists) | `t` | Cycle color theme |
-| `Esc` | Close active panel or modal | `?` | Show help modal |
+| Key       | Action                | Key   | Action                     |
+| --------- | --------------------- | ----- | -------------------------- |
+| `Space`   | Play / Pause          | `e`   | Toggle Equalizer           |
+| `n`       | Next track            | `x`   | Cycle Spatial Audio mode   |
+| `p`       | Previous track        | `a`   | Toggle Auto-EQ             |
+| `←` / `→` | Seek ±5s              | `p`   | Perfect Tune *(EQ panel)*  |
+| `↑` / `↓` | Volume ±5%            | `l`   | Toggle Lyrics              |
+| `m`       | Toggle Mute           | `v`   | Toggle CAVA visualizer     |
+| `s`       | Toggle Shuffle        | `c`   | Toggle CRT scanlines       |
+| `r`       | Cycle Repeat          | `q`   | Toggle Queue               |
+| `/`       | Search command prompt | `t`   | Cycle color theme          |
+| `1`–`4`   | Switch tab            | `Esc` | Close active panel / modal |
+| `?`       | Show help             |       |                            |
+
+> `p` controls Previous Track outside the EQ panel and Perfect Tune while the EQ panel is active.
 
 ---
 
 ## Tech Stack
 
-- **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite (aiosqlite WAL), ytmusicapi, yt-dlp.
-- **Audio Engine**: Web Audio API (BiquadFilter, AudioWorklet brickwall limiter, ConvolverNode, HRTF Panner).
-- **Frontend**: Vanilla ES6 Modules + Pure CSS (no build tools, no npm, no frameworks).
+* **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite + aiosqlite (WAL mode), ytmusicapi, yt-dlp.
+* **Audio**: Web Audio API — BiquadFilter, AudioWorklet, ConvolverNode, and HRTF Panner.
+* **Frontend**: Vanilla ES6 Modules + CSS.
+* **Build**: No frontend build step, npm, or JavaScript framework required.
 
 ---
 
