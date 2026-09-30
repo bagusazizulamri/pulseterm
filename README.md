@@ -17,7 +17,10 @@
 - **Terminal-Like UI Style**: Browser-based web player designed with a retro terminal aesthetic (not a pure command-line/curses TUI app)—featuring monospace typography, ASCII borders/telemetry, CRT scanlines, keyboard-first navigation, and customizable color themes (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
 - **Studio Audio DSP (48 kHz Opus)**:
   - **10-Band Parametric EQ**: 32Hz–16kHz faders, preamp trim, harmonic bass boost, and 14 calibrated presets.
-  - **Smart Auto-EQ**: Word-boundary genre classification that adapts EQ presets seamlessly on track changes without overwriting user manual settings.
+  - **SmartEQ** — 3-phase adaptive equalizer that analyzes audio in real-time *without* relying on static EQ presets:
+    1. **Metadata → Archetype Selection**: Maps genre, vibe, and artist/title metadata to a spectral *archetype* (target tilt, per-band priorities, base gains) via word-boundary matching across 200+ artists/songs (K-Pop, J-Pop, Metal, Hip-Hop, R&B, EDM, etc.).
+    2. **Real-Time Spectral Reclassification**: After ~1.8s of playback, captures 20 FFT frames (8192-point, ~1s window) and computes octave-band power. If the measured spectral shape disagrees with the metadata guess, SmartEQ reclassifies to the correct archetype automatically.
+    3. **Dynamic Spectral Deficiency Compensation**: Compares each octave band against the genre-specific pink-noise target tilt, then **boosts under-represented frequencies** (e.g. rolled-off air → `+AIR`) and **cuts over-represented ones** (e.g. harsh cymbals → `TAME HARSH`), with 3-point smoothing and clamped gain limits. Diagnostic hints (`+PUNCH`, `+VOCAL`, `BALANCED`, etc.) are shown in the UI.
   - **Perfect Tune**: Pre-EQ 8192-FFT octave spectral analysis with target pink noise tilt (-4.5 dB/oct) and auto gain staging.
   - **3D Binaural Spatial Audio**: True Mid/Side matrix with HRTF panners, synthetic stereo convolver reverb, and RMS-normalized loudness matching (`OFF`, `STUDIO`, `WIDE`, `CONCERT`).
   - **Brickwall Lookahead Limiter**: 5ms lookahead AudioWorklet with -1.0 dBFS ceiling and transparent compressor fallback.
