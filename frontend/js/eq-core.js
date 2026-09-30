@@ -348,12 +348,96 @@ export function classifySpectralProfile(bandDb, metadataHint = 'flat') {
     return metadataHint || 'flat';
 }
 
+export const AIR_GATING = {
+    // Absolute noise floor: di bawah ini 16kHz dianggap tidak ada konten (hiss/noise saja)
+    floorDb: -70,
+    // Relative roll-off vs 1kHz: lebih curam dari ini = mastering memang di-roll-off / lossy / lo-fi
+    maxDropRelDb: -30,
+    // 8kHz deviasi di atas pink-noise ref = sibilant/harsh (cymbal, ess, distortion)
+    harshBrillDb: 4.0,
+    // Gap 8kHz jauh lebih panas dari 16kHz = top-end kasar, jangan dongkrak air
+    harshGapDb: 6.0,
+    // 2kHz deviasi di bawah ini = vokal absen / scooped (drop EDM, instrumental)
+    vocalMin2kDb: -4.0,
+    // Total gain 16kHz maksimum saat air diblokir (base + offset dipangkas ke sini)
+    defaultBlockedTotalCap: 1.5
+};
+
+// Per-archetype batas air: [airMaxBoostEligible, airTotalCapBlocked]
+// airMaxBoostEligible = offset kompensasi 16kHz maksimum saat eligible
+// airTotalCapBlocked  = total gain 16kHz (base+offset) maksimum saat TIDAK eligible
+export const AIR_POLICY_BY_ARCHETYPE = {
+    pop_upbeat:  { airMaxBoost: 3.0, blockedTotalCap: 2.0 },
+    electronic:  { airMaxBoost: 3.0, blockedTotalCap: 2.0 },
+    pop:         { airMaxBoost: 2.5, blockedTotalCap: 1.5 },
+    hiphop:      { airMaxBoost: 2.0, blockedTotalCap: 1.5 },
+    rnb:         { airMaxBoost: 2.0, blockedTotalCap: 1.5 },
+    rock:        { airMaxBoost: 1.5, blockedTotalCap: 1.0 },
+    metal:       { airMaxBoost: 1.0, blockedTotalCap: 1.0 },
+    sad_ballad:  { airMaxBoost: 1.0, blockedTotalCap: 1.0 },
+    flat:        { airMaxBoost: 0.5, blockedTotalCap: 0.5 }
+};
+
+/**
+ * Tentukan apakah lagu ini layak diberi boost AIRY (8k/16k) — khususnya airy vocal.
+ *
+ * Tidak semua lagu boleh di-airy:
+ *  - Rekaman lo-fi / lossy / roll-off sengaja (16kHz tinggal noise floor) -> boost = hiss
+ *  - Lagu harsh/sibilant (8kHz sudah panas) -> boost = makin perih & essy
+ *  - Vokal absen/scooped di 2kHz -> "airy vocal" tidak ada gunanya
+ *  - Ballad intim / metal berdinding gitar -> air berlebih = tipis & fatiguing
+ *
+ * @param {number[]} measuredOctaveDb - 10 elemen level octave-band dalam dB
+ * @param {string} archetypeKey - kunci archetype SmartEQ
+ * @returns {{ eligible: boolean, reason: string, details: object }}
+ */
+export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
+    const fallback = { eligible: true, reason: '', details: {} };
+    if (!Array.isArray(measuredOctaveDb) || measuredOctaveDb.length !== 10) return fallback;
+    const refDb = measuredOctaveDb[5]; // 1kHz reference
+    if (refDb < -85) return { eligible: false, reason: 'SILENT', details: { refDb } };
+
+    const airAbs = measuredOctaveDb[9];   // 16kHz absolut
+    const brillAbs = measuredOctaveDb[8]; // 8kHz absolut
+    const airRel = airAbs - refDb;        // relatif terhadap 1kHz
+    // Deviasi terhadap pink-noise slope -4.5 dB/oct dari 1kHz
+    const brillDev = brillAbs - refDb - (8 - 5) * (-4.5);
+    const airDev = airAbs - refDb - (9 - 5) * (-4.5);
+    const presDev = measuredOctaveDb[6] - refDb - (6 - 5) * (-4.5); // 2kHz vocal presence
+
+    // 1. Tidak ada konten HF asli — tinggal noise floor / artefak lossy
+    if (airAbs < AIR_GATING.floorDb) {
+        return { eligible: false, reason: 'NO AIR CONTENT', details: { airAbs, refDb } };
+    }
+    // 2. Roll-off disengaja / master vintage / lo-fi / kaset — hormati artis, jangan "koreksi"
+    if (airRel < AIR_GATING.maxDropRelDb) {
+        return { eligible: false, reason: 'ROLLED-OFF', details: { airRel, refDb } };
+    }
+    // 3. Curam terjun 8k->16k = tidak ada shimmer asli, yang ada hiss bila di-boost
+    if ((brillAbs - airAbs) > 8) {
+        return { eligible: false, reason: 'NO SHIMMER', details: { brillAbs, airAbs } };
+    }
+    // 4. Sudah sibilant / harsh di 8k — tambah air = makin perih, essy, fatiguing
+    if (brillDev > AIR_GATING.harshBrillDb && airDev <= brillDev - 2) {
+        return { eligible: false, reason: 'HARSH', details: { brillDev, airDev } };
+    }
+    // 5. Gap 8k jauh di atas 16k — top-end kasar, lift air hanya menonjolkan sibilance
+    if ((brillDev - airDev) > AIR_GATING.harshGapDb) {
+        return { eligible: false, reason: 'SIBILANT', details: { brillDev, airDev } };
+    }
+    // 6. Vokal tidak present di 2k — "airy vocal" tidak relevan (drop/instrumental/scooped)
+    if (presDev < AIR_GATING.vocalMin2kDb) {
+        return { eligible: false, reason: 'NO VOCAL', details: { presDev } };
+    }
+    return { eligible: true, reason: '', details: { airAbs, airRel, brillDev, airDev, presDev } };
+}
+
 export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     const arch = SPECTRAL_ARCHETYPES[archetypeKey] || SPECTRAL_ARCHETYPES.flat;
     const refDb = measuredOctaveDb[5]; // 1kHz reference
 
     if (refDb < -85) {
-        return { gains: [...arch.baseGains], offsets: new Array(10).fill(0), hint: arch.name };
+        return { gains: [...arch.baseGains], offsets: new Array(10).fill(0), hint: arch.name, airEligible: false, airReason: 'SILENT' };
     }
 
     // 1. Calculate raw deficiency per band
@@ -371,9 +455,36 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
         return 0.25 * rawDefect[i - 1] + 0.5 * rawDefect[i] + 0.25 * rawDefect[i + 1];
     });
 
+    // 2b. AIR gating — tidak semua lagu boleh diberi efek/boost airy vocal.
+    // Kalau top-end tidak eligible (lo-fi/roll-off, hiss saja, harsh/sibilant,
+    // atau vokal memang absen), pangkas kompensasi 8k/16k agar tidak jadi
+    // hiss, essy, tipis, atau fatiguing. Kalau eligible, tetap batasi boost
+    // 16k sesuai karakter archetype (ballad/metal jauh lebih kecil dari pop/EDM).
+    const airPolicy = AIR_POLICY_BY_ARCHETYPE[archetypeKey] || AIR_POLICY_BY_ARCHETYPE.flat;
+    const airCheck = assessAirEligibility(measuredOctaveDb, archetypeKey);
+    if (airCheck.eligible) {
+        if (smoothed[9] > airPolicy.airMaxBoost) smoothed[9] = airPolicy.airMaxBoost;
+        if (smoothed[8] > airPolicy.airMaxBoost + 0.5) smoothed[8] = airPolicy.airMaxBoost + 0.5;
+    } else {
+        // Blokir boost air: jangan tambah kilau di atas base preset.
+        if (smoothed[9] > 0) smoothed[9] = 0;
+        if (smoothed[8] > 0.5) smoothed[8] = 0.5;
+    }
+
     // 3. Merge with base gains
     const finalGains = arch.baseGains.map((base, i) => {
-        const total = base + smoothed[i];
+        let total = base + smoothed[i];
+        // Saat air diblokir, total gain 16kHz ikut dipangkas ke blockedTotalCap
+        // supaya base preset yang airy (mis. pop_upbeat +3.5) tidak memaksa
+        // shimmer ke lagu yang tidak cocok.
+        if (!airCheck.eligible && i === 9) {
+            const cap = (airPolicy.blockedTotalCap ?? AIR_GATING.defaultBlockedTotalCap);
+            if (total > cap) total = cap;
+        }
+        if (!airCheck.eligible && i === 8) {
+            const cap8 = (airPolicy.blockedTotalCap ?? AIR_GATING.defaultBlockedTotalCap) + 1.0;
+            if (total > cap8) total = cap8;
+        }
         return Math.round(Math.max(-12, Math.min(12, total)) * 10) / 10;
     });
 
@@ -383,7 +494,14 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     const trebleMod = (smoothed[7] + smoothed[8] + smoothed[9]) / 3;
 
     let tag = '';
-    if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
+    if (!airCheck.eligible) {
+        // Jangan pernah klaim +AIR saat boost-nya ditahan — jujur ke UI.
+        if (bassMod > 0.8) tag = `+PUNCH · AIR HELD`;
+        else if (midMod > 0.8) tag = `+VOCAL · AIR HELD`;
+        else if (trebleMod < -0.8) tag = 'TAME HARSH';
+        else if (bassMod < -0.8) tag = 'TIGHT BASS';
+        else tag = `AIR HELD (${airCheck.reason})`;
+    } else if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
     else if (trebleMod > 0.8) tag = '+AIR';
     else if (bassMod > 0.8) tag = '+PUNCH';
     else if (midMod > 0.8) tag = '+VOCAL';
@@ -394,7 +512,9 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     return {
         gains: finalGains,
         offsets: smoothed.map(s => Math.round(s * 10) / 10),
-        hint: `${arch.name} (${tag})`
+        hint: `${arch.name} (${tag})`,
+        airEligible: airCheck.eligible,
+        airReason: airCheck.reason
     };
 }
 
@@ -529,7 +649,7 @@ export function bandPowerDb(freqDb, sampleRate, fftSize, fc) {
 
 export function computeTuneCorrections(bandDb) {
     if (!Array.isArray(bandDb) || bandDb.length !== 10) {
-        return { gains: new Array(10).fill(0), preamp: 0, hint: 'FLAT' };
+        return { gains: new Array(10).fill(0), preamp: 0, hint: 'FLAT', airEligible: true, airReason: '' };
     }
 
     // Ref at 1000 Hz (index 5)
@@ -550,6 +670,19 @@ export function computeTuneCorrections(bandDb) {
         return 0.25 * delta[i - 1] + 0.5 * delta[i] + 0.25 * delta[i + 1];
     });
 
+    // AIR gating (Perfect Tune) — tidak semua lagu boleh di-airy.
+    // bandDb di sini level absolut per octave-band, jadi bisa langsung dinilai:
+    // lo-fi/roll-off, tinggal hiss, harsh/sibilant, atau vokal absen -> tahan boost 8k/16k.
+    const airCheck = assessAirEligibility(bandDb);
+    if (airCheck.eligible) {
+        // Tetap batasi air agar tidak over-shimmer pada koreksi generik
+        if (smoothed[9] > 2.5) smoothed[9] = 2.5;
+        if (smoothed[8] > 3.0) smoothed[8] = 3.0;
+    } else {
+        if (smoothed[9] > 0) smoothed[9] = 0;
+        if (smoothed[8] > 0.5) smoothed[8] = 0.5;
+    }
+
     // Clamp corrections to [-4, +4] dB per band
     const gains = smoothed.map(g => {
         const clamped = Math.max(-4, Math.min(4, g));
@@ -561,18 +694,25 @@ export function computeTuneCorrections(bandDb) {
     const sumPos = gains.filter(g => g > 0).reduce((a, b) => a + b, 0);
     const preamp = -(Math.round((maxGain * 0.6 + (sumPos > 10 ? 1.0 : 0)) * 10) / 10);
 
-    // Formulate descriptive hint
+    // Formulate descriptive hint (jujur: jangan klaim +AIR saat air-nya ditahan)
     let hint = 'BALANCED';
     const bassAvg = (gains[0] + gains[1] + gains[2]) / 3;
     const trebleAvg = (gains[7] + gains[8] + gains[9]) / 3;
-    if (bassAvg > 1.0 && trebleAvg < -0.5) hint = '+BASS · TAME';
+    if (!airCheck.eligible) {
+        if (bassAvg > 1.0 && trebleAvg < -0.5) hint = '+BASS · TAME';
+        else if (bassAvg > 1.0) hint = '+BASS';
+        else if (bassAvg < -1.0) hint = 'CLARITY';
+        else if (trebleAvg < -1.0) hint = 'WARM';
+        else hint = `AIR HELD (${airCheck.reason})`;
+    }
+    else if (bassAvg > 1.0 && trebleAvg < -0.5) hint = '+BASS · TAME';
     else if (bassAvg > 1.0) hint = '+BASS';
     else if (bassAvg < -1.0 && trebleAvg > 1.0) hint = 'CLARITY · +AIR';
     else if (bassAvg < -1.0) hint = 'CLARITY';
     else if (trebleAvg > 1.0) hint = '+AIR';
     else if (trebleAvg < -1.0) hint = 'WARM';
 
-    return { gains, preamp, hint };
+    return { gains, preamp, hint, airEligible: airCheck.eligible, airReason: airCheck.reason };
 }
 
 export function calculatePannerCoordinates(azimuthDeg, radius = 1.5) {
