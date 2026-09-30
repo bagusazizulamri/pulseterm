@@ -1,7 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
@@ -924,7 +924,7 @@ async def favicon():
 
 @app.get("/modern")
 async def modern_ui():
-    return FileResponse(os.path.join(frontend_dir, "modern.html"))
+    return RedirectResponse(url="/?ui=modern")
 
 @app.get("/")
 async def root():

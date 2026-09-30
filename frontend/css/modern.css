@@ -1,370 +1,451 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* =========================================================
+   PulseTerm — Modern Liquid Glass Interface Stylesheet
+   Pure frosted glassmorphism, crisp modern typography,
+   clean borders, and zero retro-TUI / monospace remnants.
+   ========================================================= */
 
-:root {
-    --glass-bg: rgba(20, 20, 30, 0.5);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --accent: #00ffcc;
-    --text-main: #ffffff;
-    --text-muted: #a0a0b0;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Active only under Modern UI Mode */
+html.ui-mode-modern,
+body.ui-mode-modern {
+    --font-mono: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    --font-term: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+
+    /* High-End Static Liquid Glass Palette */
+    --paper: #0b0f19;
+    --paper-2: rgba(26, 34, 52, 0.55);
+    --paper-3: rgba(40, 52, 78, 0.5);
+    --wash: rgba(15, 23, 42, 0.65);
+    --line: rgba(255, 255, 255, 0.08);
+    --line-focus: #38bdf8;
+    --ink: #f8fafc;
+    --ink-2: #38bdf8;
+    --ink-3: #94a3b8;
+    --seal: #38bdf8;
+    --seal-glow: rgba(56, 189, 248, 0.25);
+    --glass: rgba(15, 23, 42, 0.7);
+    --card-hover: rgba(255, 255, 255, 0.06);
+    --highlight-bg: #0284c7;
+    --highlight-fg: #ffffff;
+
+    /* Static, Elegant, Calm Dark Ambient Vignette (NO ANIMATION) */
+    background: radial-gradient(1000px 700px at 15% 15%, rgba(30, 58, 138, 0.22) 0%, transparent 60%),
+                radial-gradient(900px 600px at 85% 85%, rgba(14, 116, 144, 0.18) 0%, transparent 60%),
+                radial-gradient(700px 500px at 50% 50%, rgba(15, 23, 42, 0.4) 0%, transparent 70%),
+                #070a12 !important;
+    background-attachment: fixed !important;
+    color: var(--ink) !important;
+    font-family: var(--font-mono) !important;
+    letter-spacing: -0.01em;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-body {
-    background: #0f0c29;
-    color: var(--text-main);
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-}
-
-#background-art {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    z-index: -1;
-    filter: blur(50px);
-    opacity: 0.8;
-}
-
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.glass-container {
-    display: grid;
-    grid-template-columns: 240px 1fr 300px;
-    grid-template-rows: 1fr 90px;
-    height: 100vh;
-    width: 100vw;
-    padding: 1rem;
-    gap: 1rem;
-}
-
-.glass-panel {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    box-shadow: var(--glass-shadow);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Sidebar */
-.sidebar {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    padding: 1.5rem;
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-}
-
-.sidebar-header h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.badge {
-    font-size: 0.6rem;
-    background: rgba(255,255,255,0.2);
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: 600;
-}
-
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.sidebar-nav a {
-    text-decoration: none;
-    color: var(--text-muted);
-    font-weight: 500;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.sidebar-nav a i {
-    font-size: 1.2rem;
-}
-
-.sidebar-nav a:hover, .sidebar-nav a.active {
-    background: rgba(255,255,255,0.1);
-    color: var(--text-main);
-}
-
-.sidebar-section {
-    margin-top: 2rem;
-}
-
-.sidebar-section h3 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-}
-
-/* Main Content */
-.main-content {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    position: relative;
-}
-
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-.search-bar {
-    display: flex;
-    align-items: center;
-    background: rgba(0,0,0,0.2);
-    border-radius: 20px;
-    padding: 0.5rem 1rem;
-    width: 300px;
-    border: 1px solid transparent;
-    transition: border 0.3s;
-}
-
-.search-bar:focus-within {
-    border-color: rgba(255,255,255,0.3);
-}
-
-.search-bar i {
-    color: var(--text-muted);
-    margin-right: 0.5rem;
-}
-
-.search-bar input {
-    background: transparent;
-    border: none;
-    color: white;
-    outline: none;
-    width: 100%;
+body.ui-mode-modern * {
     font-family: inherit;
 }
 
-.top-actions {
-    display: flex;
-    gap: 0.5rem;
+/* 1. Eliminate Retro Overlays & Terminal Prompts */
+body.ui-mode-modern #crt-overlay,
+body.ui-mode-modern .term-prompt,
+body.ui-mode-modern .term-cursor,
+body.ui-mode-modern #crt-toggle-btn {
+    display: none !important;
 }
 
-.icon-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* 2. Sleek Liquid Glass Sidebar */
+body.ui-mode-modern #sidebar {
+    background: rgba(11, 16, 28, 0.68) !important;
+    backdrop-filter: blur(28px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
 }
 
-.icon-btn:hover {
-    color: var(--text-main);
-    background: rgba(255,255,255,0.1);
+body.ui-mode-modern .tui-brand {
+    padding-bottom: 1.25rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-.view-container {
-    padding: 1.5rem;
-    flex-grow: 1;
-    overflow-y: auto;
+body.ui-mode-modern .tui-logo {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
 }
 
-/* Right Panel */
-.right-panel {
-    grid-column: 3 / 4;
-    grid-row: 1 / 2;
+body.ui-mode-modern .tui-sub {
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    color: #38bdf8 !important;
+    opacity: 0.9 !important;
 }
 
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--glass-border);
+/* Modern Navigation Rail Buttons */
+body.ui-mode-modern .rail-nav .nav-btn {
+    border-radius: 12px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    padding: 0.7rem 0.9rem !important;
+    margin-bottom: 0.35rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    color: var(--ink-3) !important;
 }
 
-.panel-header h3 {
-    font-size: 0.9rem;
+body.ui-mode-modern .rail-nav .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--ink) !important;
+    transform: translateX(2px);
 }
 
-.queue-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 1rem;
+body.ui-mode-modern .rail-nav .nav-btn.active {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
 }
 
-.visualizer-container {
-    height: 120px;
-    border-top: 1px solid var(--glass-border);
-    padding: 1rem;
-}
-#modern-visualizer { width: 100%; height: 100%; }
-
-/* Bottom Player Bar */
-.player-bar {
-    grid-column: 1 / 4;
-    grid-row: 2 / 3;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1.5rem;
+body.ui-mode-modern .key-badge.is-modern-icon {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: inherit !important;
 }
 
-.track-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    width: 25%;
+body.ui-mode-modern .nav-text {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
 }
 
-.track-cover {
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    object-fit: cover;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+/* Sidebar Footer / Telemetry */
+body.ui-mode-modern .sidebar-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-top: 1rem !important;
 }
 
-.track-text h4 {
-    font-size: 0.9rem;
-    margin-bottom: 0.2rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+body.ui-mode-modern .tui-bitrate-badge {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    background: rgba(56, 189, 248, 0.08) !important;
+    color: #38bdf8 !important;
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    padding: 2px 8px !important;
 }
 
-.track-text p {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+body.ui-mode-modern .tui-mute-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--ink) !important;
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
 }
 
-.player-controls-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 50%;
-    gap: 0.5rem;
+/* 3. Top Navigation Bar */
+body.ui-mode-modern #top-bar {
+    background: rgba(11, 16, 28, 0.5) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-.playback-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+body.ui-mode-modern .search-bar {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 9999px !important;
+    padding: 0.35rem 0.9rem !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.play-btn i {
-    font-size: 2.2rem;
-    color: var(--text-main);
+body.ui-mode-modern .search-bar:focus-within {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
 }
 
-.progress-bar-container {
-    display: flex;
-    align-items: center;
+body.ui-mode-modern #search-input {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--ink) !important;
+}
+
+body.ui-mode-modern .search-go {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.3rem 0.8rem !important;
+}
+
+body.ui-mode-modern .top-bar-actions .tui-badge,
+body.ui-mode-modern .top-bar-actions .tui-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: var(--ink-3) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.4rem 0.8rem !important;
+    transition: all 0.2s ease !important;
+}
+
+body.ui-mode-modern .top-bar-actions .tui-badge:hover,
+body.ui-mode-modern .top-bar-actions .tui-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--ink) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* 4. Bottom Liquid Glass Player Bar */
+body.ui-mode-modern #player-bar {
+    background: rgba(13, 19, 33, 0.82) !important;
+    backdrop-filter: blur(36px) saturate(210%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.ui-mode-modern .player-cover {
+    border-radius: 10px !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ui-mode-modern #player-title {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: var(--ink) !important;
+    letter-spacing: -0.01em !important;
+}
+
+body.ui-mode-modern #player-artist {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    color: var(--ink-3) !important;
+}
+
+body.ui-mode-modern #player-state-badge {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--ink-2) !important;
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    padding: 2px 7px !important;
+}
+
+/* Sleek Play Button */
+body.ui-mode-modern #play-btn {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 50% !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    box-shadow: 0 4px 18px rgba(248, 250, 252, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+body.ui-mode-modern #play-btn:hover {
+    transform: scale(1.06) !important;
+    box-shadow: 0 6px 24px rgba(248, 250, 252, 0.38) !important;
+}
+
+body.ui-mode-modern #play-btn:active {
+    transform: scale(0.96) !important;
+}
+
+body.ui-mode-modern .ctrl-btn {
+    border-radius: 9999px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--ink-3) !important;
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+body.ui-mode-modern .ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--ink) !important;
+}
+
+body.ui-mode-modern .ctrl-btn.active,
+body.ui-mode-modern .ctrl-btn.on {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Progress Slider */
+body.ui-mode-modern #progress-bar {
+    height: 5px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    overflow: hidden !important;
+    transition: height 0.15s ease !important;
+}
+
+body.ui-mode-modern #progress-bar:hover {
+    height: 8px !important;
+}
+
+body.ui-mode-modern #progress-fill {
+    border-radius: 9999px !important;
+    background: linear-gradient(90deg, #38bdf8, #818cf8) !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
+}
+
+/* 5. Drawers (Config, Queue, EQ, Lyrics, Visualizer) */
+body.ui-mode-modern #settings-panel,
+body.ui-mode-modern #queue-panel,
+body.ui-mode-modern #equalizer-panel,
+body.ui-mode-modern #visualizer-panel,
+body.ui-mode-modern #lyrics-panel {
+    background: rgba(13, 19, 33, 0.88) !important;
+    backdrop-filter: blur(36px) saturate(210%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+body.ui-mode-modern .drawer-head h2,
+body.ui-mode-modern .drawer-head h3 {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    letter-spacing: -0.01em !important;
+}
+
+body.ui-mode-modern .drawer-head button.tui-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--ink-3) !important;
+    padding: 0.35rem 0.8rem !important;
+}
+
+body.ui-mode-modern .drawer-head button.tui-btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: var(--ink) !important;
+}
+
+/* 6. Cards & Tracks in Content Area */
+body.ui-mode-modern .song-card,
+body.ui-mode-modern .album-card,
+body.ui-mode-modern .artist-card,
+body.ui-mode-modern .queue-item,
+body.ui-mode-modern .track-row,
+body.ui-mode-modern .history-item {
+    border-radius: 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.ui-mode-modern .song-card:hover,
+body.ui-mode-modern .track-row:hover,
+body.ui-mode-modern .queue-item:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    transform: translateY(-1px);
+}
+
+body.ui-mode-modern .song-card img,
+body.ui-mode-modern .thumb-wrap img {
+    border-radius: 10px !important;
+}
+
+/* 7. Settings UI Mode Switcher Card */
+.ui-mode-setting-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.ui-mode-choice-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
-    width: 100%;
-    max-width: 500px;
+    margin-top: 0.75rem;
 }
 
-.progress-bar-container span {
+.ui-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink-3);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.ui-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--ink);
+}
+
+.ui-mode-btn.active {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+}
+
+.ui-mode-btn .mode-icon {
+    font-size: 1.25rem;
+}
+
+.ui-mode-btn .mode-desc strong {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ink);
+}
+
+.ui-mode-btn.active .mode-desc strong {
+    color: #38bdf8;
+}
+
+.ui-mode-btn .mode-desc small {
+    display: block;
     font-size: 0.7rem;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    margin-top: 2px;
 }
 
-.progress-slider, .volume-slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 2px;
-    outline: none;
-    cursor: pointer;
+/* 8. Sliders & Inputs */
+body.ui-mode-modern input[type="range"] {
+    accent-color: #38bdf8 !important;
 }
 
-.progress-slider::-webkit-slider-thumb, .volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    transition: transform 0.1s;
+body.ui-mode-modern select,
+body.ui-mode-modern input[type="text"] {
+    border-radius: 10px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--ink) !important;
 }
-
-.progress-slider:hover::-webkit-slider-thumb { transform: scale(1.2); }
-
-.extra-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 25%;
-    justify-content: flex-end;
-}
-.extra-controls i {
-    color: var(--text-muted);
-}
-.volume-slider { width: 100px; }
-
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-
-/* Component Styles */
-.song-card {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.05);
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.song-card:hover { background: rgba(255,255,255,0.1); }
-.song-card img { width: 40px; height: 40px; border-radius: 4px; margin-right: 1rem; }
-.song-card-text { flex-grow: 1; }
-.song-card-title { font-size: 0.9rem; font-weight: 500; }
-.song-card-artist { font-size: 0.75rem; color: var(--text-muted); }
-.song-card-action { display: none; }
-.song-card:hover .song-card-action { display: block; }
