@@ -357,8 +357,13 @@ export const AIR_GATING = {
     harshBrillDb: 4.0,
     // Gap 8kHz jauh lebih panas dari 16kHz = top-end kasar, jangan dongkrak air
     harshGapDb: 6.0,
-    // 2kHz deviasi di bawah ini = vokal absen / scooped (drop EDM, instrumental)
-    vocalMin2kDb: -4.0,
+    // 2kHz deviasi di bawah ini = vokal absen / scooped (drop EDM, instrumental).
+    // Sengaja dalam (-6dB): vokal recessed ballad (mix ke dalam, reverb tebal)
+    // tidak boleh langsung divonis — zona -6..-4 dB = abu-abu -> confidence LOW
+    // -> refinement pass yang memutuskan, bukan snapshot pertama.
+    vocalMin2kDb: -6.0,
+    // Zona abu-abu vokal recessed: presDev di antara ini = "mungkin vokal ke dalam"
+    vocalGrey2kDb: -4.0,
     // Total gain 16kHz maksimum saat air diblokir (base + offset dipangkas ke sini)
     defaultBlockedTotalCap: 1.5
 };
@@ -387,15 +392,26 @@ export const AIR_POLICY_BY_ARCHETYPE = {
  *  - Vokal absen/scooped di 2kHz -> "airy vocal" tidak ada gunanya
  *  - Ballad intim / metal berdinding gitar -> air berlebih = tipis & fatiguing
  *
+ * CATATAN vokal recessed (mis. ballad "I Hate That I Miss You" - Lee Haeri,
+ * vokal agak ke dalam / reverb tebal / intro piano dulu): jangan hukum lagu
+ * hanya karena 2kHz-nya sedikit di bawah ambang pada satu snapshot.
+ * assessAirEligibility() punya dua lapis pertahanan untuk kasus ini:
+ *  1. Ambang NO VOCAL dibuat dalam (-6dB, bukan -4dB) — vokal recessed tapi
+ *     masih ada tidak langsung didiskualifikasi.
+ *  2. Confidence 'LOW' saat 2kHz/8k/16k semuanya di zona abu-abu — sinyal ke
+ *     pemanggil (refineAirCompensation) untuk ukur ulang beberapa detik
+ *     kemudian saat vokal sudah masuk penuh, bukan vonis final.
+ * Jadi vocal ballad yang masuk telat tetap punya jalan kembali via refinement.
+ *
  * @param {number[]} measuredOctaveDb - 10 elemen level octave-band dalam dB
  * @param {string} archetypeKey - kunci archetype SmartEQ
- * @returns {{ eligible: boolean, reason: string, details: object }}
+ * @returns {{ eligible: boolean, reason: string, confidence: string, details: object }}
  */
 export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
-    const fallback = { eligible: true, reason: '', details: {} };
+    const fallback = { eligible: true, reason: '', confidence: 'HIGH', details: {} };
     if (!Array.isArray(measuredOctaveDb) || measuredOctaveDb.length !== 10) return fallback;
     const refDb = measuredOctaveDb[5]; // 1kHz reference
-    if (refDb < -85) return { eligible: false, reason: 'SILENT', details: { refDb } };
+    if (refDb < -85) return { eligible: false, reason: 'SILENT', confidence: 'HIGH', details: { refDb } };
 
     const airAbs = measuredOctaveDb[9];   // 16kHz absolut
     const brillAbs = measuredOctaveDb[8]; // 8kHz absolut
@@ -405,31 +421,95 @@ export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
     const airDev = airAbs - refDb - (9 - 5) * (-4.5);
     const presDev = measuredOctaveDb[6] - refDb - (6 - 5) * (-4.5); // 2kHz vocal presence
 
+    const no = (reason, details) => ({ eligible: false, reason, confidence: 'HIGH', details });
+    const greyHold = (reason, details) =>
+        // Zona abu-abu vokal recessed: JANGAN vonis final di snapshot pertama.
+        // Kembalikan blocked + confidence LOW supaya refinement pass ukur ulang
+        // saat vokal sudah masuk penuh (mis. intro piano -> verse).
+        ({ eligible: false, reason, confidence: 'LOW', details });
+
     // 1. Tidak ada konten HF asli — tinggal noise floor / artefak lossy
     if (airAbs < AIR_GATING.floorDb) {
-        return { eligible: false, reason: 'NO AIR CONTENT', details: { airAbs, refDb } };
+        return no('NO AIR CONTENT', { airAbs, refDb });
     }
     // 2. Roll-off disengaja / master vintage / lo-fi / kaset — hormati artis, jangan "koreksi"
     if (airRel < AIR_GATING.maxDropRelDb) {
-        return { eligible: false, reason: 'ROLLED-OFF', details: { airRel, refDb } };
+        return no('ROLLED-OFF', { airRel, refDb });
     }
     // 3. Curam terjun 8k->16k = tidak ada shimmer asli, yang ada hiss bila di-boost
     if ((brillAbs - airAbs) > 8) {
-        return { eligible: false, reason: 'NO SHIMMER', details: { brillAbs, airAbs } };
+        return no('NO SHIMMER', { brillAbs, airAbs });
     }
     // 4. Sudah sibilant / harsh di 8k — tambah air = makin perih, essy, fatiguing
     if (brillDev > AIR_GATING.harshBrillDb && airDev <= brillDev - 2) {
-        return { eligible: false, reason: 'HARSH', details: { brillDev, airDev } };
+        return no('HARSH', { brillDev, airDev });
     }
     // 5. Gap 8k jauh di atas 16k — top-end kasar, lift air hanya menonjolkan sibilance
     if ((brillDev - airDev) > AIR_GATING.harshGapDb) {
-        return { eligible: false, reason: 'SIBILANT', details: { brillDev, airDev } };
+        return no('SIBILANT', { brillDev, airDev });
     }
-    // 6. Vokal tidak present di 2k — "airy vocal" tidak relevan (drop/instrumental/scooped)
+    // 6. Vokal tidak present di 2k — "airy vocal" tidak relevan (drop/instrumental/scooped).
+    //    Tapi vokal RECESSED ballad (mix ke dalam, reverb tebal, verse belum masuk)
+    //    jatuh di zona abu-abu -6..-4 dB -> confidence LOW -> refinement yang memutuskan.
     if (presDev < AIR_GATING.vocalMin2kDb) {
-        return { eligible: false, reason: 'NO VOCAL', details: { presDev } };
+        return no('NO VOCAL', { presDev });
     }
-    return { eligible: true, reason: '', details: { airAbs, airRel, brillDev, airDev, presDev } };
+    if (presDev < AIR_GATING.vocalGrey2kDb) {
+        return greyHold('NO VOCAL?', { presDev });
+    }
+    return { eligible: true, reason: '', confidence: 'HIGH', details: { airAbs, airRel, brillDev, airDev, presDev } };
+}
+
+/**
+ * Refinement pass: gabungkan snapshot awal (detik ~1.8) dengan snapshot susulan
+ * (saat vokal sudah masuk penuh) supaya satu snapshot intro tidak memvonis lagu.
+ *
+ * Cara pakai: panggil analyzeAndCompensate() dua kali — sekali untuk tiap
+ * snapshot — lalu gabungkan hasilnya lewat fungsi ini.
+ *
+ * Aturan gabung:
+ *  - Kalau snapshot susulan eligible (vokal ternyata masuk) -> pakai hasil
+ *    susulan penuh (air dibuka kembali, bukan vonis snapshot pertama).
+ *  - Kalau keduanya blocked -> pakai yang lebih ketat (offset air terkecil).
+ *  - Kalau snapshot awal eligible tapi susulan blocked (lagu berubah karakter,
+ *    mis. verse intim -> drop kasar) -> tahan air (ikut susulan), karena itu
+ *    kondisi terbaru yang sedang berbunyi.
+ *  - Confidence digabung: LOW bila salah satunya LOW.
+ *
+ * @param {{gains:number[],offsets:number[],hint:string,airEligible:boolean,airReason:string,airConfidence:string}} first
+ * @param {{gains:number[],offsets:number[],hint:string,airEligible:boolean,airReason:string,airConfidence:string}} later
+ * @returns hasil gabungan dengan bentuk yang sama + confidence
+ */
+export function refineAirCompensation(first, later) {
+    if (!first) return later || null;
+    if (!later) return first;
+    const fAir = first.airEligible !== false;
+    const lAir = later.airEligible !== false;
+    const confidence = (first.airConfidence === 'LOW' || later.airConfidence === 'LOW') ? 'LOW' : 'HIGH';
+    // Vokal telat masuk -> buka kembali air dari snapshot susulan
+    if (!fAir && lAir) {
+        return { ...later, airConfidence: confidence };
+    }
+    // Lagu berubah jadi kasar di tengah jalan -> ikut kondisi terbaru (tahan)
+    if (fAir && !lAir) {
+        return { ...later, airConfidence: confidence };
+    }
+    // Keduanya blocked -> ambil offset air terkecil (paling ketat)
+    const pick = (i) => Math.min(first.offsets?.[i] ?? 0, later.offsets?.[i] ?? 0);
+    const mergedOffsets = [...(later.offsets || [])];
+    mergedOffsets[8] = pick(8);
+    mergedOffsets[9] = pick(9);
+    const mergedGains = [...(later.gains || [])];
+    const d8 = (later.offsets?.[8] ?? 0) - mergedOffsets[8];
+    const d9 = (later.offsets?.[9] ?? 0) - mergedOffsets[9];
+    mergedGains[8] = Math.round(((mergedGains[8] ?? 0) - d8) * 10) / 10;
+    mergedGains[9] = Math.round(((mergedGains[9] ?? 0) - d9) * 10) / 10;
+    return {
+        ...later,
+        gains: mergedGains,
+        offsets: mergedOffsets.map(s => Math.round(s * 10) / 10),
+        airConfidence: confidence
+    };
 }
 
 export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
@@ -437,7 +517,7 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     const refDb = measuredOctaveDb[5]; // 1kHz reference
 
     if (refDb < -85) {
-        return { gains: [...arch.baseGains], offsets: new Array(10).fill(0), hint: arch.name, airEligible: false, airReason: 'SILENT' };
+        return { gains: [...arch.baseGains], offsets: new Array(10).fill(0), hint: arch.name, airEligible: false, airReason: 'SILENT', airConfidence: 'HIGH' };
     }
 
     // 1. Calculate raw deficiency per band
@@ -496,11 +576,17 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     let tag = '';
     if (!airCheck.eligible) {
         // Jangan pernah klaim +AIR saat boost-nya ditahan — jujur ke UI.
+        // Tanda '?' + '(check again…)' = confidence LOW (zona abu-abu vokal
+        // recessed): vonis belum final, refinement pass akan ukur ulang saat
+        // vokal sudah masuk penuh.
+        const lowQ = airCheck.confidence === 'LOW';
+        const suffix = lowQ ? ' (check again…)' : '';
         if (bassMod > 0.8) tag = `+PUNCH · AIR HELD`;
         else if (midMod > 0.8) tag = `+VOCAL · AIR HELD`;
         else if (trebleMod < -0.8) tag = 'TAME HARSH';
         else if (bassMod < -0.8) tag = 'TIGHT BASS';
         else tag = `AIR HELD (${airCheck.reason})`;
+        tag += suffix;
     } else if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
     else if (trebleMod > 0.8) tag = '+AIR';
     else if (bassMod > 0.8) tag = '+PUNCH';
@@ -514,7 +600,8 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
         offsets: smoothed.map(s => Math.round(s * 10) / 10),
         hint: `${arch.name} (${tag})`,
         airEligible: airCheck.eligible,
-        airReason: airCheck.reason
+        airReason: airCheck.reason,
+        airConfidence: airCheck.confidence
     };
 }
 

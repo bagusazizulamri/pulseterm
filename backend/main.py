@@ -65,8 +65,11 @@ def get_proxy_client() -> httpx.AsyncClient:
         limits = httpx.Limits(max_keepalive_connections=30, max_connections=100, keepalive_expiry=60.0)
         _proxy_client = httpx.AsyncClient(
             follow_redirects=True,
+            # connect cepat; read dibiarkan None supaya stream lagu penuh tidak
+            # diputus di tengah (timeout read di-handle per-chunk oleh uvicorn/client).
             timeout=httpx.Timeout(30.0, connect=10.0, read=None),
             limits=limits,
+            headers={"User-Agent": stream.UA},
         )
     return _proxy_client
 
@@ -259,7 +262,24 @@ async def stream_stats():
 @app.api_route("/api/player/audio/{video_id}", methods=["GET", "HEAD"])
 async def proxy_audio(video_id: str, request: Request):
     import httpx
+    import logging
+    import time
     from fastapi.responses import StreamingResponse
+
+    t0 = time.monotonic()
+    log = logging.getLogger("pulseterm.audio")
+
+    # "audio/XXX:1" di console Chrome = URL + ":nomor-baris DevTools",
+    # BUKAN bagian videoId. Strip suffix itu lalu proxy seperti biasa —
+    # jangan malah ytsearch "XXX:1" yang lambat lalu 502 (ERR_ABORTED).
+    raw_id = (video_id or "").strip()
+    clean_id = raw_id.split(":")[0].split("?")[0].split("/")[0].strip()
+    if clean_id != raw_id:
+        log.warning("audio: stripped DevTools suffix %r -> %r", raw_id, clean_id)
+        video_id = clean_id
+    if not video_id or not stream._ID_RE.match(video_id):
+        log.warning("audio: reject invalid video_id=%r", raw_id)
+        return JSONResponse({"success": False, "error": "Invalid video id"}, status_code=400)
 
     # A downloaded copy is the cheapest source and seeks instantly.
     local = stream.offline_path(video_id)
@@ -275,10 +295,14 @@ async def proxy_audio(video_id: str, request: Request):
     client = get_proxy_client()
 
     # Two attempts: an expired googlevideo URL answers 403, so re-resolve once.
-    for attempt in (1, 2):
-        url = await stream.get_stream_url_async(video_id, force=(attempt == 2))
+    # Attempt tambahan (ke-3) untuk 429/5xx upstream yang biasanya transient.
+    resolve_err = ""
+    status_err = ""
+    for attempt in (1, 2, 3):
+        url = await stream.get_stream_url_async(video_id, force=(attempt >= 2))
         if not url:
-            break
+            resolve_err = "resolver returned empty"
+            continue
         headers = {"User-Agent": stream.UA}
         if is_head:
             headers["Range"] = "bytes=0-0"
@@ -287,16 +311,30 @@ async def proxy_audio(video_id: str, request: Request):
         try:
             upstream = await client.send(client.build_request("GET", url, headers=headers), stream=True)
         except Exception as e:
+            log.warning("audio: id=%s attempt=%d fetch failed: %.150s", video_id, attempt, str(e))
+            # Timeout/koneksi putus = transient -> coba resolve ulang + retry,
+            # kecuali ini attempt terakhir.
+            if attempt < 3:
+                continue
             return JSONResponse({"success": False, "error": "Upstream fetch failed: " + str(e)[:200]}, status_code=502)
         if upstream.status_code in (200, 206, 416):
             break
-        if attempt == 2 or upstream.status_code not in (403, 410):
-            body = await upstream.aread()
+        if upstream.status_code in (403, 410) and attempt < 3:
+            # URL kedaluwarsa -> resolve ulang lalu retry
             await upstream.aclose()
-            return JSONResponse({"success": False, "error": "Upstream status " + str(upstream.status_code)}, status_code=502)
+            continue
+        if upstream.status_code in (429, 500, 502, 503) and attempt < 3:
+            # Transient upstream -> retry dengan URL baru
+            await upstream.aclose()
+            continue
+        body = await upstream.aread()
         await upstream.aclose()
+        status_err = f"Upstream status {upstream.status_code}"
+        log.warning("audio: id=%s attempt=%d %s", video_id, attempt, status_err)
+        return JSONResponse({"success": False, "error": status_err}, status_code=502)
 
     if upstream is None:
+        log.warning("audio: id=%s no upstream (%s)", video_id, resolve_err or status_err or "no response")
         return JSONResponse({"success": False, "error": "Could not resolve stream URL"}, status_code=502)
 
     # Range beyond the end of the track: tell the player the real size.

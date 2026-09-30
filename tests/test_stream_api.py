@@ -14,7 +14,7 @@ class StreamApiTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test')
-        self.vid = 'range-test-1'
+        self.vid = 'dQw4w9WgXcQ'
         self.audio = os.path.join(self.tmp.name, self.vid + '.m4a')
         with open(self.audio, 'wb') as f: f.write(bytes(range(256)) * 64)
         self.offline = stream.OFFLINE_DIR
@@ -37,6 +37,27 @@ class StreamApiTests(unittest.TestCase):
             self.assertEqual(part.headers['content-range'], 'bytes 1024-2047/16384')
             bad = await self.client.get('/api/player/audio/' + self.vid, headers={'Range': 'bytes=99999-100000'})
             self.assertEqual(bad.status_code, 416)
+        asyncio.run(run())
+
+    def test_devtools_line_suffix_is_stripped_not_searched(self):
+        # "audio/XXX:1" di console Chrome = URL + ":nomor-baris DevTools",
+        # BUKAN bagian videoId. Server harus strip ":1" dan proxy seperti
+        # biasa — bukan malah ytsearch "XXX:1" yang lambat lalu 502.
+        async def run():
+            bad = await self.client.get('/api/player/audio/not-a-real-id!!')
+            self.assertEqual(bad.status_code, 400)
+            with patch('main.stream.get_stream_url_async', new=AsyncMock(return_value='https://unused.test/audio')) as resolver:
+                async def send(*args, **kwargs):
+                    request = args[0]
+                    req = httpx.Request('GET', str(request.url))
+                    return httpx.Response(206, headers={'content-type': 'audio/webm', 'content-range': 'bytes 0-1/10', 'content-length': '2'}, content=b'\x01\x02', request=req)
+                with patch('httpx.AsyncClient.send', side_effect=send):
+                    r = await self.client.get('/api/player/audio/dQw4w9WgXcQ:1', headers={'Range': 'bytes=0-1'})
+                self.assertEqual(r.status_code, 206)
+                self.assertEqual(r.content, b'\x01\x02')
+                # Resolver hanya dipanggil dengan id bersih, bukan "id:1"
+                for c in resolver.await_args_list:
+                    self.assertNotIn(':', c.args[0] if c.args else c.kwargs.get('video_id', ''))
         asyncio.run(run())
 
     def test_stream_proxy_uses_cache_and_returns_audio(self):

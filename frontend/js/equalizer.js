@@ -476,13 +476,56 @@ class TerminalEqualizer {
         }
 
         // Phase 3: Spectral deficiency filling relative to the (potentially reclassified) archetype
-        const { gains, hint } = analyzeAndCompensate(avgBandDb, effectiveArchetype);
+        const calResult = analyzeAndCompensate(avgBandDb, effectiveArchetype);
+        const { gains, hint } = calResult;
 
         if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
         this.gains = [...gains];
         this.lastTunedHint = `AUTO·${hint}`;
         this.applyFilters({ tau: 0.3 });
         this.updateUI();
+
+        // Refinement pass: kalau snapshot pertama jatuh di zona abu-abu vokal
+        // recessed (confidence LOW — mis. intro piano dulu baru vokal masuk,
+        // atau ballad yang vokalnya di-mix ke dalam), ukur ulang ~8 detik
+        // kemudian saat vokal sudah masuk penuh. refineAirCompensation() lalu
+        // menggabungkan kedua snapshot: vokal telat masuk -> air dibuka kembali.
+        if (calResult.airConfidence === 'LOW') {
+            const laterToken = token;
+            setTimeout(async () => {
+                if (laterToken !== this._autoToken || !this.autoMode || !this.enabled) return;
+                if (!this.tuneAnalyser || !window.player?.isPlaying || window.player?.crossfadeStarted) return;
+                try {
+                    const fft2 = this.tuneAnalyser.fftSize;
+                    const sr2 = this.audioCtx?.sampleRate || 48000;
+                    const data2 = new Float32Array(this.tuneAnalyser.frequencyBinCount);
+                    const acc2 = new Float64Array(10).fill(0);
+                    let valid2 = 0;
+                    for (let f = 0; f < frames; f++) {
+                        if (laterToken !== this._autoToken || !this.autoMode || !this.enabled) return;
+                        this.tuneAnalyser.getFloatFrequencyData(data2);
+                        for (let b = 0; b < 10; b++) {
+                            const bd = bandPowerDb(data2, sr2, fft2, EQ_FREQUENCIES[b]);
+                            acc2[b] += Math.pow(10, bd / 10);
+                        }
+                        valid2++;
+                        await new Promise(r => setTimeout(r, 50));
+                    }
+                    if (valid2 < 8) return;
+                    const laterDb = Array.from(acc2).map(sumP => 10 * Math.log10(Math.max(sumP / valid2, 1e-12)));
+                    if (laterDb[5] < -85) return;
+                    const laterArch = classifySpectralProfile(laterDb, effectiveArchetype) || effectiveArchetype;
+                    const laterResult = analyzeAndCompensate(laterDb, laterArch);
+                    const { refineAirCompensation } = await import('./eq-core.js');
+                    const merged = refineAirCompensation(calResult, laterResult);
+                    if (laterToken !== this._autoToken || !this.autoMode || !this.enabled) return;
+                    this.gains = [...merged.gains];
+                    this.lastTunedHint = `AUTO·${merged.hint}`;
+                    this.applyFilters({ tau: 0.5 });
+                    this.updateUI();
+                } catch {}
+            }, 8000);
+        }
     }
 
     async perfectTune() {
