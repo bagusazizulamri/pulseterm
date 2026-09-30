@@ -1699,16 +1699,54 @@ body.playing .tui-state-badge {
   position: relative;
 }
 
-.eq-slider-vertical {
+input[type="range"].eq-slider-vertical {
   writing-mode: vertical-lr;
   direction: rtl;
-  width: 24px;
+  width: 28px;
   height: 220px;
   cursor: ns-resize;
   accent-color: var(--seal);
   background: transparent;
-  padding: 0 4px;
+  padding: 0;
   margin: 0;
+  flex-shrink: 0;
+}
+
+input[type="range"].eq-slider-vertical::-webkit-slider-runnable-track {
+  width: 4px;
+  height: 100%;
+  background: var(--line);
+  border-radius: 2px;
+}
+
+input[type="range"].eq-slider-vertical::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 12px;
+  margin-top: 0;
+  margin-left: -9px;
+  background: var(--seal);
+  border-radius: 2px;
+  cursor: ns-resize;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"].eq-slider-vertical::-moz-range-track {
+  width: 4px;
+  height: 100%;
+  background: var(--line);
+  border-radius: 2px;
+}
+
+input[type="range"].eq-slider-vertical::-moz-range-thumb {
+  width: 22px;
+  height: 12px;
+  background: var(--seal);
+  border: 0;
+  border-radius: 2px;
+  cursor: ns-resize;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .eq-fader-freq {
@@ -2460,7 +2498,7 @@ dialog.artwork-modal::backdrop {
 }
 
 /* ============ FORM INPUTS & RANGE ============ */
-input[type="range"] {
+input[type="range"]:not(.eq-slider-vertical) {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -2468,12 +2506,12 @@ input[type="range"] {
   cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+input[type="range"]:not(.eq-slider-vertical)::-webkit-slider-runnable-track {
   height: 2px;
   background: var(--line);
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]:not(.eq-slider-vertical)::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 9px;
   height: 14px;
