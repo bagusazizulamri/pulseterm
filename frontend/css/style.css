@@ -1627,7 +1627,7 @@ body.playing .tui-state-badge {
   gap: 12px;
   padding: 16px 14px 14px;
   align-items: stretch;
-  min-height: 240px;
+  min-height: 310px;
   position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1691,7 +1691,7 @@ body.playing .tui-state-badge {
 }
 
 .eq-fader-track {
-  height: 154px;
+  height: 230px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1704,7 +1704,7 @@ body.playing .tui-state-badge {
   writing-mode: vertical-lr;
   direction: rtl;
   width: 24px;
-  height: 144px;
+  height: 220px;
   cursor: ns-resize;
   accent-color: var(--seal);
   background: transparent;
