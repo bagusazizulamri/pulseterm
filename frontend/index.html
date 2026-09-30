@@ -89,7 +89,6 @@
                     <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
                     <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
                     <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
-                    <button onclick="window.location.href='/modern'" class="tui-badge" title="Switch to Liquid Glass UI">[LIQUID UI]</button>
                     <button id="spatial-toggle-btn" onclick="spatial.cycleMode()" class="tui-badge spatial-toggle-btn" title="Toggle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
                     <button onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
                     <button onclick="toggleSettings()" class="tui-badge" title="Open terminal configuration">[CONFIG]</button>
@@ -185,6 +184,12 @@
                 <h2>┌─ CONFIG // SYSTEM PREFERENCES ─┐</h2>
                 <button onclick="toggleSettings()" class="tui-btn" aria-label="Close settings">[CLOSE ×]</button>
             </div>
+
+            <div class="setting-group" style="padding: 1rem; background: rgba(0, 255, 204, 0.1); border: 1px solid var(--accent); border-radius: 4px; text-align: center;">
+                <p style="margin-bottom: 0.5rem; color: var(--accent);">Switch to modern layout engine</p>
+                <button onclick="window.location.href='/modern'" class="tui-btn" style="width: 100%; font-weight: bold; border-color: var(--accent); color: var(--accent);">[LAUNCH LIQUID GLASS UI]</button>
+            </div>
+
             <div class="setting-group">
                 <label>Terminal Color Palette (T to cycle)</label>
                 <div class="theme-options">
