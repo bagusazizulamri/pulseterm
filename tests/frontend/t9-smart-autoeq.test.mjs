@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     EQ_FREQUENCIES,
+    EQ_LABELS,
+    EQ_HINTS,
     EQ_PRESETS,
     SPECTRAL_ARCHETYPES,
     analyzeAndCompensate,
@@ -249,3 +251,36 @@ describe('T9: Expanded Metal Band Coverage', () => {
         }
     });
 });
+
+describe('T9: Frequency Band Hints and Acoustic Domains', () => {
+    test('Defines all 10 frequency band hints matching EQ_LABELS', () => {
+        assert.equal(EQ_HINTS.length, 10);
+        EQ_HINTS.forEach((hint, idx) => {
+            assert.equal(hint.freq, EQ_LABELS[idx]);
+            assert.ok(hint.label && hint.label.length >= 2, `Label missing for band ${idx}`);
+            assert.ok(hint.role && hint.role.length >= 3, `Role missing for band ${idx}`);
+            assert.ok(hint.desc && hint.desc.length >= 5, `Desc missing for band ${idx}`);
+        });
+    });
+
+    test('Correctly maps bass, mid, vocal, and treble domains', () => {
+        // Bass domain (32Hz, 64Hz, 125Hz)
+        assert.equal(EQ_HINTS[0].type, 'bass');
+        assert.equal(EQ_HINTS[1].type, 'bass');
+        assert.equal(EQ_HINTS[2].type, 'bass');
+
+        // Mid domain (250Hz, 500Hz)
+        assert.equal(EQ_HINTS[3].type, 'mid');
+        assert.equal(EQ_HINTS[4].type, 'mid');
+
+        // Vocal domain (1kHz, 2kHz)
+        assert.equal(EQ_HINTS[5].type, 'vocal');
+        assert.equal(EQ_HINTS[6].type, 'vocal');
+
+        // Treble domain (4kHz, 8kHz, 16kHz)
+        assert.equal(EQ_HINTS[7].type, 'treble');
+        assert.equal(EQ_HINTS[8].type, 'treble');
+        assert.equal(EQ_HINTS[9].type, 'treble');
+    });
+});
+

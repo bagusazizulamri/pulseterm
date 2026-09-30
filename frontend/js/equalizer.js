@@ -5,8 +5,8 @@ import { spatial } from './spatial.js?v=11';
 import { getGenre } from './api.js';
 import { mapGenresToPreset, mapProfileToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections, analyzeAndCompensate, classifySpectralProfile, SPECTRAL_ARCHETYPES } from './eq-core.js';
 
-export { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS, SPECTRAL_ARCHETYPES } from './eq-core.js';
-import { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
+export { EQ_FREQUENCIES, EQ_LABELS, EQ_HINTS, EQ_PRESETS, SPECTRAL_ARCHETYPES } from './eq-core.js';
+import { EQ_FREQUENCIES, EQ_LABELS, EQ_HINTS, EQ_PRESETS } from './eq-core.js';
 
 export const GENRE_RULES = [
     { preset: 'metal', words: ['metal', 'metalcore', 'deathcore', 'slipknot', 'metallica', 'megadeth', 'avenged', 'soad', 'pantera', 'iron maiden', 'bmth', 'rammstein', 'architect', 'lorna shore', 'bad omens'] },
@@ -685,20 +685,28 @@ class TerminalEqualizer {
 
         this.gains.forEach((gain, idx) => {
             const freq = EQ_LABELS[idx];
+            const hint = EQ_HINTS[idx] || { type: 'mid', label: '', role: '', desc: '' };
             const displayGain = (gain >= 0 ? '+' : '') + gain.toFixed(1);
             html += `
                 <div class="eq-fader-channel" data-band="${idx}">
                     <span class="eq-fader-val" id="eq-val-${idx}">${displayGain}</span>
                     <div class="eq-fader-track">
-                        <input type="range" class="eq-slider-vertical" id="eq-slider-${idx}" min="-12" max="12" step="0.5" value="${gain}" orient="vertical">
+                        <input type="range" class="eq-slider-vertical" id="eq-slider-${idx}" min="-12" max="12" step="0.5" value="${gain}">
                     </div>
                     <span class="eq-fader-freq">${freq}</span>
+                    <span class="eq-fader-hint type-${hint.type}" title="${hint.role} (${freq}): ${hint.desc}">${hint.label}</span>
                 </div>
             `;
         });
 
         html += `
                         </div>
+                    </div>
+                    <div class="eq-fader-legend">
+                        <span class="eq-legend-item"><span class="eq-legend-dot" style="background:#3b82f6;"></span>BASS (32Hz–125Hz)</span>
+                        <span class="eq-legend-item"><span class="eq-legend-dot" style="background:#f59e0b;"></span>MID (250Hz–500Hz)</span>
+                        <span class="eq-legend-item"><span class="eq-legend-dot" style="background:#10b981;"></span>VOCAL (1kHz–2kHz)</span>
+                        <span class="eq-legend-item"><span class="eq-legend-dot" style="background:#8b5cf6;"></span>TREBLE (4kHz–16kHz)</span>
                     </div>
                 </div>
             </div>

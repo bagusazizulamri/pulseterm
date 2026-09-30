@@ -1,5 +1,17 @@
 export const EQ_FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 export const EQ_LABELS = ['32Hz', '64Hz', '125Hz', '250Hz', '500Hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz'];
+export const EQ_HINTS = [
+    { freq: '32Hz',  type: 'bass',   label: 'SUB',     role: 'Sub-Bass',       desc: 'Naikkan untuk getaran sub-bass / 808' },
+    { freq: '64Hz',  type: 'bass',   label: 'BASS',    role: 'Kick Bass',      desc: 'Naikkan untuk dentuman kick & punch bass' },
+    { freq: '125Hz', type: 'bass',   label: 'WARMTH',  role: 'Warm Bass',      desc: 'Naikkan untuk ketebalan bass & low-end hangat' },
+    { freq: '250Hz', type: 'mid',    label: 'BODY',    role: 'Low-Mid',        desc: 'Naikkan untuk bobot instrumen, turunkan jika muddy/keruh' },
+    { freq: '500Hz', type: 'mid',    label: 'MID',     role: 'Mid Body',       desc: 'Naikkan untuk kehangatan vokal & bodi instrumen' },
+    { freq: '1kHz',  type: 'vocal',  label: 'VOCAL',   role: 'Vocal Core',     desc: 'Naikkan untuk menonjolkan vokal utama / lead' },
+    { freq: '2kHz',  type: 'vocal',  label: 'CLARITY', role: 'Vocal Clarity',  desc: 'Naikkan untuk kejelasan artikulasi vokal & konsonan' },
+    { freq: '4kHz',  type: 'treble', label: 'TREBLE',  role: 'Treble Attack',  desc: 'Naikkan untuk gigitan treble, snare attack & petikan' },
+    { freq: '8kHz',  type: 'treble', label: 'BRIGHT',  role: 'Brilliance',     desc: 'Naikkan untuk kilau cymbals & suara renyah/garing' },
+    { freq: '16kHz', type: 'treble', label: 'AIR',     role: 'Air / Shimmer',  desc: 'Naikkan untuk nuansa airy, lega & shimmer halus' }
+];
 
 export const EQ_PRESETS = {
     flat: {
