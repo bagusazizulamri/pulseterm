@@ -2,6 +2,7 @@
 // PulseTerm — Modern Liquid Glass Interface Engine
 // Handles UI Mode switching, reactive bracket removal,
 // and adaptive switcher rendering for both TUI & Modern modes.
+// Crash-proof, debounced, zero infinite-loop mutations.
 // =========================================================
 
 const ICONS = {
@@ -20,50 +21,59 @@ class ModernUiEngine {
         this.mode = 'tui';
         this.observer = null;
         this.isModern = false;
+        this.isCleaning = false;
+        this.animFrameId = null;
+
+        // Attach global hooks immediately
+        window.switchUiMode = (m) => this.setMode(m);
+        window.getUiMode = () => this.mode;
+
         this.init();
     }
 
     init() {
-        // 1. Check URL parameters (?ui=modern or ?ui=tui)
-        const params = new URLSearchParams(window.location.search);
-        const urlMode = params.get('ui');
-        const savedMode = localStorage.getItem('pulseterm_ui_mode');
+        try {
+            // Check URL parameters (?ui=modern or ?ui=tui)
+            const params = new URLSearchParams(window.location.search);
+            const urlMode = params.get('ui');
+            const savedMode = localStorage.getItem('pulseterm_ui_mode');
 
-        if (urlMode === 'modern' || (!urlMode && savedMode === 'modern')) {
-            this.mode = 'modern';
-        } else {
-            this.mode = 'tui';
-        }
+            if (urlMode === 'modern' || (!urlMode && savedMode === 'modern')) {
+                this.mode = 'modern';
+            } else {
+                this.mode = 'tui';
+            }
 
-        // Clean URL parameter without reload
-        if (urlMode) {
-            params.delete('ui');
-            const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            window.history.replaceState({}, '', cleanUrl);
-        }
+            // Clean URL parameter without reload
+            if (urlMode) {
+                params.delete('ui');
+                const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                window.history.replaceState({}, '', cleanUrl);
+            }
 
-        // 2. Attach global hooks
-        window.switchUiMode = (m) => this.setMode(m);
-        window.getUiMode = () => this.mode;
+            // Apply mode
+            this.apply(this.mode, true);
 
-        // 3. Apply mode
-        this.apply(this.mode, true);
+            // Bind controls when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.bindControls());
+            } else {
+                this.bindControls();
+            }
 
-        // 4. Setup DOM observer for reactive bracket removal
-        this.setupObserver();
-
-        // 5. Update UI Switcher in settings panel when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.bindControls());
-        } else {
-            this.bindControls();
+            // Setup DOM observer
+            this.setupObserver();
+        } catch (err) {
+            console.error('[ModernUI] Init error:', err);
         }
     }
 
     setMode(newMode) {
         if (newMode !== 'modern' && newMode !== 'tui') return;
         this.mode = newMode;
-        localStorage.setItem('pulseterm_ui_mode', newMode);
+        try {
+            localStorage.setItem('pulseterm_ui_mode', newMode);
+        } catch (e) {}
         this.apply(newMode, false);
     }
 
@@ -76,15 +86,17 @@ class ModernUiEngine {
             body.classList.add('ui-mode-modern');
             html.classList.add('ui-mode-modern');
             this.transformToModern();
-            if (!quiet && window.player && typeof window.player.showToast === 'function') {
-                window.player.showToast('>> INTERFACE: MODERN LIQUID GLASS');
+            if (!quiet) {
+                const toast = window.showToast || (window.player && window.player.showToast);
+                if (typeof toast === 'function') toast('>> INTERFACE: MODERN LIQUID GLASS');
             }
         } else {
             body.classList.remove('ui-mode-modern');
             html.classList.remove('ui-mode-modern');
             this.restoreToTui();
-            if (!quiet && window.player && typeof window.player.showToast === 'function') {
-                window.player.showToast('>> INTERFACE: RETRO TUI');
+            if (!quiet) {
+                const toast = window.showToast || (window.player && window.player.showToast);
+                if (typeof toast === 'function') toast('>> INTERFACE: RETRO TUI');
             }
         }
 
@@ -150,187 +162,226 @@ class ModernUiEngine {
     }
 
     transformToModern() {
-        // 1. Navigation Rail Icons
-        const navBtns = document.querySelectorAll('.rail-nav .nav-btn');
-        navBtns.forEach(btn => {
-            const page = btn.dataset.page;
-            const badge = btn.querySelector('.key-badge');
-            if (badge && page && ICONS[page]) {
-                if (!badge.hasAttribute('data-original')) {
-                    badge.setAttribute('data-original', badge.textContent);
+        try {
+            // 1. Navigation Rail Icons
+            const navBtns = document.querySelectorAll('.rail-nav .nav-btn');
+            navBtns.forEach(btn => {
+                const page = btn.dataset.page;
+                const badge = btn.querySelector('.key-badge');
+                if (badge && page && ICONS[page]) {
+                    if (!badge.hasAttribute('data-original')) {
+                        badge.setAttribute('data-original', badge.textContent);
+                    }
+                    if (!badge.classList.contains('is-modern-icon')) {
+                        badge.innerHTML = ICONS[page];
+                        badge.classList.add('is-modern-icon');
+                    }
                 }
-                badge.innerHTML = ICONS[page];
-                badge.classList.add('is-modern-icon');
+            });
+
+            // 2. Clean Brand Subtitle
+            const tuiSub = document.querySelector('.tui-sub');
+            if (tuiSub && tuiSub.textContent !== 'LIQUID AUDIO') {
+                tuiSub.textContent = 'LIQUID AUDIO';
             }
-        });
 
-        // 2. Clean Brand Subtitle
-        const tuiSub = document.querySelector('.tui-sub');
-        if (tuiSub) tuiSub.textContent = 'LIQUID AUDIO';
+            // 3. Clean search button
+            const searchGo = document.querySelector('.search-go');
+            if (searchGo && searchGo.textContent !== 'Search') {
+                searchGo.textContent = 'Search';
+            }
 
-        // 3. Clean search button
-        const searchGo = document.querySelector('.search-go');
-        if (searchGo) searchGo.textContent = 'Search';
-
-        // 4. Run deep content cleaner
-        this.cleanModernContent();
+            // 4. Run deep content cleaner safely
+            this.cleanModernContent();
+        } catch (err) {
+            console.error('[ModernUI] Transform error:', err);
+        }
     }
 
     restoreToTui() {
-        // 1. Restore Navigation Badges
-        document.querySelectorAll('.rail-nav .key-badge').forEach(badge => {
-            const orig = badge.getAttribute('data-original');
-            if (orig) {
-                badge.textContent = orig;
-                badge.classList.remove('is-modern-icon');
+        try {
+            // 1. Restore Navigation Badges
+            document.querySelectorAll('.rail-nav .key-badge').forEach(badge => {
+                const orig = badge.getAttribute('data-original');
+                if (orig) {
+                    badge.textContent = orig;
+                    badge.classList.remove('is-modern-icon');
+                }
+            });
+
+            // 2. Restore Brand Subtitle
+            const tuiSub = document.querySelector('.tui-sub');
+            if (tuiSub) tuiSub.textContent = 'TUI AUDIO CORE';
+
+            // 3. Restore Search Button
+            const searchGo = document.querySelector('.search-go');
+            if (searchGo) searchGo.textContent = '[EXEC]';
+
+            // 4. Restore drawer titles
+            document.querySelectorAll('.drawer-head h2, .drawer-head h3').forEach(h => {
+                const orig = h.getAttribute('data-original-title');
+                if (orig) h.textContent = orig;
+            });
+
+            // 5. Restore current page view if navigate is available
+            const activeNav = document.querySelector('.rail-nav .nav-btn.active');
+            if (activeNav && window.navigate) {
+                window.navigate(activeNav.dataset.page || 'home');
             }
-        });
-
-        // 2. Restore Brand Subtitle
-        const tuiSub = document.querySelector('.tui-sub');
-        if (tuiSub) tuiSub.textContent = 'TUI AUDIO CORE';
-
-        // 3. Restore Search Button
-        const searchGo = document.querySelector('.search-go');
-        if (searchGo) searchGo.textContent = '[EXEC]';
-
-        // 4. Restore drawer titles
-        document.querySelectorAll('.drawer-head h2, .drawer-head h3').forEach(h => {
-            const orig = h.getAttribute('data-original-title');
-            if (orig) h.textContent = orig;
-        });
-
-        // 5. Restore current page view if navigate is available
-        const activeNav = document.querySelector('.rail-nav .nav-btn.active');
-        if (activeNav && window.navigate) {
-            window.navigate(activeNav.dataset.page || 'home');
+        } catch (err) {
+            console.error('[ModernUI] Restore error:', err);
         }
     }
 
     cleanModernContent() {
-        if (!this.isModern) return;
+        if (!this.isModern || this.isCleaning) return;
+        this.isCleaning = true;
 
-        // 1. Clean Top Bar & Badges
-        document.querySelectorAll(`
-            .top-bar-actions .tui-badge,
-            .top-bar-actions .tui-btn,
-            #player-state-badge,
-            #player-audio-quality,
-            .eq-action-buttons .tui-btn,
-            .eq-state-badge,
-            .tui-clear-btn,
-            .drawer-head-actions .tui-btn,
-            .drawer-head button.tui-btn
-        `).forEach(el => {
-            if (el.children.length === 0) {
-                const text = el.textContent.trim();
-                if (text.startsWith('[') && text.endsWith(']')) {
-                    let cleaned = text.slice(1, -1).trim();
-                    if (cleaned === 'CLOSE ×' || cleaned === '✕') cleaned = '✕';
-                    else if (cleaned === 'HELP: ?') cleaned = 'Shortcuts';
-                    else if (cleaned === 'CONFIG') cleaned = 'Settings';
-                    else if (cleaned === 'VIZ: CAVA') cleaned = 'Visualizer';
-                    el.textContent = cleaned;
+        // Disconnect observer temporarily to prevent ANY recursive mutations
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+
+        try {
+            // 1. Clean Top Bar & Badges
+            document.querySelectorAll(`
+                .top-bar-actions .tui-badge,
+                .top-bar-actions .tui-btn,
+                #player-state-badge,
+                #player-audio-quality,
+                .eq-action-buttons .tui-btn,
+                .eq-state-badge,
+                .tui-clear-btn,
+                .drawer-head-actions .tui-btn,
+                .drawer-head button.tui-btn
+            `).forEach(el => {
+                if (el.children.length === 0) {
+                    const text = el.textContent.trim();
+                    if (text.startsWith('[') && text.endsWith(']')) {
+                        let cleaned = text.slice(1, -1).trim();
+                        if (cleaned === 'CLOSE ×' || cleaned === '✕') cleaned = '✕';
+                        else if (cleaned === 'HELP: ?') cleaned = 'Shortcuts';
+                        else if (cleaned === 'CONFIG') cleaned = 'Settings';
+                        else if (cleaned === 'VIZ: CAVA') cleaned = 'Visualizer';
+                        if (el.textContent !== cleaned) el.textContent = cleaned;
+                    }
                 }
-            }
-        });
+            });
 
-        // 2. Clean Page Headers & ASCII frames (┌─ ... ─┐)
-        document.querySelectorAll('.page-header h1, .drawer-head h2, .drawer-head h3').forEach(h => {
-            if (!h.hasAttribute('data-original-title')) {
-                h.setAttribute('data-original-title', h.textContent);
-            }
-            let text = h.textContent.trim();
-            if (text.includes('PULSETERM AUDIO ARCHIVE')) text = 'Featured & Trending';
-            else if (text.includes('SEARCH ENGINE QUERY BUFFER')) text = 'Search Music';
-            else if (text.includes('SAVED AUDIO REPOSITORY')) text = 'Your Library';
-            else if (text.includes('LOCAL PLAYLIST REGISTRY')) text = 'Your Playlists';
-            else if (text.includes('CONFIG // SYSTEM PREFERENCES')) text = 'System Preferences';
-            else if (text.includes('PLAYBACK QUEUE BUFFER')) text = 'Playback Queue';
-            else if (text.includes('10-BAND DSP EQUALIZER')) text = '10-Band Equalizer';
-            else if (text.includes('AUDIO SPECTRUM ANALYZER')) text = 'Audio Visualizer';
-            else {
-                text = text.replace(/^[┌─\s]+/, '').replace(/[─┐\s]+$/, '').trim();
-            }
-            h.textContent = text;
-        });
+            // 2. Clean Page Headers & ASCII frames (┌─ ... ─┐)
+            document.querySelectorAll('.page-header h1, .drawer-head h2, .drawer-head h3').forEach(h => {
+                if (!h.hasAttribute('data-original-title')) {
+                    h.setAttribute('data-original-title', h.textContent);
+                }
+                const current = h.textContent.trim();
+                let text = current;
+                if (text.includes('PULSETERM AUDIO ARCHIVE')) text = 'Featured & Trending';
+                else if (text.includes('SEARCH ENGINE QUERY BUFFER')) text = 'Search Music';
+                else if (text.includes('SAVED AUDIO REPOSITORY')) text = 'Your Library';
+                else if (text.includes('LOCAL PLAYLIST REGISTRY')) text = 'Your Playlists';
+                else if (text.includes('CONFIG // SYSTEM PREFERENCES')) text = 'System Preferences';
+                else if (text.includes('PLAYBACK QUEUE BUFFER')) text = 'Playback Queue';
+                else if (text.includes('10-BAND DSP EQUALIZER')) text = '10-Band Equalizer';
+                else if (text.includes('AUDIO SPECTRUM ANALYZER')) text = 'Audio Visualizer';
+                else {
+                    text = text.replace(/^[┌─\s]+/, '').replace(/[─┐\s]+$/, '').trim();
+                }
+                if (h.textContent !== text) h.textContent = text;
+            });
 
-        // 3. Clean Eyebrows ([ 01 // TRENDING TRACKS ])
-        document.querySelectorAll('.eyebrow').forEach(eb => {
-            let text = eb.textContent.trim();
-            if (text.startsWith('[') && text.endsWith(']')) {
-                text = text.slice(1, -1).trim();
-            }
-            if (text.includes('//')) {
-                const parts = text.split('//');
-                text = parts[parts.length - 1].trim();
-            }
-            if (text.includes('·')) {
-                text = text.split('·')[0].trim();
-            }
-            // Title case formatting
-            text = text.toLowerCase().replace(/(?:^|\s)\w/g, c => c.toUpperCase());
-            eb.textContent = text;
-        });
+            // 3. Clean Eyebrows ([ 01 // TRENDING TRACKS ])
+            document.querySelectorAll('.eyebrow').forEach(eb => {
+                const current = eb.textContent.trim();
+                let text = current;
+                if (text.startsWith('[') && text.endsWith(']')) {
+                    text = text.slice(1, -1).trim();
+                }
+                if (text.includes('//')) {
+                    const parts = text.split('//');
+                    text = parts[parts.length - 1].trim();
+                }
+                if (text.includes('·')) {
+                    text = text.split('·')[0].trim();
+                }
+                text = text.toLowerCase().replace(/(?:^|\s)\w/g, c => c.toUpperCase());
+                if (eb.textContent !== text) eb.textContent = text;
+            });
 
-        // 4. Clean Filter Buttons ([ALL], [SONGS], etc.)
-        document.querySelectorAll('.filter-btn, .search-filters button').forEach(btn => {
-            let text = btn.textContent.trim();
-            if (text.startsWith('[') && text.endsWith(']')) {
-                text = text.slice(1, -1).trim();
-            }
-            btn.textContent = text.charAt(0) + text.slice(1).toLowerCase();
-        });
+            // 4. Clean Filter Buttons ([ALL], [SONGS], etc.)
+            document.querySelectorAll('.filter-btn, .search-filters button').forEach(btn => {
+                const current = btn.textContent.trim();
+                if (current.startsWith('[') && current.endsWith(']')) {
+                    const text = current.slice(1, -1).trim();
+                    const cleaned = text.charAt(0) + text.slice(1).toLowerCase();
+                    if (btn.textContent !== cleaned) btn.textContent = cleaned;
+                }
+            });
 
-        // 5. Clean Specific Buttons ([◀ RETURN], [▶ PLAY ALL], [PURGE HISTORY], [+ NEW PLAYLIST])
-        const backBtn = document.getElementById('detail-back');
-        if (backBtn && backBtn.textContent.includes('RETURN')) backBtn.textContent = '← Back';
+            // 5. Clean Specific Buttons
+            const backBtn = document.getElementById('detail-back');
+            if (backBtn && backBtn.textContent.includes('RETURN')) backBtn.textContent = '← Back';
 
-        const playAllBtn = document.getElementById('detail-play');
-        if (playAllBtn && playAllBtn.textContent.includes('PLAY ALL')) playAllBtn.textContent = '▶ Play All';
+            const playAllBtn = document.getElementById('detail-play');
+            if (playAllBtn && playAllBtn.textContent.includes('PLAY ALL')) playAllBtn.textContent = '▶ Play All';
 
-        const purgeHistBtn = document.getElementById('clear-hist-btn');
-        if (purgeHistBtn && purgeHistBtn.textContent.includes('PURGE')) purgeHistBtn.textContent = 'Clear History';
+            const purgeHistBtn = document.getElementById('clear-hist-btn');
+            if (purgeHistBtn && purgeHistBtn.textContent.includes('PURGE')) purgeHistBtn.textContent = 'Clear History';
 
-        const newPlBtn = document.getElementById('new-pl-btn');
-        if (newPlBtn && newPlBtn.textContent.includes('NEW PLAYLIST')) newPlBtn.textContent = '+ New Playlist';
+            const newPlBtn = document.getElementById('new-pl-btn');
+            if (newPlBtn && newPlBtn.textContent.includes('NEW PLAYLIST')) newPlBtn.textContent = '+ New Playlist';
 
-        // 6. Clean Track Ranks ([01] -> 1)
-        document.querySelectorAll('.rank').forEach(r => {
-            let text = r.textContent.trim();
-            if (text.startsWith('[') && text.endsWith(']')) {
-                const num = parseInt(text.slice(1, -1), 10);
-                if (!isNaN(num)) r.textContent = String(num);
-            }
-        });
+            // 6. Clean Track Ranks ([01] -> 1)
+            document.querySelectorAll('.rank').forEach(r => {
+                const current = r.textContent.trim();
+                if (current.startsWith('[') && current.endsWith(']')) {
+                    const num = parseInt(current.slice(1, -1), 10);
+                    if (!isNaN(num) && r.textContent !== String(num)) {
+                        r.textContent = String(num);
+                    }
+                }
+            });
 
-        // 7. Clean Status Labels ([STATUS: ...], [QUERY: READY])
-        document.querySelectorAll('.label, .empty-state .label').forEach(lbl => {
-            let text = lbl.textContent.trim();
-            if (text.startsWith('[') && text.endsWith(']')) {
-                lbl.textContent = text.slice(1, -1).trim();
-            }
-        });
+            // 7. Clean Status Labels
+            document.querySelectorAll('.label, .empty-state .label').forEach(lbl => {
+                const current = lbl.textContent.trim();
+                if (current.startsWith('[') && current.endsWith(']')) {
+                    const cleaned = current.slice(1, -1).trim();
+                    if (lbl.textContent !== cleaned) lbl.textContent = cleaned;
+                }
+            });
+        } catch (err) {
+            console.error('[ModernUI] Clean error:', err);
+        } finally {
+            this.isCleaning = false;
+            // Reconnect observer safely
+            this.setupObserver();
+        }
     }
 
     setupObserver() {
-        if (this.observer) this.observer.disconnect();
+        if (!this.observer) {
+            this.observer = new MutationObserver(() => {
+                if (this.isModern && !this.isCleaning) {
+                    if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+                    this.animFrameId = requestAnimationFrame(() => {
+                        this.cleanModernContent();
+                    });
+                }
+            });
+        }
 
-        this.observer = new MutationObserver(() => {
-            if (this.isModern) {
-                this.cleanModernContent();
-            }
-        });
-
-        this.observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
+        // Only observe main dynamic content container, never document.body characterData!
+        const target = document.getElementById('page-content') || document.body;
+        if (target) {
+            this.observer.observe(target, {
+                childList: true,
+                subtree: true
+            });
+        }
     }
 }
 
-// Instantiate engine immediately
+// Instantiate engine safely
 if (typeof window !== 'undefined') {
     window.modernUiEngine = new ModernUiEngine();
 }
