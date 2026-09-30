@@ -11,7 +11,7 @@ from dataclasses import asdict, is_dataclass
 
 from config import APP_PORT, APP_HOST, CORS_ORIGINS, CACHE_DIR
 from database import (init_db, get_playlists, get_playlist_songs,
-    create_playlist, add_song_to_playlist, remove_song_from_playlist,
+    create_playlist, add_song_to_playlist, add_songs_to_playlist_batch, remove_song_from_playlist,
     delete_playlist, add_history, get_history, clear_history,
     save_setting, get_setting, get_all_settings, add_search_history, get_search_history,
     clear_search_history, get_liked, liked_ids, is_liked, set_liked,
@@ -756,6 +756,39 @@ async def create_pl(name: str = Query(...)):
     pls = await get_playlists()
     match = [p for p in pls if p["id"] == pid]
     return {"success": True, "data": match[0] if match else {"id": pid, "name": name}}
+
+@app.post("/api/playlists/import")
+async def import_playlist_endpoint(body: dict = None):
+    body = body if isinstance(body, dict) else {}
+    url = str(body.get("url", "") or "").strip()
+    custom_name = str(body.get("name", "") or "").strip()
+    if not url:
+        return {"success": False, "error": "Missing playlist URL or ID"}
+
+    try:
+        imported = await music.import_youtube_playlist(url, custom_name)
+        playlist_name = imported.get("name", "Imported Playlist")
+        if len(playlist_name) > 120:
+            playlist_name = playlist_name[:120]
+        tracks = imported.get("tracks", [])
+
+        pid = await create_playlist(playlist_name)
+        await add_songs_to_playlist_batch(pid, tracks)
+        songs = await get_playlist_songs(pid)
+
+        return {
+            "success": True,
+            "data": {
+                "id": pid,
+                "name": playlist_name,
+                "count": len(songs),
+                "songs": songs
+            }
+        }
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to import playlist: {e}"}
 
 @app.post("/api/playlists/{playlist_id}/songs")
 async def add_to_playlist(playlist_id: int, body: dict = None):

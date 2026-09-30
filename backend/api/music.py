@@ -1,6 +1,10 @@
 import asyncio
+import json
 import os
 import re
+import shutil
+import subprocess
+import sys
 from typing import Optional
 from ytmusicapi import YTMusic
 from config import YTMUSIC_HEADER, CACHE_DIR
@@ -42,6 +46,28 @@ def extract_video_id(url_or_id: str) -> str:
         if "youtu.be/" in url_or_id:
             return url_or_id.split("youtu.be/")[1].split("?")[0]
     return url_or_id
+
+def extract_playlist_id(url_or_id: str) -> Optional[str]:
+    if not url_or_id or not isinstance(url_or_id, str):
+        return None
+    s = url_or_id.strip()
+    if "list=" in s:
+        m = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', s)
+        if m:
+            return m.group(1)
+    s = s.strip("\"' \t\r\n")
+    if re.match(r'^(PL|VL|RD|OLAK|UU|FL|TL|LM|CLAK|RMM)[a-zA-Z0-9_-]+$', s):
+        return s
+    return None
+
+def _ytdlp_cmd():
+    exe = shutil.which("yt-dlp")
+    if exe:
+        return [exe]
+    cand = os.path.join(os.path.dirname(sys.executable), "yt-dlp")
+    if os.path.exists(cand):
+        return [cand]
+    return [sys.executable, "-m", "yt_dlp"]
 
 def _anames(artists) -> str:
     if not artists:
@@ -254,6 +280,118 @@ async def get_playlist(playlist_id: str) -> SearchResult:
         return SearchResult(results=songs, query=playlist_id, name=title)
     except Exception:
         return SearchResult(results=[], query=playlist_id)
+
+async def import_youtube_playlist(url_or_id: str, custom_name: str = "") -> dict:
+    playlist_id = extract_playlist_id(url_or_id)
+    raw = (url_or_id or "").strip()
+    if not playlist_id and not raw.startswith("http"):
+        raise ValueError("Invalid YouTube playlist URL or ID")
+
+    canonical_url = raw if raw.startswith("http") else f"https://www.youtube.com/playlist?list={playlist_id}"
+    playlist_title = (custom_name or "").strip()
+    tracks = []
+
+    # Tier 1: Try ytmusicapi
+    if playlist_id:
+        try:
+            yt = get_ytmusic()
+            loop = asyncio.get_running_loop()
+            res = None
+            try:
+                res = await loop.run_in_executor(None, lambda: yt.get_playlist(playlist_id, limit=None))
+            except Exception:
+                res = await loop.run_in_executor(None, lambda: yt.get_playlist(playlist_id, limit=500))
+
+            if res and isinstance(res, dict) and res.get("tracks"):
+                if not playlist_title:
+                    playlist_title = res.get("title") or "Imported Playlist"
+                for t in res.get("tracks", []):
+                    if not isinstance(t, dict):
+                        continue
+                    vid = t.get("videoId")
+                    if not vid:
+                        continue
+                    tracks.append({
+                        "video_id": vid,
+                        "title": t.get("title") or "Unknown Title",
+                        "artist": _anames(t.get("artists")) or res.get("author") or "Unknown Artist",
+                        "thumbnail": _thumb(t) or f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
+                        "duration": _dur(t)
+                    })
+        except Exception:
+            # ytmusicapi failed, proceed to Tier 2
+            pass
+
+    # Tier 2: Fallback to yt-dlp if no tracks found via ytmusicapi
+    if not tracks:
+        loop = asyncio.get_running_loop()
+        def _fetch_ytdlp():
+            cmd = _ytdlp_cmd() + [
+                "--flat-playlist",
+                "-J",
+                "--no-warnings",
+                "--no-check-certificates",
+                canonical_url
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if proc.returncode != 0:
+                raise RuntimeError(proc.stderr or "yt-dlp extraction failed")
+            return json.loads(proc.stdout)
+
+        try:
+            data = await loop.run_in_executor(None, _fetch_ytdlp)
+            if data and isinstance(data, dict):
+                if not playlist_title:
+                    playlist_title = data.get("title") or "Imported Playlist"
+                entries = data.get("entries") or []
+                for entry in entries:
+                    if not isinstance(entry, dict):
+                        continue
+                    vid = entry.get("id")
+                    if not vid or len(vid) != 11:
+                        continue
+                    t_title = entry.get("title") or ""
+                    if t_title in ("[Private video]", "[Deleted video]"):
+                        continue
+
+                    thumb = ""
+                    th_list = entry.get("thumbnails")
+                    if isinstance(th_list, list) and th_list:
+                        for th in reversed(th_list):
+                            if isinstance(th, dict) and th.get("url"):
+                                thumb = th["url"]
+                                break
+                    if not thumb:
+                        thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
+
+                    artist = entry.get("uploader") or entry.get("channel") or "Unknown Artist"
+                    dur = entry.get("duration")
+                    try:
+                        dur = max(0, int(dur or 0))
+                    except (TypeError, ValueError):
+                        dur = 0
+
+                    tracks.append({
+                        "video_id": vid,
+                        "title": t_title or "Unknown Title",
+                        "artist": artist,
+                        "thumbnail": thumb,
+                        "duration": dur
+                    })
+        except Exception as e:
+            if not tracks:
+                raise RuntimeError(f"Could not import playlist: {e}")
+
+    if not tracks:
+        raise ValueError("Playlist contains no playable tracks or is private.")
+
+    if not playlist_title:
+        playlist_title = "Imported Playlist"
+
+    return {
+        "name": playlist_title,
+        "tracks": tracks
+    }
 
 async def get_home() -> dict:
     try:

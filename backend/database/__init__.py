@@ -124,6 +124,50 @@ async def add_song_to_playlist(playlist_id, song_data):
              str(song_data.get("artist", "") or ""), str(song_data.get("thumbnail", "") or ""), duration, pos))
         await db.commit()
 
+async def add_songs_to_playlist_batch(playlist_id, songs):
+    if not songs or not isinstance(songs, list):
+        return []
+    try:
+        playlist_id = int(playlist_id)
+    except (TypeError, ValueError):
+        return []
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM playlist_songs WHERE playlist_id = ?", (playlist_id,)) as cur:
+            row = await cur.fetchone()
+            start_pos = row[0] if row else 0
+
+        tuples = []
+        pos = start_pos
+        for s in songs:
+            if not isinstance(s, dict):
+                continue
+            vid = str(s.get("video_id", s.get("videoId", "")) or "").strip()
+            if not vid:
+                continue
+            try:
+                duration = max(0, int(s.get("duration", 0) or 0))
+            except (TypeError, ValueError):
+                duration = 0
+            tuples.append((
+                playlist_id,
+                vid,
+                str(s.get("title", "") or "Unknown Title"),
+                str(s.get("artist", "") or "Unknown Artist"),
+                str(s.get("thumbnail", "") or ""),
+                duration,
+                pos
+            ))
+            pos += 1
+
+        if tuples:
+            await db.executemany(
+                "INSERT INTO playlist_songs (playlist_id, video_id, title, artist, thumbnail, duration, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                tuples
+            )
+            await db.commit()
+    return tuples
+
 async def remove_song_from_playlist(song_id):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM playlist_songs WHERE id = ?", (song_id,))

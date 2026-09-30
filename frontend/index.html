@@ -366,6 +366,34 @@
         </div>
     </dialog>
 
+    <!-- YouTube Playlist Import Modal -->
+    <dialog id="import-playlist-modal" class="tui-modal import-modal">
+        <div class="modal-head">
+            <span class="eyebrow-label">[ IMPORT PLAYLIST FROM YOUTUBE ]</span>
+            <button id="import-modal-close" class="tui-btn" onclick="document.getElementById('import-playlist-modal').close()">[CLOSE ESC]</button>
+        </div>
+        <div class="import-modal-body">
+            <p class="import-modal-desc">Enter a YouTube or YouTube Music playlist link / ID to bundle and import all tracks into your local library.</p>
+            <div class="import-field-group">
+                <label for="import-url-input">YOUTUBE URL / PLAYLIST ID:</label>
+                <input type="text" id="import-url-input" class="import-input" placeholder="https://www.youtube.com/playlist?list=PL... or PL..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="import-field-group">
+                <label for="import-name-input">CUSTOM PLAYLIST NAME (OPTIONAL):</label>
+                <input type="text" id="import-name-input" class="import-input" placeholder="Leave empty to use original YouTube title" autocomplete="off" spellcheck="false" />
+            </div>
+            <div id="import-status" class="import-status hidden">
+                <span class="import-spinner">⠋</span>
+                <span id="import-status-text">Fetching playlist tracks & metadata...</span>
+            </div>
+            <div id="import-error" class="import-error hidden"></div>
+            <div class="import-modal-actions">
+                <button id="import-cancel-btn" class="tui-btn">[CANCEL]</button>
+                <button id="import-submit-btn" class="tui-btn tui-btn-primary">[⇣ IMPORT PLAYLIST]</button>
+            </div>
+        </div>
+    </dialog>
+
     <div id="context-menu" class="hidden" role="menu"></div>
     <div id="toast" role="status" aria-live="polite" class="hidden">
         <span class="tui-prompt-char">❯</span>

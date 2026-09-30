@@ -2244,6 +2244,122 @@ dialog.artwork-modal::backdrop {
   color: var(--ink-light);
 }
 
+/* ============ YOUTUBE PLAYLIST IMPORT MODAL ============ */
+dialog.import-modal {
+  max-width: 90vw;
+  width: 520px;
+  background: var(--paper-2);
+  border: 1px solid var(--seal);
+  box-shadow: 0 0 35px var(--seal-glow);
+  padding: 18px 20px;
+  color: var(--ink);
+  font-family: var(--font-term);
+}
+
+dialog.import-modal::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.import-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.import-modal-desc {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.import-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.import-field-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--seal);
+  letter-spacing: 0.5px;
+}
+
+.import-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-term);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.import-input:focus {
+  border-color: var(--seal);
+  box-shadow: 0 0 8px var(--seal-glow);
+}
+
+.import-input::placeholder {
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
+.import-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--seal);
+  padding: 6px 0;
+}
+
+.import-spinner {
+  display: inline-block;
+  animation: spin-pulse 1s linear infinite;
+  font-weight: bold;
+}
+
+@keyframes spin-pulse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.import-error {
+  font-size: 11px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 8px 10px;
+  word-break: break-word;
+}
+
+.import-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.tui-btn-primary {
+  background: var(--seal-bg, rgba(59, 130, 246, 0.15));
+  border-color: var(--seal);
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.tui-btn-primary:hover {
+  background: var(--seal);
+  color: #fff;
+  box-shadow: 0 0 10px var(--seal-glow);
+}
+
 /* Lyrics Scroll Wrap & Dynamic Optical Fade */
 .lyrics-scroll-wrap {
   position: relative;

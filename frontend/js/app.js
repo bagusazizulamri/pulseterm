@@ -1,4 +1,4 @@
-import { search, searchSuggestions, getSearchHistory, browseArtist, getAlbum, getYtPlaylist, getLyrics, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, getPlaylists, getHistory, clearHistory, getLikedSongs, getSettings, saveSettings, prepareStreams } from './api.js';
+import { search, searchSuggestions, getSearchHistory, browseArtist, getAlbum, getYtPlaylist, getLyrics, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, getPlaylists, importYtPlaylist, getHistory, clearHistory, getLikedSongs, getSettings, saveSettings, prepareStreams } from './api.js';
 import { player, togglePlay, nextSong, prevSong, toggleQueue, removeFromQueue, clearQueue, toggleLyrics, closeNowPlaying } from './player.js';
 import { visualizer } from './visualizer.js';
 import { equalizer } from './equalizer.js';
@@ -336,9 +336,13 @@ async function renderLibrary(content) {
 async function renderPlaylists(content) {
     const pres = await getPlaylists();
     const pls = pres.success ? pres.data : [];
-    let html = '<div class="page-header"><h1>┌─ LOCAL PLAYLIST REGISTRY ─┐</h1><button id="new-pl-btn" class="tui-btn">[+ NEW PLAYLIST]</button></div>';
+    let html = '<div class="page-header"><h1>┌─ LOCAL PLAYLIST REGISTRY ─┐</h1>' +
+        '<div style="display:flex;gap:8px;">' +
+        '<button id="import-yt-pl-btn" class="tui-btn">[⇣ IMPORT YOUTUBE]</button>' +
+        '<button id="new-pl-btn" class="tui-btn">[+ NEW PLAYLIST]</button>' +
+        '</div></div>';
     if (pls.length === 0) {
-        html += '<div class="empty-state"><span class="label">[REGISTRY: VOID]</span><h3>NO PLAYLISTS INITIALIZED</h3><p>Create a custom playlist to bundle audio streams.</p></div>';
+        html += '<div class="empty-state"><span class="label">[REGISTRY: VOID]</span><h3>NO PLAYLISTS INITIALIZED</h3><p>Create a custom playlist or import one from YouTube to bundle audio streams.</p></div>';
     } else {
         html += '<div class="item-grid">';
         pls.forEach(pl => {
@@ -352,6 +356,8 @@ async function renderPlaylists(content) {
     content.innerHTML = html;
     const nb = document.getElementById('new-pl-btn');
     if (nb) nb.addEventListener('click', promptNewPlaylist);
+    const ib = document.getElementById('import-yt-pl-btn');
+    if (ib) ib.addEventListener('click', openImportPlaylistModal);
     content.querySelectorAll('[data-pl]').forEach(el => el.addEventListener('click', () => openPlaylist(parseInt(el.dataset.pl))));
 }
 
@@ -472,6 +478,123 @@ async function promptNewPlaylist() {
     if (name) {
         await createPlaylist(name);
         renderPlaylists(document.getElementById('page-content'));
+    }
+}
+
+let _importSpinnerInterval = null;
+
+function openImportPlaylistModal() {
+    const modal = document.getElementById('import-playlist-modal');
+    if (!modal) return;
+    const urlInput = document.getElementById('import-url-input');
+    const nameInput = document.getElementById('import-name-input');
+    const statusEl = document.getElementById('import-status');
+    const errorEl = document.getElementById('import-error');
+    const submitBtn = document.getElementById('import-submit-btn');
+
+    if (urlInput) urlInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (statusEl) statusEl.classList.add('hidden');
+    if (errorEl) {
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+    }
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '[⇣ IMPORT PLAYLIST]';
+    }
+    if (_importSpinnerInterval) {
+        clearInterval(_importSpinnerInterval);
+        _importSpinnerInterval = null;
+    }
+
+    modal.showModal();
+    if (urlInput) urlInput.focus();
+}
+
+async function handleImportPlaylist() {
+    const modal = document.getElementById('import-playlist-modal');
+    const urlInput = document.getElementById('import-url-input');
+    const nameInput = document.getElementById('import-name-input');
+    const statusEl = document.getElementById('import-status');
+    const statusText = document.getElementById('import-status-text');
+    const spinner = modal?.querySelector('.import-spinner');
+    const errorEl = document.getElementById('import-error');
+    const submitBtn = document.getElementById('import-submit-btn');
+
+    const url = (urlInput?.value || '').trim();
+    const customName = (nameInput?.value || '').trim();
+
+    if (!url) {
+        if (errorEl) {
+            errorEl.textContent = 'Please enter a valid YouTube playlist URL or ID.';
+            errorEl.classList.remove('hidden');
+        }
+        if (urlInput) urlInput.focus();
+        return;
+    }
+
+    if (errorEl) {
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+    }
+    if (statusEl) statusEl.classList.remove('hidden');
+    if (statusText) statusText.textContent = 'Resolving playlist & fetching track metadata...';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '[IMPORTING...]';
+    }
+
+    const spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    let spinIdx = 0;
+    if (_importSpinnerInterval) clearInterval(_importSpinnerInterval);
+    _importSpinnerInterval = setInterval(() => {
+        spinIdx = (spinIdx + 1) % spinnerChars.length;
+        if (spinner) spinner.textContent = spinnerChars[spinIdx];
+    }, 80);
+
+    try {
+        const res = await importYtPlaylist(url, customName);
+        if (_importSpinnerInterval) {
+            clearInterval(_importSpinnerInterval);
+            _importSpinnerInterval = null;
+        }
+
+        if (res && res.success && res.data) {
+            const count = res.data.count || (res.data.songs ? res.data.songs.length : 0);
+            const plName = res.data.name || 'PLAYLIST';
+            modal?.close();
+            showToast(`[✓ IMPORTED: ${plName} (${count} TRACKS)]`);
+            const content = document.getElementById('page-content');
+            if (content && currentPage === 'playlists') {
+                await renderPlaylists(content);
+            }
+        } else {
+            const errMsg = res?.error || 'Failed to import playlist. Please verify the URL.';
+            if (errorEl) {
+                errorEl.textContent = errMsg;
+                errorEl.classList.remove('hidden');
+            }
+            if (statusEl) statusEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '[⇣ IMPORT PLAYLIST]';
+            }
+        }
+    } catch (err) {
+        if (_importSpinnerInterval) {
+            clearInterval(_importSpinnerInterval);
+            _importSpinnerInterval = null;
+        }
+        if (errorEl) {
+            errorEl.textContent = err?.message || 'Network error occurred during import.';
+            errorEl.classList.remove('hidden');
+        }
+        if (statusEl) statusEl.classList.add('hidden');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '[⇣ IMPORT PLAYLIST]';
+        }
     }
 }
 
@@ -867,6 +990,28 @@ async function init() {
             sClear.classList.toggle('hidden', !sInput.value);
         });
     }
+
+    // YouTube playlist import modal handlers
+    const importModal = document.getElementById('import-playlist-modal');
+    const importSubmitBtn = document.getElementById('import-submit-btn');
+    const importCancelBtn = document.getElementById('import-cancel-btn');
+    const importUrlInput = document.getElementById('import-url-input');
+    const importNameInput = document.getElementById('import-name-input');
+
+    if (importSubmitBtn) {
+        importSubmitBtn.addEventListener('click', handleImportPlaylist);
+    }
+    if (importCancelBtn && importModal) {
+        importCancelBtn.addEventListener('click', () => importModal.close());
+    }
+    [importUrlInput, importNameInput].forEach(inp => {
+        inp?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleImportPlaylist();
+            }
+        });
+    });
 }
 
 const REPEAT_ORDER = ['none', 'all', 'one'];
@@ -896,6 +1041,7 @@ window.doSearch = doSearch;
 window.setSearchFilter = setSearchFilter;
 window.playFromHistory = playFromHistory;
 window.promptNewPlaylist = promptNewPlaylist;
+window.openImportPlaylistModal = openImportPlaylistModal;
 window.openPlaylist = openPlaylist;
 window.deletePlaylistItem = deletePlaylistItem;
 window.toggleQueue = toggleQueue;

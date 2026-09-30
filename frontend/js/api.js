@@ -229,6 +229,10 @@ export async function removeFromPlaylist(playlistId, songId) {
     return apiDelete(`/api/playlists/${playlistId}/songs/${songId}`);
 }
 
+export async function importYtPlaylist(url, name = '') {
+    return apiPost('/api/playlists/import', { url, name });
+}
+
 // Library
 export async function getHistory() {
     return apiGet('/api/library/history');
