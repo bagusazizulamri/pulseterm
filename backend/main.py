@@ -921,6 +921,11 @@ async def favicon():
     return Response(status_code=204)
 
 
+
+@app.get("/modern")
+async def modern_ui():
+    return FileResponse(os.path.join(frontend_dir, "modern.html"))
+
 @app.get("/")
 async def root():
     return FileResponse(os.path.join(frontend_dir, "index.html"))

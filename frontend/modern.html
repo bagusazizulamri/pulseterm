@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseTerm Liquid</title>
+    <link rel="stylesheet" href="/css/modern.css?v=2">
+    <link rel="icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div id="background-art"></div>
+    <div class="glass-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <h2>PulseTerm</h2>
+                <span class="badge">LIQUID</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" id="nav-home" class="active"><i class="ph ph-house"></i> Home</a>
+                <a href="#" id="nav-search"><i class="ph ph-magnifying-glass"></i> Explore</a>
+                <a href="#" id="nav-library"><i class="ph ph-books"></i> Library</a>
+                <a href="#" id="nav-lyrics"><i class="ph ph-microphone-stage"></i> Lyrics</a>
+            </nav>
+            <div class="sidebar-section">
+                <h3>Playlists</h3>
+                <div id="modern-playlists"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content glass-panel">
+            <header class="topbar">
+                <div class="search-bar">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="modern-search" placeholder="Search for songs, artists, albums...">
+                </div>
+                <div class="top-actions">
+                    <button class="icon-btn" id="modern-eq-btn" title="Equalizer"><i class="ph ph-sliders"></i></button>
+                    <button class="icon-btn" id="modern-spatial-btn" title="Spatial Audio"><i class="ph ph-headphones"></i></button>
+                    <button class="icon-btn" onclick="window.location.href='/'" title="Back to Retro TUI"><i class="ph ph-terminal"></i></button>
+                </div>
+            </header>
+
+            <div id="modern-view-container" class="view-container">
+                <!-- Dynamic views -->
+                <div class="welcome-screen">
+                    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Welcome to Liquid UI</h1>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem;">A completely modern, glassmorphism interface powered by the same advanced PulseTerm audio engine.</p>
+                    <div id="home-content"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL (QUEUE / VIZ) -->
+        <aside class="right-panel glass-panel">
+            <div class="panel-header">
+                <h3>Up Next</h3>
+                <button class="icon-btn" id="modern-clear-queue" title="Clear Queue"><i class="ph ph-trash"></i></button>
+            </div>
+            <div id="modern-queue-list" class="queue-list"></div>
+            
+            <div class="visualizer-container">
+                <canvas id="modern-visualizer"></canvas>
+            </div>
+        </aside>
+
+        <!-- BOTTOM PLAYER BAR -->
+        <footer class="player-bar glass-panel">
+            <div class="track-info">
+                <img id="modern-cover" src="/assets/favicon.svg" alt="Cover" class="track-cover">
+                <div class="track-text">
+                    <h4 id="modern-title">No Track</h4>
+                    <p id="modern-artist">Waiting for playback...</p>
+                </div>
+            </div>
+
+            <div class="player-controls-container">
+                <div class="playback-controls">
+                    <button class="icon-btn" id="modern-shuffle"><i class="ph ph-shuffle"></i></button>
+                    <button class="icon-btn" id="modern-prev"><i class="ph ph-skip-back-circle"></i></button>
+                    <button class="icon-btn play-btn" id="modern-play"><i class="ph ph-play-circle" weight="fill" id="play-icon"></i></button>
+                    <button class="icon-btn" id="modern-next"><i class="ph ph-skip-forward-circle"></i></button>
+                    <button class="icon-btn" id="modern-repeat"><i class="ph ph-repeat"></i></button>
+                </div>
+                <div class="progress-bar-container">
+                    <span id="modern-time-current">0:00</span>
+                    <input type="range" id="modern-progress" class="progress-slider" min="0" max="100" value="0">
+                    <span id="modern-time-total">0:00</span>
+                </div>
+            </div>
+
+            <div class="extra-controls">
+                <i class="ph ph-speaker-high" id="vol-icon"></i>
+                <input type="range" id="modern-volume" class="volume-slider" min="0" max="100" value="80">
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Hidden Elements to Satisfy player.js DOM assumptions -->
+    <div style="display: none;">
+        <div id="playback-bar"></div>
+        <div id="visualizer-canvas"></div>
+        <div id="lyrics-lines"></div>
+        <div id="progress-bar"></div>
+        <div id="progress-fill"></div>
+        <div id="progress-buffered"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import * as api from '/js/api.js';
+        window.api = api;
+    </script>
+    <script src="/js/player.js"></script>
+    <script src="/js/eq-core.js"></script>
+    <script src="/js/spatial.js"></script>
+    <script src="/js/equalizer.js"></script>
+    <script type="module" src="/js/modern.js?v=2"></script>
+</body>
+</html>
