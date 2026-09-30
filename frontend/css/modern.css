@@ -4,8 +4,6 @@
    clean borders, and zero retro-TUI / monospace remnants.
    ========================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
 /* =========================================================
    1. RETRO TUI MODE SELECTOR (Inside Config Drawer)
    Styled authentically to match active Terminal TUI themes
@@ -48,8 +46,8 @@ body:not(.ui-mode-modern) .tui-ui-mode-choice button.active {
 html.ui-mode-modern,
 body.ui-mode-modern,
 body.ui-mode-modern[class*="theme-"] {
-    --font-mono: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    --font-term: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    --font-term: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 
     /* High-End Static Liquid Glass Palette */
     --paper: #090d16 !important;
