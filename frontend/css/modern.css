@@ -6,33 +6,72 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-/* Active only under Modern UI Mode */
+/* =========================================================
+   1. RETRO TUI MODE SELECTOR (Inside Config Drawer)
+   Styled authentically to match active Terminal TUI themes
+   ========================================================= */
+body:not(.ui-mode-modern) .tui-ui-mode-group {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+body:not(.ui-mode-modern) .tui-ui-mode-group label {
+    display: block;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--ink-3);
+    margin-bottom: 6px;
+}
+
+body:not(.ui-mode-modern) .tui-ui-mode-choice button {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    background: var(--paper-3);
+    color: var(--ink);
+}
+
+body:not(.ui-mode-modern) .tui-ui-mode-choice button.active {
+    border-color: var(--seal);
+    background: var(--seal-glow);
+    color: var(--seal);
+    font-weight: 700;
+}
+
+/* =========================================================
+   2. MODERN LIQUID GLASS MODE STYLES
+   Active ONLY under html.ui-mode-modern and body.ui-mode-modern
+   ========================================================= */
 html.ui-mode-modern,
-body.ui-mode-modern {
+body.ui-mode-modern,
+body.ui-mode-modern[class*="theme-"] {
     --font-mono: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     --font-term: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 
     /* High-End Static Liquid Glass Palette */
-    --paper: #0b0f19;
-    --paper-2: rgba(26, 34, 52, 0.55);
-    --paper-3: rgba(40, 52, 78, 0.5);
-    --wash: rgba(15, 23, 42, 0.65);
-    --line: rgba(255, 255, 255, 0.08);
-    --line-focus: #38bdf8;
-    --ink: #f8fafc;
-    --ink-2: #38bdf8;
-    --ink-3: #94a3b8;
-    --seal: #38bdf8;
-    --seal-glow: rgba(56, 189, 248, 0.25);
-    --glass: rgba(15, 23, 42, 0.7);
-    --card-hover: rgba(255, 255, 255, 0.06);
-    --highlight-bg: #0284c7;
-    --highlight-fg: #ffffff;
+    --paper: #090d16 !important;
+    --paper-2: rgba(22, 30, 48, 0.6) !important;
+    --paper-3: rgba(35, 48, 75, 0.5) !important;
+    --wash: rgba(14, 20, 32, 0.7) !important;
+    --line: rgba(255, 255, 255, 0.08) !important;
+    --line-focus: #38bdf8 !important;
+    --ink: #f8fafc !important;
+    --ink-2: #38bdf8 !important;
+    --ink-3: #94a3b8 !important;
+    --seal: #38bdf8 !important;
+    --seal-glow: rgba(56, 189, 248, 0.25) !important;
+    --glass: rgba(15, 23, 42, 0.75) !important;
+    --card-hover: rgba(255, 255, 255, 0.06) !important;
+    --highlight-bg: #0284c7 !important;
+    --highlight-fg: #ffffff !important;
 
-    /* Static, Elegant, Calm Dark Ambient Vignette (NO ANIMATION) */
-    background: radial-gradient(1000px 700px at 15% 15%, rgba(30, 58, 138, 0.22) 0%, transparent 60%),
-                radial-gradient(900px 600px at 85% 85%, rgba(14, 116, 144, 0.18) 0%, transparent 60%),
-                radial-gradient(700px 500px at 50% 50%, rgba(15, 23, 42, 0.4) 0%, transparent 70%),
+    /* Static, Calm, Elegant Dark Obsidian Ambient Glass (NO ANIMATION) */
+    background: radial-gradient(1100px 750px at 10% 10%, rgba(30, 58, 138, 0.25) 0%, transparent 60%),
+                radial-gradient(950px 650px at 90% 90%, rgba(14, 116, 144, 0.2) 0%, transparent 60%),
+                radial-gradient(800px 500px at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 70%),
                 #070a12 !important;
     background-attachment: fixed !important;
     color: var(--ink) !important;
@@ -41,10 +80,12 @@ body.ui-mode-modern {
 }
 
 body.ui-mode-modern * {
-    font-family: inherit;
+    font-family: inherit !important;
 }
 
-/* 1. Eliminate Retro Overlays & Terminal Prompts */
+/* =========================================================
+   3. HIDE RETRO TUI OVERLAYS & MONOSPACE ARTIFACTS
+   ========================================================= */
 body.ui-mode-modern #crt-overlay,
 body.ui-mode-modern .term-prompt,
 body.ui-mode-modern .term-cursor,
@@ -52,22 +93,26 @@ body.ui-mode-modern #crt-toggle-btn {
     display: none !important;
 }
 
-/* 2. Sleek Liquid Glass Sidebar */
+/* =========================================================
+   4. SLEEK LIQUID GLASS SIDEBAR
+   ========================================================= */
 body.ui-mode-modern #sidebar {
-    background: rgba(11, 16, 28, 0.68) !important;
-    backdrop-filter: blur(28px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    background: rgba(11, 16, 28, 0.7) !important;
+    backdrop-filter: blur(32px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
+    padding: 18px 12px 14px !important;
 }
 
 body.ui-mode-modern .tui-brand {
     padding-bottom: 1.25rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    margin-bottom: 0.75rem !important;
 }
 
 body.ui-mode-modern .tui-logo {
-    font-size: 1.15rem !important;
+    font-size: 1.2rem !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em !important;
     background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%) !important;
@@ -81,6 +126,7 @@ body.ui-mode-modern .tui-sub {
     letter-spacing: 0.08em !important;
     color: #38bdf8 !important;
     opacity: 0.9 !important;
+    margin-top: 2px !important;
 }
 
 /* Modern Navigation Rail Buttons */
@@ -88,11 +134,11 @@ body.ui-mode-modern .rail-nav .nav-btn {
     border-radius: 12px !important;
     border: 1px solid transparent !important;
     background: transparent !important;
-    padding: 0.7rem 0.9rem !important;
-    margin-bottom: 0.35rem !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.4rem !important;
     display: flex !important;
     align-items: center !important;
-    gap: 0.75rem !important;
+    gap: 0.85rem !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     color: var(--ink-3) !important;
 }
@@ -121,7 +167,7 @@ body.ui-mode-modern .key-badge.is-modern-icon {
 }
 
 body.ui-mode-modern .nav-text {
-    font-size: 0.85rem !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
     letter-spacing: 0 !important;
 }
@@ -139,7 +185,7 @@ body.ui-mode-modern .tui-bitrate-badge {
     color: #38bdf8 !important;
     font-size: 0.65rem !important;
     font-weight: 600 !important;
-    padding: 2px 8px !important;
+    padding: 3px 10px !important;
 }
 
 body.ui-mode-modern .tui-mute-btn {
@@ -148,35 +194,40 @@ body.ui-mode-modern .tui-mute-btn {
     background: rgba(255, 255, 255, 0.05) !important;
     color: var(--ink) !important;
     font-size: 0.75rem !important;
-    padding: 2px 8px !important;
+    padding: 3px 10px !important;
 }
 
-/* 3. Top Navigation Bar */
+/* =========================================================
+   5. TOP NAVIGATION BAR
+   ========================================================= */
 body.ui-mode-modern #top-bar {
-    background: rgba(11, 16, 28, 0.5) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    background: rgba(11, 16, 28, 0.52) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 0.75rem 1.5rem !important;
 }
 
 body.ui-mode-modern .search-bar {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 9999px !important;
-    padding: 0.35rem 0.9rem !important;
+    padding: 0.4rem 1.1rem !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body.ui-mode-modern .search-bar:focus-within {
     background: rgba(255, 255, 255, 0.08) !important;
     border-color: rgba(56, 189, 248, 0.5) !important;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 body.ui-mode-modern #search-input {
-    font-size: 0.85rem !important;
+    font-size: 0.88rem !important;
     font-weight: 500 !important;
     color: var(--ink) !important;
+    border: none !important;
 }
 
 body.ui-mode-modern .search-go {
@@ -184,9 +235,9 @@ body.ui-mode-modern .search-go {
     border: 1px solid rgba(56, 189, 248, 0.3) !important;
     background: rgba(56, 189, 248, 0.15) !important;
     color: #38bdf8 !important;
-    font-size: 0.75rem !important;
+    font-size: 0.78rem !important;
     font-weight: 600 !important;
-    padding: 0.3rem 0.8rem !important;
+    padding: 0.35rem 0.9rem !important;
 }
 
 body.ui-mode-modern .top-bar-actions .tui-badge,
@@ -195,9 +246,9 @@ body.ui-mode-modern .top-bar-actions .tui-btn {
     border: 1px solid rgba(255, 255, 255, 0.09) !important;
     background: rgba(255, 255, 255, 0.04) !important;
     color: var(--ink-3) !important;
-    font-size: 0.75rem !important;
+    font-size: 0.78rem !important;
     font-weight: 600 !important;
-    padding: 0.4rem 0.8rem !important;
+    padding: 0.45rem 0.9rem !important;
     transition: all 0.2s ease !important;
 }
 
@@ -208,17 +259,20 @@ body.ui-mode-modern .top-bar-actions .tui-btn:hover {
     border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
-/* 4. Bottom Liquid Glass Player Bar */
+/* =========================================================
+   6. BOTTOM LIQUID GLASS PLAYER BAR
+   ========================================================= */
 body.ui-mode-modern #player-bar {
-    background: rgba(13, 19, 33, 0.82) !important;
+    background: rgba(13, 19, 33, 0.85) !important;
     backdrop-filter: blur(36px) saturate(210%) !important;
     -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.45) !important;
+    padding: 0 1.5rem !important;
 }
 
 body.ui-mode-modern .player-cover {
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -230,7 +284,7 @@ body.ui-mode-modern #player-title {
 }
 
 body.ui-mode-modern #player-artist {
-    font-size: 0.8rem !important;
+    font-size: 0.82rem !important;
     font-weight: 500 !important;
     color: var(--ink-3) !important;
 }
@@ -242,13 +296,13 @@ body.ui-mode-modern #player-state-badge {
     color: var(--ink-2) !important;
     font-size: 0.65rem !important;
     font-weight: 700 !important;
-    padding: 2px 7px !important;
+    padding: 2px 8px !important;
 }
 
-/* Sleek Play Button */
+/* Prominent Play/Pause Button */
 body.ui-mode-modern #play-btn {
-    width: 44px !important;
-    height: 44px !important;
+    width: 46px !important;
+    height: 46px !important;
     border-radius: 50% !important;
     background: #f8fafc !important;
     color: #0f172a !important;
@@ -263,7 +317,7 @@ body.ui-mode-modern #play-btn {
 
 body.ui-mode-modern #play-btn:hover {
     transform: scale(1.06) !important;
-    box-shadow: 0 6px 24px rgba(248, 250, 252, 0.38) !important;
+    box-shadow: 0 6px 24px rgba(248, 250, 252, 0.4) !important;
 }
 
 body.ui-mode-modern #play-btn:active {
@@ -275,8 +329,8 @@ body.ui-mode-modern .ctrl-btn {
     border: 1px solid transparent !important;
     background: transparent !important;
     color: var(--ink-3) !important;
-    padding: 0.4rem 0.7rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.45rem 0.8rem !important;
+    font-size: 0.82rem !important;
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
 }
@@ -312,7 +366,190 @@ body.ui-mode-modern #progress-fill {
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
 }
 
-/* 5. Drawers (Config, Queue, EQ, Lyrics, Visualizer) */
+/* =========================================================
+   7. MAIN PAGE VIEWS (Cards, Shelves, Lists, Headers)
+   ========================================================= */
+body.ui-mode-modern .page-header {
+    margin-bottom: 1.5rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-bottom: 1rem !important;
+}
+
+body.ui-mode-modern .page-header h1 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    color: #f8fafc !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .eyebrow {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    color: #38bdf8 !important;
+    margin-top: 1.75rem !important;
+    margin-bottom: 0.85rem !important;
+    border: none !important;
+    text-transform: capitalize !important;
+}
+
+/* Modern Card Grid */
+body.ui-mode-modern .item-grid {
+    gap: 1.15rem !important;
+}
+
+body.ui-mode-modern .card {
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25) !important;
+    padding: 14px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.ui-mode-modern .card:hover {
+    transform: translateY(-4px) !important;
+    background: rgba(255, 255, 255, 0.065) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.12) !important;
+}
+
+body.ui-mode-modern .card .cover-wrap img,
+body.ui-mode-modern .cover-fallback {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ui-mode-modern .card-title {
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    color: #f8fafc !important;
+    margin-top: 10px !important;
+    letter-spacing: -0.01em !important;
+}
+
+body.ui-mode-modern .card-subtitle {
+    font-size: 0.78rem !important;
+    color: #94a3b8 !important;
+}
+
+/* Modern Track List Rows */
+body.ui-mode-modern .list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .list-item {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    padding: 10px 16px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.ui-mode-modern .list-item:hover {
+    background: rgba(255, 255, 255, 0.065) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    transform: translateX(3px) !important;
+}
+
+body.ui-mode-modern .list-item.is-playing {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.12) !important;
+}
+
+body.ui-mode-modern .list-title {
+    font-weight: 600 !important;
+    color: #f8fafc !important;
+    font-size: 0.92rem !important;
+}
+
+body.ui-mode-modern .list-artist {
+    font-size: 0.78rem !important;
+    color: #94a3b8 !important;
+}
+
+body.ui-mode-modern .rank {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    min-width: 24px !important;
+}
+
+body.ui-mode-modern .list-item.is-playing .rank {
+    color: #38bdf8 !important;
+}
+
+/* Modern Filter Buttons & Quick Chips */
+body.ui-mode-modern .filter-btn {
+    border-radius: 9999px !important;
+    padding: 6px 16px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #94a3b8 !important;
+    transition: all 0.2s ease !important;
+}
+
+body.ui-mode-modern .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .filter-btn.active {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
+}
+
+body.ui-mode-modern .quick-tag-btn {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    font-size: 0.78rem !important;
+    color: #cbd5e1 !important;
+    padding: 4px 12px !important;
+    transition: all 0.2s ease !important;
+}
+
+body.ui-mode-modern .quick-tag-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    color: #f8fafc !important;
+}
+
+/* Empty States */
+body.ui-mode-modern .empty-state {
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 2.5rem 1.5rem !important;
+    text-align: center !important;
+}
+
+body.ui-mode-modern .empty-state h3 {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+    margin-bottom: 0.5rem !important;
+}
+
+body.ui-mode-modern .empty-state p {
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+}
+
+/* =========================================================
+   8. DRAWERS (Config, Queue, Equalizer, Lyrics, Visualizer)
+   ========================================================= */
 body.ui-mode-modern #settings-panel,
 body.ui-mode-modern #queue-panel,
 body.ui-mode-modern #equalizer-panel,
@@ -326,9 +563,14 @@ body.ui-mode-modern #lyrics-panel {
     box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
+body.ui-mode-modern .drawer-head {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 1rem !important;
+}
+
 body.ui-mode-modern .drawer-head h2,
 body.ui-mode-modern .drawer-head h3 {
-    font-size: 1.1rem !important;
+    font-size: 1.15rem !important;
     font-weight: 700 !important;
     color: var(--ink) !important;
     letter-spacing: -0.01em !important;
@@ -339,7 +581,8 @@ body.ui-mode-modern .drawer-head button.tui-btn {
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     background: rgba(255, 255, 255, 0.06) !important;
     color: var(--ink-3) !important;
-    padding: 0.35rem 0.8rem !important;
+    padding: 0.4rem 0.9rem !important;
+    font-weight: 600 !important;
 }
 
 body.ui-mode-modern .drawer-head button.tui-btn:hover {
@@ -347,97 +590,58 @@ body.ui-mode-modern .drawer-head button.tui-btn:hover {
     color: var(--ink) !important;
 }
 
-/* 6. Cards & Tracks in Content Area */
-body.ui-mode-modern .song-card,
-body.ui-mode-modern .album-card,
-body.ui-mode-modern .artist-card,
-body.ui-mode-modern .queue-item,
-body.ui-mode-modern .track-row,
-body.ui-mode-modern .history-item {
+/* =========================================================
+   9. MODERN ADAPTIVE UI MODE SWITCHER (Segmented Control)
+   ========================================================= */
+body.ui-mode-modern .modern-ui-mode-group {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    padding: 1.1rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+body.ui-mode-modern .modern-segmented-control {
+    display: flex !important;
+    gap: 6px !important;
+    background: rgba(0, 0, 0, 0.35) !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 4px !important;
+}
+
+body.ui-mode-modern .modern-seg-btn {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 9px 16px !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-body.ui-mode-modern .song-card:hover,
-body.ui-mode-modern .track-row:hover,
-body.ui-mode-modern .queue-item:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
-    transform: translateY(-1px);
+body.ui-mode-modern .modern-seg-btn:hover {
+    color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
-body.ui-mode-modern .song-card img,
-body.ui-mode-modern .thumb-wrap img {
-    border-radius: 10px !important;
+body.ui-mode-modern .modern-seg-btn.active {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
 }
 
-/* 7. Settings UI Mode Switcher Card */
-.ui-mode-setting-card {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 16px !important;
-    padding: 1.25rem !important;
-    margin-bottom: 1.5rem !important;
-}
-
-.ui-mode-choice-wrap {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-}
-
-.ui-mode-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 0.85rem 1rem;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--ink-3);
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s ease;
-}
-
-.ui-mode-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: var(--ink);
-}
-
-.ui-mode-btn.active {
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    color: #38bdf8;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
-}
-
-.ui-mode-btn .mode-icon {
-    font-size: 1.25rem;
-}
-
-.ui-mode-btn .mode-desc strong {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--ink);
-}
-
-.ui-mode-btn.active .mode-desc strong {
-    color: #38bdf8;
-}
-
-.ui-mode-btn .mode-desc small {
-    display: block;
-    font-size: 0.7rem;
-    color: var(--ink-3);
-    margin-top: 2px;
-}
-
-/* 8. Sliders & Inputs */
+/* =========================================================
+   10. SETTINGS CONTROLS & FORM INPUTS IN MODERN MODE
+   ========================================================= */
 body.ui-mode-modern input[type="range"] {
     accent-color: #38bdf8 !important;
 }
@@ -448,4 +652,21 @@ body.ui-mode-modern input[type="text"] {
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     background: rgba(255, 255, 255, 0.05) !important;
     color: var(--ink) !important;
+    padding: 6px 12px !important;
+}
+
+body.ui-mode-modern .save-btn {
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    padding: 12px !important;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3) !important;
+    letter-spacing: normal !important;
+}
+
+body.ui-mode-modern .save-btn:hover {
+    box-shadow: 0 6px 24px rgba(56, 189, 248, 0.45) !important;
+    transform: translateY(-1px) !important;
 }
