@@ -34,3 +34,5 @@ Thumbs.db
 .idea/
 .vscode/
 scratch/
+node_modules/
+package-lock.json

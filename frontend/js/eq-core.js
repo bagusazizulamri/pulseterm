@@ -23,8 +23,20 @@ export const EQ_PRESETS = {
     pop: {
         name: 'POP',
         label: 'Pop & Modern',
-        gains: [-1, 1, 3, 4, 4, 3, 1, 0, 2, 3],
+        gains: [1.0, 2.0, 1.5, 0.0, 0.5, 1.5, 2.0, 2.0, 2.5, 2.5],
         preamp: -1
+    },
+    pop_upbeat: {
+        name: 'POP UPBEAT',
+        label: 'Pop Upbeat / Fun',
+        gains: [1.5, 3.0, 1.5, -0.5, 0.0, 1.5, 2.5, 2.0, 3.0, 3.5],
+        preamp: -1.5
+    },
+    sad_ballad: {
+        name: 'EMOTIONAL',
+        label: 'Mellow & Emotional Ballad',
+        gains: [2.0, 2.0, 1.0, 1.0, 1.5, 2.5, 3.0, 2.0, 1.5, 1.0],
+        preamp: -1.0
     },
     electronic: {
         name: 'EDM',
@@ -39,9 +51,9 @@ export const EQ_PRESETS = {
         preamp: -1.5
     },
     rnb: {
-        name: 'R&B',
-        label: 'R&B / Soul',
-        gains: [4, 6, 3, 0, 1, 2, 2, 1, 2, 3],
+        name: 'R&B / CITY POP',
+        label: 'R&B / Soul / City Pop',
+        gains: [3.0, 4.0, 2.0, 0.5, 1.0, 1.5, 2.0, 1.5, 2.5, 3.0],
         preamp: -1
     },
     jazz: {
@@ -70,9 +82,9 @@ export const EQ_PRESETS = {
     },
     metal: {
         name: 'METAL',
-        label: 'Heavy Metal',
-        gains: [5, 4, 2, 0, -2, -2, 1, 4, 5, 4],
-        preamp: -1.5
+        label: 'Metal & Heavy Rock',
+        gains: [2.5, 3.5, 1.5, -1.0, -0.5, 1.0, 2.5, 2.0, 1.5, 1.0],
+        preamp: -2.0
     },
     vocal: {
         name: 'VOCAL',
@@ -128,6 +140,252 @@ export const GENRE_MAP = {
     ambient: 'flat'
 };
 
+export const SPECTRAL_ARCHETYPES = {
+    pop_upbeat: {
+        name: 'POP UPBEAT',
+        label: 'Pop Upbeat / Fun',
+        baseGains: [1.5, 3.0, 1.5, -0.5, 0.0, 1.5, 2.5, 2.0, 3.0, 3.5],
+        preamp: -1.5,
+        targetTilt: -4.2,
+        priorities: [1.0, 1.3, 1.0, 0.8, 0.8, 1.1, 1.2, 1.1, 1.4, 1.5],
+        maxBoost: 3.5,
+        maxCut: -2.5
+    },
+    sad_ballad: {
+        name: 'EMOTIONAL',
+        label: 'Mellow & Emotional Ballad',
+        baseGains: [2.0, 2.0, 1.0, 1.0, 1.5, 2.5, 3.0, 2.0, 1.5, 1.0],
+        preamp: -1.0,
+        targetTilt: -4.8,
+        priorities: [1.1, 1.1, 1.2, 1.2, 1.3, 1.4, 1.4, 1.0, 0.8, 0.7],
+        maxBoost: 3.0,
+        maxCut: -3.0
+    },
+    metal: {
+        name: 'METAL',
+        label: 'Metal & Heavy Subgenres',
+        baseGains: [2.5, 3.5, 1.5, -1.0, -0.5, 1.0, 2.5, 2.0, 1.5, 1.0],
+        preamp: -2.0,
+        targetTilt: -4.5,
+        priorities: [1.1, 1.4, 1.1, 0.9, 0.9, 1.2, 1.4, 1.2, 0.8, 0.7],
+        maxBoost: 3.5,
+        maxCut: -3.0
+    },
+    rock: {
+        name: 'ROCK',
+        label: 'Rock & Alt',
+        baseGains: [4.0, 3.5, 2.5, 0.5, -0.5, 0.5, 1.5, 2.5, 3.0, 3.5],
+        preamp: -1.5,
+        targetTilt: -4.4,
+        priorities: [1.0, 1.2, 1.0, 0.9, 0.9, 1.1, 1.2, 1.1, 1.2, 1.2],
+        maxBoost: 3.0,
+        maxCut: -2.5
+    },
+    electronic: {
+        name: 'EDM',
+        label: 'Electronic / EDM',
+        baseGains: [4.5, 4.5, 2.5, 0.0, -1.0, 1.0, 2.0, 2.5, 4.0, 4.0],
+        preamp: -2.0,
+        targetTilt: -4.0,
+        priorities: [1.3, 1.4, 1.0, 0.7, 0.7, 1.0, 1.1, 1.2, 1.4, 1.4],
+        maxBoost: 4.0,
+        maxCut: -3.0
+    },
+    hiphop: {
+        name: 'HIP-HOP',
+        label: 'Hip-Hop & Rap',
+        baseGains: [5.0, 4.5, 2.5, 0.5, -0.5, 1.0, 2.0, 1.5, 2.5, 3.0],
+        preamp: -1.5,
+        targetTilt: -4.3,
+        priorities: [1.4, 1.3, 1.0, 0.8, 0.8, 1.1, 1.2, 1.0, 1.1, 1.1],
+        maxBoost: 3.5,
+        maxCut: -2.5
+    },
+    rnb: {
+        name: 'R&B / CITY POP',
+        label: 'R&B / Soul / City Pop',
+        baseGains: [3.0, 4.0, 2.0, 0.5, 1.0, 1.5, 2.0, 1.5, 2.5, 3.0],
+        preamp: -1.0,
+        targetTilt: -4.5,
+        priorities: [1.2, 1.3, 1.1, 1.0, 1.1, 1.2, 1.2, 1.0, 1.0, 1.0],
+        maxBoost: 3.0,
+        maxCut: -2.5
+    },
+    pop: {
+        name: 'POP',
+        label: 'Pop & Modern',
+        baseGains: [1.0, 2.0, 1.5, 0.0, 0.5, 1.5, 2.0, 2.0, 2.5, 2.5],
+        preamp: -1.0,
+        targetTilt: -4.3,
+        priorities: [1.0, 1.2, 1.0, 0.8, 0.8, 1.1, 1.2, 1.1, 1.2, 1.3],
+        maxBoost: 3.0,
+        maxCut: -2.5
+    },
+    flat: {
+        name: 'FLAT',
+        label: 'Flat / Neutral',
+        baseGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        preamp: 0,
+        targetTilt: -4.5,
+        priorities: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        maxBoost: 2.0,
+        maxCut: -2.0
+    }
+};
+
+/**
+ * Reclassify the EQ archetype by examining the ACTUAL measured audio spectrum.
+ * This overrides weak metadata guesses (flat/pop) when audio features clearly
+ * indicate a different genre character.
+ *
+ * Spectral features used:
+ *   - sub (32Hz deviation from pink-noise ref): rumble / 808 sub-bass presence
+ *   - kick (64Hz): punchy kick drum / bass guitar fundamental
+ *   - lowMid (250Hz): body / mud indicator
+ *   - midBody (500Hz): vocal/piano warmth or guitar chug
+ *   - upperMid (2kHz): vocal presence / guitar crunch
+ *   - presence (4kHz): guitar bite / snare attack
+ *   - brilliance (8kHz): cymbal / hi-hat / sibilance
+ *   - air (16kHz): glossy sheen / analog warmth roll-off
+ *
+ * @param {number[]} bandDb - 10-element array of measured octave-band levels in dB
+ * @param {string} metadataHint - the archetype chosen by metadata (Phase 1)
+ * @returns {string} - reclassified archetype key
+ */
+export function classifySpectralProfile(bandDb, metadataHint = 'flat') {
+    if (!Array.isArray(bandDb) || bandDb.length !== 10) return metadataHint || 'flat';
+    const ref = bandDb[5]; // 1kHz reference
+    if (ref < -80) return metadataHint || 'flat';
+
+    // Deviation relative to standard pink-noise slope (-4.5 dB/octave from 1kHz)
+    const dev = bandDb.map((val, i) => val - ref - (i - 5) * (-4.5));
+    const sub = dev[0];        // 32Hz
+    const kick = dev[1];       // 64Hz
+    const lowMid = dev[3];     // 250Hz
+    const midBody = dev[4];    // 500Hz
+    const upperMid = dev[6];   // 2kHz
+    const presence = dev[7];   // 4kHz
+    const brilliance = dev[8]; // 8kHz
+    const air = dev[9];        // 16kHz
+
+    const bassPower = (sub + kick) / 2;
+    const highPower = (brilliance + air) / 2;
+    const guitarPresence = (upperMid + presence) / 2;
+    const vocalWarmth = (midBody + dev[5]) / 2; // 500Hz + 1kHz
+
+    // If metadata already provided a high-confidence specific preset, trust it
+    if (metadataHint && !['flat', 'pop'].includes(metadataHint)) {
+        return metadataHint;
+    }
+
+    // --- Spectral classification from real audio ---
+
+    // 1. Sad Ballad / Mellow / Acoustic
+    //    Signature: subdued sub-bass, gentle highs, prominent vocal/piano mid-body
+    if (bassPower <= 0.5 && highPower <= 0.5 && (midBody >= -1.0 || lowMid >= 0.5)) {
+        return 'sad_ballad';
+    }
+
+    // 2. EDM / Electronic (check before hip-hop: EDM has BOTH extreme sub AND extreme highs)
+    //    Signature: massive sub+kick AND massive high-end synths, scooped mids
+    //    Key differentiator from hip-hop: EDM has extremely high brilliance+air (>= 6.0)
+    if (bassPower >= 3.5 && highPower >= 6.0 && lowMid <= -1.0) {
+        return 'electronic';
+    }
+
+    // 3. Hip-Hop / 808 Trap / Semi Hip-Hop K-Pop
+    //    Signature: massive sub-bass (sub >= 3dB above pink ref), scooped low-mids
+    //    808 sub-bass is the defining feature — sub must dominate
+    if (sub >= 3.0 && bassPower >= 2.5 && lowMid <= 1.0) {
+        return 'hiphop';
+    }
+
+    // 4. Metal / Heavy Rock
+    //    Signature: heavy distorted 2k-4k guitar wall + punchy kick, scooped 250Hz
+    //    Key differentiator from rock: metal has deeply scooped lowMid (<= -1.0)
+    //    AND sub-bass is NOT dominant (guitars don't produce 808-style sub)
+    if (upperMid >= 3.0 && guitarPresence >= 3.0 && kick >= 1.5 && sub <= 2.0 && lowMid <= -0.5) {
+        return 'metal';
+    }
+
+    // 5. Rock / Alt-Rock
+    //    Signature: guitar crunch in 2k-4k but less extreme than metal,
+    //    sub-bass not dominant, low-mids more present than metal (less scooped)
+    if (guitarPresence >= 2.5 && kick >= 1.0 && upperMid >= 2.0 && sub <= 1.0 && lowMid > -0.5) {
+        return 'rock';
+    }
+
+    // 6. Pop Upbeat / Dance Pop / K-Pop Pure Pop
+    //    Signature: punchy 64Hz kick + glossy 8k-16k air (modern mastering sheen)
+    //    Pop has high air but sub-bass is NOT as extreme as hip-hop/EDM
+    if (highPower >= 2.0 && kick >= 1.0) {
+        return 'pop_upbeat';
+    }
+
+    // 7. R&B / City Pop / Groovy
+    //    Signature: warm bass, smooth mids, moderate high shimmer
+    if (bassPower >= 1.5 && vocalWarmth >= 0.5 && highPower >= 0.5 && highPower <= 2.5) {
+        return 'rnb';
+    }
+
+    // 8. Modern Pop / Balanced
+    if (bassPower >= 1.0 || highPower >= 1.0) {
+        return 'pop';
+    }
+
+    return metadataHint || 'flat';
+}
+
+export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
+    const arch = SPECTRAL_ARCHETYPES[archetypeKey] || SPECTRAL_ARCHETYPES.flat;
+    const refDb = measuredOctaveDb[5]; // 1kHz reference
+
+    if (refDb < -85) {
+        return { gains: [...arch.baseGains], offsets: new Array(10).fill(0), hint: arch.name };
+    }
+
+    // 1. Calculate raw deficiency per band
+    const rawDefect = measuredOctaveDb.map((val, i) => {
+        const expectedRel = (i - 5) * arch.targetTilt;
+        const actualRel = val - refDb;
+        const defect = (expectedRel - actualRel) * arch.priorities[i] * 0.35;
+        return Math.max(arch.maxCut, Math.min(arch.maxBoost, defect));
+    });
+
+    // 2. 3-point smoothing
+    const smoothed = rawDefect.map((d, i) => {
+        if (i === 0) return 0.75 * rawDefect[0] + 0.25 * rawDefect[1];
+        if (i === 9) return 0.75 * rawDefect[9] + 0.25 * rawDefect[8];
+        return 0.25 * rawDefect[i - 1] + 0.5 * rawDefect[i] + 0.25 * rawDefect[i + 1];
+    });
+
+    // 3. Merge with base gains
+    const finalGains = arch.baseGains.map((base, i) => {
+        const total = base + smoothed[i];
+        return Math.round(Math.max(-12, Math.min(12, total)) * 10) / 10;
+    });
+
+    // 4. Telemetry hint
+    const bassMod = (smoothed[0] + smoothed[1] + smoothed[2]) / 3;
+    const midMod = (smoothed[4] + smoothed[5] + smoothed[6]) / 3;
+    const trebleMod = (smoothed[7] + smoothed[8] + smoothed[9]) / 3;
+
+    let tag = '';
+    if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
+    else if (trebleMod > 0.8) tag = '+AIR';
+    else if (bassMod > 0.8) tag = '+PUNCH';
+    else if (midMod > 0.8) tag = '+VOCAL';
+    else if (trebleMod < -0.8) tag = 'TAME HARSH';
+    else if (bassMod < -0.8) tag = 'TIGHT BASS';
+    else tag = 'BALANCED';
+
+    return {
+        gains: finalGains,
+        offsets: smoothed.map(s => Math.round(s * 10) / 10),
+        hint: `${arch.name} (${tag})`
+    };
+}
+
 export function mapGenresToPreset(genres) {
     if (!Array.isArray(genres) || genres.length === 0) return 'flat';
     const set = new Set(genres.map(g => String(g).toLowerCase().trim()));
@@ -139,20 +397,77 @@ export function mapGenresToPreset(genres) {
     return 'flat';
 }
 
+export function mapProfileToPreset(genres = [], vibes = [], song = null) {
+    const genreList = Array.isArray(genres) ? genres.map(g => String(g).toLowerCase().trim()) : [];
+    const vibeList = Array.isArray(vibes) ? vibes.map(v => String(v).toLowerCase().trim()) : [];
+    const genreSet = new Set(genreList);
+    const vibeSet = new Set(vibeList);
+
+    const raw = song ? `${song.title || ''} ${song.artist || ''} ${song.album || ''}`.toLowerCase() : '';
+
+    // 1. Sad / Mellow / Emotional Ballad
+    if (vibeSet.has('mellow') || vibeSet.has('sad') || vibeSet.has('ballad') || vibeSet.has('heartbreak') ||
+        /\b(sad|ballad|galau|sedih|tears|cry|crying|lonely|heartbreak|patah hati|rindu|duka|hampa|terluka|someone like you|glimpse of us|satu bulan|drivers license|untungnya|through the night|heather|traitor|back to december|all too well|when i was your man|say something|fix you|let her go)\b/i.test(raw)) {
+        return 'sad_ballad';
+    }
+
+    // 2. Metal & Heavy Subgenres (expanded with more bands)
+    if (genreSet.has('metal') || genreSet.has('punk') ||
+        /\b(metal|metalcore|deathcore|nu-metal|thrash|djent|post-hardcore|slipknot|metallica|megadeth|iron maiden|bmth|bring me the horizon|rammstein|lorna shore|bad omens|babymetal|band-maid|hanabie|maximum the hormone|coldrain|spiritbox|sleep token|gojira|architects|trivium|parkway drive|killswitch engage|avenged sevenfold|a7x|polyphia|periphery|meshuggah|lamb of god|opeth|in flames|jinjer|electric callboy|slaughter to prevail|korn|deftones|disturbed|pantera|soad|system of a down|bullet for my valentine|cannibal corpse|sepultura|anthrax|ghost|judas priest|black sabbath|falling in reverse|evanescence|dir en grey|the gazette|sim|galneryus|man with a mission|while she sleeps|wage war|motionless in white|ice nine kills|knocked loose|counterparts|currents|erra|northlane|crystal lake|make them suffer|veil of maya|born of osiris|august burns red|miss may i|as i lay dying|whitechapel|thy art is murder|suicide silence|infant annihilator|shadow of intent|fit for an autopsy|rivers of nihil|between the buried and me)\b/i.test(raw)) {
+        return 'metal';
+    }
+
+    // 3. K-Pop & J-Pop Semi Hip-Hop / Hard-Hitting (trap-based production, heavy 808s)
+    if (/\b(stray kids|skz|nct|nct 127|nct dream|wayv|bigbang|g-dragon|taeyang|monsta x|ateez|xg|b\.i|bobby|ikon|block b|zico|cl|2ne1|got7|jackson wang|agust d|suga|j-hope|rm|god's menu|gods menu|maniac|thunderous|back door|kick it|2 baddies|fire truck|cherry bomb|bang bang bang|fantastic baby|mic drop|ugh|ddaeng|daechwita|first|guerrilla)\b/i.test(raw)) {
+        return 'hiphop';
+    }
+
+    // 4. K-Pop & J-Pop Pure Pop Upbeat / Dance (glossy, punchy, bright production)
+    if (/\b(twice|ive|aespa|le sserafim|illit|newjeans|itzy|stayc|nmixx|red velvet|girls generation|snsd|fromis_9|loona|wjsn|oh my girl|apink|mamamoo|gfriend|viviz|kep1er|everglow|dreamcatcher|blackpink|lisa|jennie|rose|jisoo|treasure|riize|zerobaseone|kiss of life|tws|boynextdoor|seventeen|txt|tomorrow x together|enhypen|the boyz|cravity|tempest|drippin|fancy|feel special|what is love|i can't stop me|alcohol-free|scientist|talk that talk|set me free|dice|love dive|after like|eleven|i am|kitsch|baddie|supernova|drama|armageddon|perfect night|fearless|antifragite|unforgiven|super shy|hype boy|attention|ditto|eta|get up|cookie|dalla dalla|wannabe|loco|sneakers|cheshire|love me like this|o\.o|tank|roll|queencard|flower|magnetic|lucky girl syndrome|idol|dynamite|boy with luv|butter|permission to dance|run bts|dna)\b/i.test(raw)) {
+        return 'pop_upbeat';
+    }
+
+    // 5. Pop Upbeat by vibe signals
+    if ((genreSet.has('pop') || genreSet.has('k-pop') || genreSet.has('j-pop') || genreSet.has('dance')) &&
+        (vibeSet.has('energetic') || vibeSet.has('happy') || vibeSet.has('party') ||
+         /\b(upbeat|fun|dance|party|club|hype|bouncy|espresso|levitating|cheerful|ceria|summer)\b/i.test(raw))) {
+        return 'pop_upbeat';
+    }
+
+    // 6. J-Pop Upbeat / Anime Upbeat
+    if (/\b(yoasobi|ado|eve|king gnu|higedan|official hige dandism|mrs\.? green apple|vaundy|zutomayo|yorushika|fujii kaze|kenshi yonezu|lisa|aimer|spyair|kana-boon|asian kung-fu generation|hatsune miku|miku|vocaloid|deco\*27|kikuo|giga|idol|racing into the night|new genesis|odo|kick back|unravel|shinzou wo sasageyo|gurenge|inferno|zankyou sanka|kaikai kitan)\b/i.test(raw)) {
+        return 'pop_upbeat';
+    }
+
+    // 7. City Pop & K-R&B
+    if (vibeSet.has('groovy') || /\b(city pop|shibuya-kei|tatsuro yamashita|miki matsubara|anri|mariya takeuchi|lamp|k-rnb|dean|crush|dpr ian|dpr live|colde|heize|bibi|lee hi|offonoff|sumin|ph-1|gray|elo|code kunst|sam kim|wave to earth|the rose|hyukoh|silica gel|jannabi|sza|frank ocean|daniel caesar|brent faiyaz|giveon)\b/i.test(raw)) {
+        return 'rnb';
+    }
+
+    // 8. Standard genre mapping fallback
+    const genrePreset = mapGenresToPreset(genreList);
+    if (genrePreset !== 'flat') return genrePreset;
+
+    // 9. Local text fallback
+    return detectPresetLocal(song);
+}
+
 // Local regex-based fallback rules with word boundaries.
-// Ambiguous keywords removed: remix, club, dance, guitar, piano, queen, muse, ost, caesar
 export const LOCAL_GENRE_RULES = [
-    { preset: 'metal', words: ['metal', 'metalcore', 'deathcore', 'slipknot', 'metallica', 'megadeth', 'avenged', 'soad', 'pantera', 'iron maiden', 'bmth', 'rammstein', 'architect', 'lorna shore', 'bad omens'] },
-    { preset: 'rock', words: ['rock', 'grunge', 'nirvana', 'linkin park', 'green day', 'arctic monkeys', 'oasis', 'foo fighters', 'paramore', 'rhcp', 'strokes', 'radiohead', 'weezer'] },
-    { preset: 'electronic', words: ['edm', 'house', 'techno', 'trance', 'dubstep', 'dnb', 'drum and bass', 'avicii', 'skrillex', 'garrix', 'tiesto', 'marshmello', 'alan walker'] },
-    { preset: 'hiphop', words: ['hip hop', 'hip-hop', 'rap', 'trap', 'drill', 'eminem', 'drake', 'kendrick', 'kanye', 'travis scott', 'post malone', '2pac', 'snoop'] },
-    { preset: 'rnb', words: ['r&b', 'rnb', 'soul', 'neo soul', 'sza', 'frank ocean', 'brent faiyaz', 'giveon'] },
+    { preset: 'sad_ballad', words: ['sad', 'ballad', 'galau', 'sedih', 'tears', 'crying', 'lonely', 'heartbreak', 'patah hati', 'rindu', 'duka', 'hampa', 'terluka', 'bernadya', 'adele', 'glimpse of us', 'heather', 'traitor', 'drivers license', 'satu bulan', 'untungnya', 'feby putri', 'nadin amizah', 'pamungkas', 'mahalini', 'lewis capaldi', 'sam smith', 'joji', 'calum scott', 'conan gray', 'paul kim', 'sung si kyung', 'davichi', 'ailee', 'park hyo shin', 'taeyeon', 'iu', 'melomance', 'lim young woong'] },
+    { preset: 'metal', words: ['metal', 'metalcore', 'deathcore', 'nu-metal', 'thrash', 'djent', 'slipknot', 'metallica', 'megadeth', 'avenged sevenfold', 'a7x', 'soad', 'system of a down', 'pantera', 'iron maiden', 'bmth', 'bring me the horizon', 'rammstein', 'architects', 'lorna shore', 'bad omens', 'babymetal', 'band-maid', 'hanabie', 'maximum the hormone', 'coldrain', 'spiritbox', 'sleep token', 'gojira', 'trivium', 'parkway drive', 'killswitch engage', 'polyphia', 'periphery', 'meshuggah', 'lamb of god', 'opeth', 'in flames', 'jinjer', 'electric callboy', 'slaughter to prevail', 'korn', 'deftones', 'disturbed', 'bullet for my valentine', 'cannibal corpse', 'sepultura', 'anthrax', 'ghost', 'judas priest', 'black sabbath', 'falling in reverse', 'evanescence', 'dir en grey', 'the gazette', 'sim', 'galneryus', 'man with a mission', 'while she sleeps', 'wage war', 'motionless in white', 'ice nine kills', 'knocked loose', 'counterparts', 'erra', 'northlane', 'crystal lake', 'currents', 'veil of maya', 'born of osiris', 'august burns red', 'whitechapel', 'thy art is murder', 'suicide silence', 'infant annihilator', 'shadow of intent', 'fit for an autopsy'] },
+    { preset: 'hiphop', words: ['hip hop', 'hip-hop', 'rap', 'trap', 'drill', 'eminem', 'drake', 'kendrick', 'kanye', 'travis scott', 'post malone', '2pac', 'snoop', 'zico', 'epik high', 'stray kids', 'skz', 'nct', 'nct 127', 'nct dream', 'wayv', 'bigbang', 'g-dragon', 'monsta x', 'ateez', 'ikon', 'bobby', 'block b', 'got7', 'jackson wang', 'agust d', 'changmo', 'ph-1', 'rich brian'] },
+    { preset: 'pop_upbeat', words: ['upbeat', 'dance pop', 'espresso', 'levitating', 'super shy', 'hype boy', 'dynamite', 'bouncy', 'cheerful', 'ceria', 'twice', 'ive', 'aespa', 'le sserafim', 'illit', 'newjeans', 'itzy', 'stayc', 'nmixx', 'red velvet', 'girls generation', 'snsd', 'mamamoo', 'gfriend', 'viviz', 'everglow', 'fromis_9', 'loona', 'dreamcatcher', 'blackpink', 'seventeen', 'txt', 'enhypen', 'the boyz', 'treasure', 'riize', 'zerobaseone', 'kiss of life', 'boynextdoor', 'fancy', 'feel special', 'love dive', 'after like', 'eleven', 'queencard', 'supernova', 'magnetic', 'perfect night', 'dalla dalla', 'wannabe', 'sneakers'] },
+    { preset: 'pop_upbeat', words: ['yoasobi', 'ado', 'eve', 'king gnu', 'higedan', 'mrs green apple', 'vaundy', 'zutomayo', 'yorushika', 'fujii kaze', 'kenshi yonezu', 'spyair', 'kana-boon', 'hatsune miku', 'vocaloid', 'idol', 'racing into the night', 'gurenge', 'kick back', 'unravel'] },
+    { preset: 'rock', words: ['rock', 'grunge', 'nirvana', 'linkin park', 'green day', 'arctic monkeys', 'oasis', 'foo fighters', 'paramore', 'rhcp', 'strokes', 'radiohead', 'weezer', 'one ok rock', 'radwimps', 'asian kung-fu generation', 'day6', 'wave to earth', 'muse', 'coldplay', 'imagine dragons', 'the killers', 'my chemical romance', 'queen'] },
+    { preset: 'electronic', words: ['edm', 'house', 'techno', 'trance', 'dubstep', 'dnb', 'drum and bass', 'avicii', 'skrillex', 'garrix', 'tiesto', 'marshmello', 'alan walker', 'zedd', 'david guetta'] },
+    { preset: 'rnb', words: ['r&b', 'rnb', 'soul', 'neo soul', 'city pop', 'sza', 'frank ocean', 'brent faiyaz', 'giveon', 'tatsuro yamashita', 'miki matsubara', 'mariya takeuchi', 'anri', 'dean', 'crush', 'dpr ian', 'colde', 'heize', 'bibi', 'lee hi', 'daniel caesar', 'wave to earth', 'the rose', 'hyukoh', 'silica gel', 'jannabi'] },
     { preset: 'jazz', words: ['jazz', 'bossa', 'swing', 'bebop', 'miles davis', 'coltrane', 'bill evans'] },
-    { preset: 'classical', words: ['classical', 'symphony', 'orchestra', 'bach', 'beethoven', 'mozart', 'chopin', 'soundtrack', 'zimmer'] },
+    { preset: 'classical', words: ['classical', 'symphony', 'orchestra', 'bach', 'beethoven', 'mozart', 'chopin', 'soundtrack', 'zimmer', 'sawano', 'hisaishi'] },
     { preset: 'acoustic', words: ['acoustic', 'akustik', 'unplugged', 'folk', 'fingerstyle'] },
     { preset: 'vocal', words: ['podcast', 'speech', 'interview', 'acapella', 'vocal'] },
     { preset: 'bass_boost', words: ['dangdut', 'koplo', 'funkot', 'breakbeat', 'bass boost', 'phonk'] },
-    { preset: 'pop', words: ['pop', 'k-pop', 'kpop', 'j-pop', 'jpop', 'bts', 'blackpink', 'twice', 'newjeans', 'yoasobi', 'taylor swift', 'ariana', 'dua lipa', 'billie eilish'] },
+    { preset: 'pop', words: ['pop', 'k-pop', 'kpop', 'j-pop', 'jpop', 'bts', 'taylor swift', 'ariana', 'dua lipa', 'billie eilish', 'tulus', 'raisa', 'tiara andini'] },
 ];
 
 function escapeRegex(str) {

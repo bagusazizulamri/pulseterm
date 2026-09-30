@@ -63,8 +63,14 @@ class SpatialAudioEngine {
             this.inputNode = this.audioCtx.createGain();
             this.outputNode = this.audioCtx.createGain();
 
+            // Direct clean bypass node for Spatial OFF (pure 0.00 dB flat passthrough)
+            this.bypassGain = this.audioCtx.createGain();
+            this.bypassGain.gain.value = this.mode === 'off' ? 1.0 : 0.0;
+            this.inputNode.connect(this.bypassGain);
+            this.bypassGain.connect(this.outputNode);
+
             this.directGain = this.audioCtx.createGain();
-            this.directGain.gain.value = this.mode === 'off' ? 1.0 : SPATIAL_CONFIGS[this.mode].dryMix;
+            this.directGain.gain.value = this.mode === 'off' ? 0.0 : SPATIAL_CONFIGS[this.mode].dryMix;
             
             this.directGain.connect(this.outputNode);
 
@@ -412,12 +418,10 @@ class SpatialAudioEngine {
         }
 
         if (this.mode === 'off') {
+            this._setParam(this.bypassGain?.gain, 1.0, t, tc);
             this._setParam(this.spatialBus.gain, 0.0, t, tc);
-            
-            
-            this._setParam(this.directGain.gain, 1.0, t, tc);
-            this._setParam(this.bassMonoGain?.gain, -1.0, t, tc); // Inverted for Butterworth summing
-
+            this._setParam(this.directGain.gain, 0.0, t, tc);
+            this._setParam(this.bassMonoGain?.gain, 0.0, t, tc);
 
             this._setParam(this.highShelf?.gain, 0.0, t, tc);
             
@@ -438,11 +442,9 @@ class SpatialAudioEngine {
             this._setParam(this.haloGainR?.gain, 0.0, t, tc);
             this._setParam(this.erMasterGain?.gain, 0.0, t, tc);
         } else {
+            this._setParam(this.bypassGain?.gain, 0.0, t, tc);
             this._setParam(this.spatialBus.gain, 1.0, t, tc);
-            
-            
             this._setParam(this.directGain.gain, cfg.dryMix, t, tc);
-            // Inverted for Butterworth summing. Unity gain for bass = 1.0, so we use -1.0
             this._setParam(this.bassMonoGain?.gain, -1.0, t, tc);
 
 

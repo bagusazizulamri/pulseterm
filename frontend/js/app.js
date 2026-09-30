@@ -691,6 +691,13 @@ function setLocalSettings(data) {
     }
 }
 
+function applyThemeClass(themeName) {
+    const validTheme = THEME_LIST.includes(themeName) ? themeName : 'maclight';
+    const classes = Array.from(document.body.classList).filter(c => !c.startsWith('theme-'));
+    classes.push('theme-' + validTheme);
+    document.body.className = classes.join(' ');
+}
+
 function applySettings(d, syncInputs = true) {
     if (!d || typeof d !== 'object') return;
 
@@ -702,7 +709,7 @@ function applySettings(d, syncInputs = true) {
 
     // 2. Theme
     const themeToApply = d.theme && THEME_LIST.includes(d.theme) ? d.theme : (d.theme || 'maclight');
-    document.body.className = 'theme-' + themeToApply;
+    applyThemeClass(themeToApply);
     document.querySelectorAll('.theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeToApply);
     });
@@ -875,7 +882,8 @@ function cycleRepeat() {
 }
 
 function cycleTheme() {
-    const current = document.body.className.replace('theme-', '') || 'maclight';
+    const currentThemeClass = Array.from(document.body.classList).find(c => c.startsWith('theme-'));
+    const current = (currentThemeClass || '').replace('theme-', '') || 'maclight';
     const idx = THEME_LIST.indexOf(current);
     const nextTheme = THEME_LIST[(idx + 1) % THEME_LIST.length];
     window.setTheme(nextTheme);
@@ -954,7 +962,7 @@ window.toggleLike = function() { player.toggleLike(); };
 window.toggleSettings = function() { document.getElementById('settings-panel').classList.toggle('hidden'); };
 window.setTheme = function(t, btn) {
     const themeName = THEME_LIST.includes(t) ? t : 'maclight';
-    document.body.className = 'theme-' + themeName;
+    applyThemeClass(themeName);
     document.querySelectorAll('.theme-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.theme === themeName || b === btn);
     });
@@ -964,7 +972,8 @@ window.setTheme = function(t, btn) {
 
 window.savePlayerSettings = function() {
     const activeThemeBtn = document.querySelector('.theme-btn.active');
-    const theme = activeThemeBtn?.dataset.theme || (document.body.className.replace('theme-', '') || 'maclight');
+    const currentThemeClass = Array.from(document.body.classList).find(c => c.startsWith('theme-'));
+    const theme = activeThemeBtn?.dataset.theme || (currentThemeClass ? currentThemeClass.replace('theme-', '') : 'maclight');
     const vol = Number(document.getElementById('settings-volume')?.value || 80) / 100;
     const shuffle = Boolean(document.getElementById('settings-shuffle')?.checked);
     const repeat = document.getElementById('settings-repeat')?.value || 'none';

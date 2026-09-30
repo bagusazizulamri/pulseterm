@@ -3,9 +3,9 @@
 
 import { spatial } from './spatial.js?v=11';
 import { getGenre } from './api.js';
-import { mapGenresToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections } from './eq-core.js';
+import { mapGenresToPreset, mapProfileToPreset, detectPresetLocal, bandPowerDb, computeTuneCorrections, analyzeAndCompensate, classifySpectralProfile, SPECTRAL_ARCHETYPES } from './eq-core.js';
 
-export { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
+export { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS, SPECTRAL_ARCHETYPES } from './eq-core.js';
 import { EQ_FREQUENCIES, EQ_LABELS, EQ_PRESETS } from './eq-core.js';
 
 export const GENRE_RULES = [
@@ -295,6 +295,7 @@ class TerminalEqualizer {
         this.currentPreset = presetKey;
         this.gains = [...preset.gains];
         this.preamp = preset.preamp || 0;
+        this.bassBoost = 0;
 
         if (!isAuto) {
             this.manualPreset = presetKey;
@@ -383,21 +384,21 @@ class TerminalEqualizer {
             presetKey = this._genreCache.get(cacheKey);
         } else {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1000);
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
             try {
                 const res = await getGenre(
                     { title: song.title || '', artist: song.artist || '', album: song.album || '' },
                     { signal: controller.signal }
                 );
                 clearTimeout(timeoutId);
-                if (res && res.success && res.data && Array.isArray(res.data.genres) && res.data.genres.length > 0) {
-                    presetKey = mapGenresToPreset(res.data.genres);
+                if (res && res.success && res.data) {
+                    presetKey = mapProfileToPreset(res.data.genres || [], res.data.vibes || [], song);
                 }
             } catch (e) {
                 clearTimeout(timeoutId);
             }
             if (!presetKey) {
-                presetKey = detectPresetLocal(song);
+                presetKey = mapProfileToPreset([], [], song);
             }
             if (cacheKey && presetKey) {
                 this._genreCache.set(cacheKey, presetKey);
@@ -405,8 +406,82 @@ class TerminalEqualizer {
         }
 
         if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
-        this.applyPreset(presetKey, { isAuto: true, tau: 0.5 });
+        this.applyPreset(presetKey, { isAuto: true, tau: 0.4 });
         this.lastTunedHint = `AUTO (${EQ_PRESETS[presetKey]?.name || presetKey.toUpperCase()})`;
+        this.updateUI();
+
+        // Dynamically analyze the real-time audio spectrum of this track to fill deficient frequencies
+        this._scheduleSpectralCalibration(presetKey, token);
+    }
+
+    async _scheduleSpectralCalibration(archetypeKey, token) {
+        if (!this.tuneAnalyser) return;
+        // Wait ~1.8 seconds after track load for audio decoding and steady-state playback
+        await new Promise(r => setTimeout(r, 1800));
+        if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
+
+        // Verify player is actively playing and not crossfading
+        if (!window.player?.isPlaying || window.player?.crossfadeStarted) {
+            for (let i = 0; i < 5; i++) {
+                await new Promise(r => setTimeout(r, 600));
+                if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
+                if (window.player?.isPlaying && !window.player?.crossfadeStarted) break;
+            }
+            if (!window.player?.isPlaying || window.player?.crossfadeStarted) return;
+        }
+
+        const fftSize = this.tuneAnalyser.fftSize;
+        const binCount = this.tuneAnalyser.frequencyBinCount;
+        const sampleRate = this.audioCtx?.sampleRate || 48000;
+        const floatData = new Float32Array(binCount);
+
+        // Accumulate linear power across 20 frames (~1.0 second, 50ms intervals)
+        const frames = 20;
+        const bandAccumPower = new Float64Array(10).fill(0);
+        let validFrames = 0;
+
+        for (let f = 0; f < frames; f++) {
+            if (token !== this._autoToken || !this.autoMode || !this.enabled || !window.player?.isPlaying || window.player?.crossfadeStarted) break;
+            this.tuneAnalyser.getFloatFrequencyData(floatData);
+
+            for (let b = 0; b < 10; b++) {
+                const fc = EQ_FREQUENCIES[b];
+                const bandDb = bandPowerDb(floatData, sampleRate, fftSize, fc);
+                bandAccumPower[b] += Math.pow(10, bandDb / 10);
+            }
+            validFrames++;
+            await new Promise(r => setTimeout(r, 50));
+        }
+
+        if (token !== this._autoToken || !this.autoMode || !this.enabled || validFrames < 8) return;
+
+        const avgBandDb = Array.from(bandAccumPower).map(sumP => {
+            const avgP = sumP / validFrames;
+            return 10 * Math.log10(Math.max(avgP, 1e-12));
+        });
+
+        // Ensure track is not in a silent intro (< -85 dBFS at 1kHz)
+        if (avgBandDb[5] < -85) return;
+
+        // Phase 2: Spectral Reclassification
+        // If metadata gave us a weak guess (flat/pop), use the ACTUAL measured
+        // audio spectrum to determine the real genre archetype.
+        const reclassifiedKey = classifySpectralProfile(avgBandDb, archetypeKey);
+        const effectiveArchetype = reclassifiedKey || archetypeKey;
+
+        // If reclassified, also re-apply the base preset first for a smooth transition
+        if (effectiveArchetype !== archetypeKey) {
+            if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
+            this.applyPreset(effectiveArchetype, { isAuto: true, tau: 0.3 });
+        }
+
+        // Phase 3: Spectral deficiency filling relative to the (potentially reclassified) archetype
+        const { gains, hint } = analyzeAndCompensate(avgBandDb, effectiveArchetype);
+
+        if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
+        this.gains = [...gains];
+        this.lastTunedHint = `AUTO·${hint}`;
+        this.applyFilters({ tau: 0.3 });
         this.updateUI();
     }
 
@@ -750,6 +825,9 @@ class TerminalEqualizer {
 
     getPresetDisplayName() {
         if (!this.enabled) return 'BYPASS';
+        if (this.autoMode && this.lastTunedHint) {
+            return this.lastTunedHint.replace(/^AUTO \((.+)\)$/, '$1');
+        }
         if (this.currentPreset === 'perfect') return this.lastTunedHint || 'PERFECT';
         if (this.currentPreset === 'custom') return 'CUSTOM';
         const p = EQ_PRESETS[this.currentPreset];

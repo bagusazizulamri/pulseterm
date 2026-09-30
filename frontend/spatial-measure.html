@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spatial Audio Measure (Chrome)</title>
+    <style>
+        body { background: #121212; color: #fff; font-family: monospace; padding: 20px; }
+        pre { background: #222; padding: 15px; border-radius: 8px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+        th { background: #333; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>Spatial Audio Measurement (Chrome Native HRTF)</h1>
+    <button id="run-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Run Measurements</button>
+    <div id="status" style="margin-top: 20px; font-weight: bold;"></div>
+    <div id="results"></div>
+
+    <script type="module">
+        import { spatial, SPATIAL_CONFIGS, SPATIAL_MODES } from './js/spatial.js?v=8';
+
+        function LCG(seed) {
+            this.seed = seed;
+            this.next = () => {
+                this.seed = (this.seed * 1664525 + 1013904223) % 4294967296;
+                return (this.seed / 4294967296) * 2 - 1;
+            };
+        }
+
+        async function measureSignal(modeName, signalType) {
+            const sampleRate = 48000;
+            const duration = 0.6;
+            const ctx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
+            
+            // Bypass init restrictions by resetting
+            spatial.audioCtx = null;
+            spatial.inputNode = null;
+            spatial.mode = 'off';
+            spatial._reverbCache = new Map();
+            
+            spatial.init(ctx);
+            spatial.applyMode(modeName, true);
+
+            await new Promise(r => setTimeout(r, 300)); // wait for crossfade
+
+            const input = ctx.createGain();
+            input.connect(spatial.inputNode);
+            spatial.outputNode.connect(ctx.destination);
+
+            const lcg = new LCG(12345);
+
+            if (signalType === 'lead1k') {
+                const osc = ctx.createOscillator(); osc.frequency.value = 1000;
+                const gain = ctx.createGain(); gain.gain.value = 0.707;
+                osc.connect(gain); gain.connect(input); osc.start();
+            } else if (signalType === 'bass80') {
+                const osc = ctx.createOscillator(); osc.frequency.value = 80;
+                const gain = ctx.createGain(); gain.gain.value = 0.707;
+                osc.connect(gain); gain.connect(input); osc.start();
+            } else if (signalType === 'side3k' || signalType === 'sideBass80') {
+                const osc = ctx.createOscillator(); 
+                osc.frequency.value = signalType === 'side3k' ? 3200 : 80;
+                const gain = ctx.createGain(); gain.gain.value = 0.707;
+                const merger = ctx.createChannelMerger(2);
+                const inv = ctx.createGain(); inv.gain.value = -1;
+                osc.connect(gain); gain.connect(merger, 0, 0);
+                gain.connect(inv); inv.connect(merger, 0, 1);
+                merger.connect(input); osc.start();
+            } else if (signalType === 'noise') {
+                const len = sampleRate * duration;
+                const buf = ctx.createBuffer(2, len, sampleRate);
+                for (let c=0; c<2; c++) {
+                    const d = buf.getChannelData(c);
+                    for (let i=0; i<len; i++) d[i] = lcg.next() * 0.707;
+                }
+                const src = ctx.createBufferSource(); src.buffer = buf;
+                src.connect(input); src.start();
+            } else if (signalType === 'haloTest') {
+                const len = sampleRate * duration;
+                const buf = ctx.createBuffer(1, len, sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i=0; i<len; i++) d[i] = lcg.next() * 0.707;
+                const src = ctx.createBufferSource(); src.buffer = buf;
+                const bpf = ctx.createBiquadFilter();
+                bpf.type = 'bandpass'; bpf.frequency.value = 3000; bpf.Q.value = 0.5;
+                src.connect(bpf); bpf.connect(input); src.start();
+            }
+
+            const renderedBuffer = await ctx.startRendering();
+            const L = renderedBuffer.getChannelData(0);
+            const R = renderedBuffer.getChannelData(1);
+            let sumSq = 0, peak = 0, dot = 0, sumL2 = 0, sumR2 = 0;
+            const startIdx = Math.floor(0.1 * sampleRate);
+            
+            for (let i = startIdx; i < L.length; i++) {
+                const l = L[i], r = R[i];
+                sumSq += l*l + r*r;
+                peak = Math.max(peak, Math.abs(l), Math.abs(r));
+                dot += l*r; sumL2 += l*l; sumR2 += r*r;
+            }
+            const frames = L.length - startIdx;
+            const rmsDb = 20 * Math.log10(Math.sqrt(sumSq / (2 * frames)) || 1e-9);
+            const peakDb = 20 * Math.log10(peak || 1e-9);
+            const correlation = dot / (Math.sqrt(sumL2 * sumR2) || 1e-9);
+
+            return { rmsDb, peakDb, correlation };
+        }
+
+        document.getElementById('run-btn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('status');
+            const resultsEl = document.getElementById('results');
+            statusEl.innerText = "Running measurements... Please wait.";
+            resultsEl.innerHTML = "";
+
+            try {
+                const signals = ['lead1k', 'bass80', 'side3k', 'sideBass80', 'noise', 'haloTest'];
+                const results = {};
+                
+                for (const mode of SPATIAL_MODES) {
+                    statusEl.innerText = `Measuring ${mode.toUpperCase()}...`;
+                    results[mode] = {};
+                    for (const sig of signals) {
+                        results[mode][sig] = await measureSignal(mode, sig);
+                    }
+                }
+
+                statusEl.innerText = "Finished! Analyzing results...";
+                
+                const off = results.off;
+                let html = ``;
+
+                for (const mode of ['studio', 'wide', 'concert']) {
+                    const cur = results[mode];
+                    const leadDiff = cur.lead1k.rmsDb - off.lead1k.rmsDb;
+                    const bassDiff = cur.bass80.rmsDb - off.bass80.rmsDb;
+                    const side3kDiff = cur.side3k.rmsDb - off.side3k.rmsDb;
+                    const sideBassDiff = cur.sideBass80.rmsDb - off.sideBass80.rmsDb;
+                    const noiseDiff = cur.noise.rmsDb - off.noise.rmsDb;
+                    const haloVocalDiff = cur.haloTest.rmsDb - off.haloTest.rmsDb;
+                    const peak = Math.max(cur.lead1k.peakDb, cur.noise.peakDb, cur.side3k.peakDb);
+                    const haloCorrel = cur.haloTest.correlation;
+
+                    const checks = [
+                        { name: "Lead 1k (±1 dB)", val: leadDiff, pass: Math.abs(leadDiff) <= 1.0 },
+                        { name: "Bass 80 (±1 dB)", val: bassDiff, pass: Math.abs(bassDiff) <= 1.0 },
+                        { name: "Side 3.2k (+2..+5 dB)", val: side3kDiff, pass: side3kDiff >= 2.0 && side3kDiff <= 5.0 },
+                        { name: "Side Bass 80 (<= -6 dB)", val: sideBassDiff, pass: sideBassDiff <= -6.0 },
+                        { name: "Noise RMS (<= 1 dB diff)", val: noiseDiff, pass: noiseDiff <= 1.0 },
+                        { name: "Vocal Band (±1.5 dB)", val: haloVocalDiff, pass: Math.abs(haloVocalDiff) <= 1.5 },
+                        { name: "Max Peak (<= -1 dBFS)", val: peak, pass: peak <= -1.0 },
+                        { name: "Halo Correl (Lower)", val: haloCorrel, pass: haloCorrel < off.haloTest.correlation }
+                    ];
+
+                    html += `<h3>Mode: ${mode.toUpperCase()}</h3><table><tr><th>Metric</th><th>Value</th><th>Result</th></tr>`;
+                    for (const chk of checks) {
+                        const statusClass = chk.pass ? 'pass' : 'fail';
+                        const statusText = chk.pass ? 'PASS' : 'FAIL';
+                        html += `<tr><td>${chk.name}</td><td>${chk.val.toFixed(2)}</td><td class="${statusClass}"><strong>${statusText}</strong></td></tr>`;
+                    }
+                    html += `</table>`;
+                }
+
+                resultsEl.innerHTML = html;
+                statusEl.innerText = "Done.";
+            } catch (err) {
+                statusEl.innerText = "Error occurred: " + err.message;
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>

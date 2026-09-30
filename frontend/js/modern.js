@@ -20,6 +20,7 @@ class ModernUiEngine {
     constructor() {
         this.mode = 'tui';
         this.observer = null;
+        this.observedTargets = [];
         this.isModern = false;
         this.isCleaning = false;
         this.animFrameId = null;
@@ -43,6 +44,11 @@ class ModernUiEngine {
             } else {
                 this.mode = 'tui';
             }
+
+            // Immediately persist active mode so page refreshes and reloads remember it
+            try {
+                localStorage.setItem('pulseterm_ui_mode', this.mode);
+            } catch (e) {}
 
             // Clean URL parameter without reload
             if (urlMode) {
@@ -191,7 +197,16 @@ class ModernUiEngine {
                 searchGo.textContent = 'Search';
             }
 
-            // 4. Run deep content cleaner safely
+            // 4. Clean play/pause button glyphs
+            const playBtn = document.getElementById('play-btn');
+            if (playBtn) {
+                const gPlay = playBtn.querySelector('.glyph-play');
+                const gPause = playBtn.querySelector('.glyph-pause');
+                if (gPlay) this.cleanText(gPlay, '▶');
+                if (gPause) this.cleanText(gPause, '❚❚');
+            }
+
+            // 5. Run deep content cleaner safely
             this.cleanModernContent();
         } catch (err) {
             console.error('[ModernUI] Transform error:', err);
@@ -228,45 +243,124 @@ class ModernUiEngine {
             if (activeNav && window.navigate) {
                 window.navigate(activeNav.dataset.page || 'home');
             }
+
+            // 6. Restore every node tracked by cleanText()
+            this.restoreText(document);
         } catch (err) {
             console.error('[ModernUI] Restore error:', err);
         }
+    }
+
+    cleanText(el, cleaned) {
+        if (el && cleaned !== undefined && el.textContent !== cleaned) {
+            if (!el.hasAttribute('data-orig-text')) {
+                try { el.setAttribute('data-orig-text', el.textContent); } catch (e) {}
+            }
+            el.textContent = cleaned;
+        }
+    }
+
+    restoreText(scope) {
+        (scope || document).querySelectorAll('[data-orig-text]').forEach(el => {
+            const orig = el.getAttribute('data-orig-text');
+            if (orig !== null && el.textContent !== orig) el.textContent = orig;
+            el.removeAttribute('data-orig-text');
+        });
+    }
+
+    stripBrackets(text) {
+        const t = String(text || '').trim();
+        if (t.startsWith('[') && t.endsWith(']')) return t.slice(1, -1).trim();
+        return t;
     }
 
     cleanModernContent() {
         if (!this.isModern || this.isCleaning) return;
         this.isCleaning = true;
 
-        // Disconnect observer temporarily to prevent ANY recursive mutations
+        // Stack-safe disconnect: observe() is additive per spec, so drop
+        // every stacked target before cleaning to avoid N× callbacks.
         if (this.observer) {
             this.observer.disconnect();
+            this.observedTargets = [];
         }
 
         try {
-            // 1. Clean Top Bar & Badges
+            // 1. Clean Top Bar & Badges (leaf nodes only — nested spans
+            // like [MODE: <span>] are skipped to avoid clobbering).
             document.querySelectorAll(`
                 .top-bar-actions .tui-badge,
                 .top-bar-actions .tui-btn,
-                #player-state-badge,
                 #player-audio-quality,
                 .eq-action-buttons .tui-btn,
                 .eq-state-badge,
                 .tui-clear-btn,
                 .drawer-head-actions .tui-btn,
-                .drawer-head button.tui-btn
+                .eq-chip,
+                .suggestion-item,
+                #toast-action
             `).forEach(el => {
                 if (el.children.length === 0) {
                     const text = el.textContent.trim();
                     if (text.startsWith('[') && text.endsWith(']')) {
-                        let cleaned = text.slice(1, -1).trim();
+                        let cleaned = this.stripBrackets(text);
                         if (cleaned === 'CLOSE ×' || cleaned === '✕') cleaned = '✕';
+                        else if (cleaned === 'CLOSE ESC') cleaned = 'Close';
                         else if (cleaned === 'HELP: ?') cleaned = 'Shortcuts';
                         else if (cleaned === 'CONFIG') cleaned = 'Settings';
                         else if (cleaned === 'VIZ: CAVA') cleaned = 'Visualizer';
-                        if (el.textContent !== cleaned) el.textContent = cleaned;
+                        else if (/^(PLAYING|PAUSED|IDLE)$/.test(cleaned)) cleaned = cleaned.charAt(0) + cleaned.slice(1).toLowerCase();
+                        this.cleanText(el, cleaned);
+                    } else if (text.startsWith('> ')) {
+                        this.cleanText(el, text.slice(2));
                     }
                 }
             });
+
+            // 1b. Live badges rewritten per-tick by player.js / equalizer.js.
+            const stateBadge = document.getElementById('player-state-badge');
+            if (stateBadge) {
+                const t = this.stripBrackets(stateBadge.textContent);
+                if (/^(PLAYING|PAUSED|IDLE)$/i.test(t)) {
+                    this.cleanText(stateBadge, t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+                }
+            }
+            const qualityBadge = document.getElementById('player-audio-quality');
+            if (qualityBadge) {
+                const m = qualityBadge.textContent.trim().match(/^\[(HQ|SQ)\s*·\s*(.+)\]$/);
+                if (m) this.cleanText(qualityBadge, `${m[1]} · ${m[2]}`);
+            }
+            const repeatBtn = document.getElementById('repeat-btn');
+            if (repeatBtn && repeatBtn.children.length === 0) {
+                const t = this.stripBrackets(repeatBtn.textContent);
+                const map = { 'REP: OFF': 'Repeat Off', 'REP: ALL': 'Repeat All', 'REP: ONE': 'Repeat One' };
+                if (map[t]) this.cleanText(repeatBtn, map[t]);
+            }
+            const crtBtn = document.getElementById('crt-toggle-btn');
+            if (crtBtn && crtBtn.children.length === 0) {
+                const t = this.stripBrackets(crtBtn.textContent);
+                if (/^CRT\s*:\s*(ON|OFF)$/i.test(t)) this.cleanText(crtBtn, t.split(':')[1].trim() === 'ON' ? 'CRT On' : 'CRT Off');
+            }
+            const followBtn = document.getElementById('lyrics-autoscroll-btn');
+            if (followBtn && followBtn.children.length === 0) {
+                const t = this.stripBrackets(followBtn.textContent);
+                if (/^FOLLOW\s*:\s*(ON|OFF)$/i.test(t)) this.cleanText(followBtn, t.split(':')[1].trim() === 'ON' ? 'Follow On' : 'Follow Off');
+            }
+            const romanBtn = document.getElementById('lyrics-roman-btn');
+            if (romanBtn && romanBtn.children.length === 0) {
+                const t = this.stripBrackets(romanBtn.textContent);
+                if (/^SCRIPT\s*:/i.test(t)) this.cleanText(romanBtn, t.replace(/^SCRIPT\s*:\s*/i, ''));
+            }
+            const lyricsBadge = document.getElementById('lyrics-status-badge');
+            if (lyricsBadge && lyricsBadge.children.length === 0) {
+                const t = this.stripBrackets(lyricsBadge.textContent);
+                if (/^STATUS\s*:/i.test(t)) this.cleanText(lyricsBadge, t.replace(/^STATUS\s*:\s*/i, ''));
+            }
+            const eqToggle = document.getElementById('eq-toggle-btn');
+            if (eqToggle && eqToggle.children.length === 0) {
+                const t = this.stripBrackets(eqToggle.textContent);
+                if (/^EQ\s*:/i.test(t)) this.cleanText(eqToggle, t.replace(/^EQ\s*:\s*/i, ''));
+            }
 
             // 2. Clean Page Headers & ASCII frames (┌─ ... ─┐)
             document.querySelectorAll('.page-header h1, .drawer-head h2, .drawer-head h3').forEach(h => {
@@ -307,47 +401,94 @@ class ModernUiEngine {
                 if (eb.textContent !== text) eb.textContent = text;
             });
 
-            // 4. Clean Filter Buttons ([ALL], [SONGS], etc.)
-            document.querySelectorAll('.filter-btn, .search-filters button').forEach(btn => {
+            document.querySelectorAll('.filter-btn, .search-filters button, .quick-tag-btn, #eq-auto-btn, #eq-auto-toggle-btn, #spatial-panel-btn, #eq-perfect-btn, .zoom-preset-btn').forEach(btn => {
+                if (btn.children.length > 0) return;
                 const current = btn.textContent.trim();
                 if (current.startsWith('[') && current.endsWith(']')) {
-                    const text = current.slice(1, -1).trim();
-                    const cleaned = text.charAt(0) + text.slice(1).toLowerCase();
-                    if (btn.textContent !== cleaned) btn.textContent = cleaned;
+                    const text = this.stripBrackets(current);
+                    // Keep EQ/DSP telemetry uppercase-ish, prettify the rest
+                    const cleaned = /^(EQ|DSP|SPATIAL|AUTO|PERFECT|RESET)/i.test(text)
+                        ? text
+                        : (text.charAt(0) + text.slice(1).toLowerCase());
+                    this.cleanText(btn, cleaned);
                 }
             });
 
-            // 5. Clean Specific Buttons
-            const backBtn = document.getElementById('detail-back');
-            if (backBtn && backBtn.textContent.includes('RETURN')) backBtn.textContent = '← Back';
+            // 5. Clean Specific Buttons (dynamic pages + drawers)
+            const textBtns = [
+                ['detail-back', 'RETURN', '← Back'],
+                ['pl-detail-back', 'RETURN', '← Back'],
+                ['detail-play', 'PLAY ALL', '▶ Play All'],
+                ['pl-detail-play', 'PLAY ALL', '▶ Play All'],
+                ['clear-hist-btn', 'PURGE', 'Clear History'],
+                ['new-pl-btn', 'NEW PLAYLIST', '+ New Playlist'],
+                ['pl-detail-delete', 'DELETE PLAYLIST', 'Delete Playlist'],
+                ['search-clear-btn', '✕', '✕'],
+                ['viz-expand-btn', 'EXPAND', 'Expand'],
+                ['continue-btn', 'AUTOPLAY', 'Autoplay'],
+                ['shuffle-btn', 'SHUF', 'Shuffle'],
+                ['queue-panel', null, null],
+            ];
+            textBtns.forEach(([id, match, out]) => {
+                if (!match) return;
+                const el = document.getElementById(id);
+                if (el && el.children.length === 0 && el.textContent.includes(match)) this.cleanText(el, out);
+            });
+            // Static player-bar buttons that never get rewritten by player.js
+            document.querySelectorAll('#player-bar .player-controls .tui-btn, #player-bar .player-right .tui-btn, #lyrics-toggle').forEach(el => {
+                if (el.id === 'play-btn' || el.id === 'repeat-btn' || el.children.length > 0) return;
+                const t = el.textContent.trim();
+                const m = { '[◀◀]': '‹‹', '[▶▶]': '››', '[SHUF]': 'Shuffle', '[AUTOPLAY]': 'Autoplay', '[QUEUE]': 'Queue', '[LYRICS]': 'Lyrics' };
+                if (m[t]) this.cleanText(el, m[t]);
+            });
+            // Clean play/pause button glyphs if rendered or rewritten
+            const playBtn = document.getElementById('play-btn');
+            if (playBtn) {
+                const gPlay = playBtn.querySelector('.glyph-play');
+                const gPause = playBtn.querySelector('.glyph-pause');
+                if (gPlay && gPlay.textContent.includes('[')) this.cleanText(gPlay, '▶');
+                if (gPause && gPause.textContent.includes('[')) this.cleanText(gPause, '❚❚');
+            }
+            const toastAction = document.getElementById('toast-action');
+            if (toastAction && toastAction.children.length === 0) {
+                const t = this.stripBrackets(toastAction.textContent);
+                if (t === 'UNDO') this.cleanText(toastAction, 'Undo');
+            }
 
-            const playAllBtn = document.getElementById('detail-play');
-            if (playAllBtn && playAllBtn.textContent.includes('PLAY ALL')) playAllBtn.textContent = '▶ Play All';
-
-            const purgeHistBtn = document.getElementById('clear-hist-btn');
-            if (purgeHistBtn && purgeHistBtn.textContent.includes('PURGE')) purgeHistBtn.textContent = 'Clear History';
-
-            const newPlBtn = document.getElementById('new-pl-btn');
-            if (newPlBtn && newPlBtn.textContent.includes('NEW PLAYLIST')) newPlBtn.textContent = '+ New Playlist';
-
-            // 6. Clean Track Ranks ([01] -> 1)
+            // 6. Clean Track Ranks ([01] -> 1, [SONG]/[VIDEO] -> Song/Video)
             document.querySelectorAll('.rank').forEach(r => {
                 const current = r.textContent.trim();
                 if (current.startsWith('[') && current.endsWith(']')) {
-                    const num = parseInt(current.slice(1, -1), 10);
-                    if (!isNaN(num) && r.textContent !== String(num)) {
-                        r.textContent = String(num);
+                    const inner = current.slice(1, -1).trim();
+                    const num = parseInt(inner, 10);
+                    if (!isNaN(num) && String(num) === inner.replace(/^0+(\d)/, '$1')) {
+                        this.cleanText(r, String(num));
+                    } else if (/^(SONG|VIDEO|PL)$/i.test(inner)) {
+                        this.cleanText(r, inner.charAt(0).toUpperCase() + inner.slice(1).toLowerCase());
                     }
                 }
             });
+            document.querySelectorAll('.q-rank').forEach(r => {
+                const t = r.textContent.trim();
+                if (/^0\d$/.test(t)) this.cleanText(r, String(parseInt(t, 10)));
+            });
 
-            // 7. Clean Status Labels
-            document.querySelectorAll('.label, .empty-state .label').forEach(lbl => {
+            // 7. Clean Status Labels + eyebrows + fallback covers + misc
+            document.querySelectorAll('.label, .empty-state .label, .eyebrow-label, .cover-zoom-prompt, .cover-fallback, .tui-state-badge, .card-subtitle .tui-state-badge').forEach(lbl => {
+                if (lbl.children.length > 0) return;
                 const current = lbl.textContent.trim();
                 if (current.startsWith('[') && current.endsWith(']')) {
-                    const cleaned = current.slice(1, -1).trim();
-                    if (lbl.textContent !== cleaned) lbl.textContent = cleaned;
+                    this.cleanText(lbl, this.stripBrackets(current));
                 }
+            });
+            document.querySelectorAll('.artwork-meta-footer #artwork-spec-label').forEach(lbl => {
+                const t = lbl.textContent.trim();
+                if (t.startsWith('[') && t.endsWith(']')) this.cleanText(lbl, this.stripBrackets(t));
+            });
+            document.querySelectorAll('.lyrics-head-actions .tui-btn').forEach(el => {
+                if (el.children.length > 0) return;
+                const t = el.textContent.trim();
+                if (t === '[CLOSE ESC]') this.cleanText(el, 'Close');
             });
         } catch (err) {
             console.error('[ModernUI] Clean error:', err);
@@ -361,23 +502,56 @@ class ModernUiEngine {
     setupObserver() {
         if (!this.observer) {
             this.observer = new MutationObserver(() => {
-                if (this.isModern && !this.isCleaning) {
-                    if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-                    this.animFrameId = requestAnimationFrame(() => {
-                        this.cleanModernContent();
-                    });
+                if (this.isModern) {
+                    // Self-healing guard: if any external script strips ui-mode-modern, restore it
+                    if (document.body && !document.body.classList.contains('ui-mode-modern')) {
+                        document.body.classList.add('ui-mode-modern');
+                    }
+                    if (document.documentElement && !document.documentElement.classList.contains('ui-mode-modern')) {
+                        document.documentElement.classList.add('ui-mode-modern');
+                    }
+                    if (!this.isCleaning) {
+                        if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+                        this.animFrameId = requestAnimationFrame(() => {
+                            this.cleanModernContent();
+                        });
+                    }
                 }
             });
         }
 
-        // Only observe main dynamic content container, never document.body characterData!
-        const target = document.getElementById('page-content') || document.body;
-        if (target) {
-            this.observer.observe(target, {
-                childList: true,
-                subtree: true
-            });
+        // Observe document.body class attribute changes for self-healing
+        if (document.body && !this.observedTargets.includes(document.body)) {
+            this.observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+            this.observedTargets.push(document.body);
         }
+
+        // Observe every live region once. observe() is additive, so guard
+        // with observedTargets — re-calling setupObserver() after each clean
+        // must NOT stack another callback on the same node.
+        const targets = [
+            document.getElementById('page-content'),
+            document.getElementById('player-bar'),
+            document.getElementById('queue-panel'),
+            document.getElementById('equalizer-panel'),
+            document.getElementById('now-playing'),
+            document.getElementById('settings-panel'),
+            document.getElementById('visualizer-drawer'),
+            document.getElementById('top-bar'),
+        ].filter(Boolean);
+        targets.forEach(target => {
+            if (!this.observedTargets.includes(target)) {
+                this.observer.observe(target, { childList: true, subtree: true });
+                this.observedTargets.push(target);
+            }
+        });
+    }
+
+    disconnectObserver() {
+        if (this.observer) this.observer.disconnect();
+        this.observedTargets = [];
+        if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
     }
 }
 

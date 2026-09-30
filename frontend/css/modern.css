@@ -322,6 +322,32 @@ body.ui-mode-modern #play-btn:active {
     transform: scale(0.96) !important;
 }
 
+body.ui-mode-modern #play-btn .glyph-play,
+body.ui-mode-modern #play-btn .glyph-pause {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+}
+
+body.ui-mode-modern #play-btn .glyph-play {
+    margin-left: 2px !important;
+}
+
+body.ui-mode-modern #play-btn .glyph-pause {
+    display: none !important;
+}
+
+body.ui-mode-modern #play-btn[data-state="playing"] .glyph-play {
+    display: none !important;
+}
+
+body.ui-mode-modern #play-btn[data-state="playing"] .glyph-pause {
+    display: inline-flex !important;
+    margin-left: 0 !important;
+}
+
 body.ui-mode-modern .ctrl-btn {
     border-radius: 9999px !important;
     border: 1px solid transparent !important;
@@ -638,7 +664,85 @@ body.ui-mode-modern .modern-seg-btn.active {
 }
 
 /* =========================================================
-   10. SETTINGS CONTROLS & FORM INPUTS IN MODERN MODE
+   11. QUEUE / LYRICS / EQUALIZER / TOAST / CONTEXT PANELS
+   ========================================================= */
+body.ui-mode-modern #queue-panel,
+body.ui-mode-modern #lyrics-panel,
+body.ui-mode-modern #equalizer-panel,
+body.ui-mode-modern #tune-panel,
+body.ui-mode-modern #now-playing,
+body.ui-mode-modern #visualizer-drawer .viz-body,
+body.ui-mode-modern .toast,
+body.ui-mode-modern #toast,
+body.ui-mode-modern #context-menu {
+    background: rgba(15, 23, 42, 0.72) !important;
+    backdrop-filter: blur(28px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.ui-mode-modern .queue-drawer-head h2,
+body.ui-mode-modern .lyrics-drawer-head h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    letter-spacing: -0.01em !important;
+    color: #f8fafc !important;
+}
+
+/* Suggestion dropdown + context menu + toast */
+body.ui-mode-modern .suggestion-item {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+}
+
+body.ui-mode-modern .suggestion-item:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern #context-menu button {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif !important;
+    font-size: 0.85rem !important;
+}
+
+/* Queue rank numbers */
+body.ui-mode-modern .q-rank,
+body.ui-mode-modern .rank {
+    font-variant-numeric: tabular-nums !important;
+    color: #94a3b8 !important;
+}
+
+/* Player-bar glyph buttons: render as clean pill labels */
+body.ui-mode-modern #player-bar .player-controls .tui-btn,
+body.ui-mode-modern #player-bar .player-right .tui-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    padding: 0.5rem 0.95rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+}
+
+/* Hide the VIZ mini ASCII readout (replaced by real canvas visualizer) */
+body.ui-mode-modern #player-mini-viz {
+    display: none !important;
+}
+
+/* EQ / tune panel chips */
+body.ui-mode-modern .eq-chip,
+body.ui-mode-modern #eq-auto-btn,
+body.ui-mode-modern #eq-auto-toggle-btn,
+body.ui-mode-modern #spatial-panel-btn,
+body.ui-mode-modern #eq-perfect-btn {
+    border-radius: 9999px !important;
+    font-weight: 600 !important;
+}
+
+/* =========================================================
+   12. SETTINGS CONTROLS & FORM INPUTS IN MODERN MODE
    ========================================================= */
 body.ui-mode-modern input[type="range"] {
     accent-color: #38bdf8 !important;
