@@ -88,6 +88,12 @@ async def lifespan(app: FastAPI):
     os.makedirs(os.path.join(frontend_dir, "assets"), exist_ok=True)
     get_proxy_client()
     yield
+    # Flush any debounced session-cache writes so the last volume/position
+    # burst lands on disk before the process exits.
+    try:
+        player_mgr.flush_pending_save()
+    except Exception:
+        pass
     global _proxy_client
     if _proxy_client is not None and not _proxy_client.is_closed:
         await _proxy_client.aclose()

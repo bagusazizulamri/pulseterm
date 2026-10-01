@@ -9,9 +9,22 @@ user queue that always plays first.
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
+import logging
+import threading
 from typing import Optional
 from models import Song
 from config import SESSION_CACHE
+
+# ponytail: ganti ke fsync-only-on-shutdown kalau volume slider masih terasa lambat.
+log = logging.getLogger("pulseterm.player")
+
+# Coalesce rapid setter writes (e.g. volume slider, position scrubbing).
+# Sync write = os.fsync(); on SSD/RPi SD this can stall 5-20ms. Burst from
+# a slider = 60+ calls/sec, so debounce to a single trailing write.
+_SAVE_DEBOUNCE_MS = 400
+_save_lock = threading.Lock()
+_save_pending = False
+_save_timer = None
 
 
 def _as_song(item):
@@ -113,7 +126,7 @@ class PlayerManager:
         except Exception:
             pass
 
-    def save_state(self):
+    def _save_state_sync(self):
         try:
             state = {
                 "context": [s.__dict__ for s in self._context],
@@ -146,8 +159,64 @@ class PlayerManager:
                 except Exception:
                     pass
             os.replace(tmp, SESSION_CACHE)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("save_state failed: %s", e)
+
+    def save_state(self, immediate=True):
+        # Default: immediate write preserves the original synchronous-fsync
+        # contract for every existing call site. Hot setters (volume, position,
+        # muted) override with immediate=False to coalesce slider bursts.
+        if immediate:
+            self._cancel_pending_save()
+            self._save_state_sync()
+            return
+        global _save_timer, _save_pending
+        with _save_lock:
+            _save_pending = True
+            if _save_timer is not None:
+                try:
+                    _save_timer.cancel()
+                except Exception:
+                    pass
+            t = threading.Timer(_SAVE_DEBOUNCE_MS / 1000.0, self._flush_pending_save)
+            t.daemon = True
+            _save_timer = t
+            t.start()
+
+    def _cancel_pending_save(self):
+        global _save_timer, _save_pending
+        with _save_lock:
+            _save_pending = False
+            if _save_timer is not None:
+                try:
+                    _save_timer.cancel()
+                except Exception:
+                    pass
+                _save_timer = None
+
+    def _flush_pending_save(self):
+        global _save_pending
+        with _save_lock:
+            if not _save_pending:
+                return
+            _save_pending = False
+            _save_timer = None
+        self._save_state_sync()
+
+    def flush_pending_save(self):
+        """Force a synchronous write if a debounced write is pending."""
+        global _save_pending, _save_timer
+        with _save_lock:
+            if not _save_pending:
+                return
+            _save_pending = False
+            if _save_timer is not None:
+                try:
+                    _save_timer.cancel()
+                except Exception:
+                    pass
+                _save_timer = None
+        self._save_state_sync()
 
     # ---------- context ----------
 
@@ -486,7 +555,7 @@ class PlayerManager:
             self._position = max(0, int(val or 0))
         except (TypeError, ValueError):
             self._position = 0
-        self.save_state()
+        self.save_state(immediate=False)  # debounced — hot path
 
     @property
     def volume(self):
@@ -500,7 +569,7 @@ class PlayerManager:
             self._volume = 0.8
         if self._volume > 0:
             self._muted = False
-        self.save_state()
+        self.save_state(immediate=False)  # debounced — hot path
 
     @property
     def muted(self):
@@ -509,7 +578,7 @@ class PlayerManager:
     @muted.setter
     def muted(self, val):
         self._muted = bool(val)
-        self.save_state()
+        self.save_state(immediate=False)  # debounced — hot path
 
     @property
     def shuffle(self):

@@ -8,6 +8,9 @@ watch-playlist + related rails (already vibe-adjacent), re-ranked and
 strictly filtered so every returned track matches the seed on genre or vibe.
 """
 import re
+import logging
+
+log = logging.getLogger("pulseterm.recommend")
 
 GENRE_KEYWORDS = {
     "dangdut": ["dangdut", "koplo", "campursari", "keroncong", "pop jawa", "tarling", "denny caknan", "happy asmara", "didik kempot", "didi kempot", "rhoma irama", "via vallen", "nella kharisma", "ndx aka", "guyon waton", "gilga sahid"],
@@ -391,7 +394,9 @@ def _cache_get(video_id, limit, exclude=None):
         tracks = hit[1]
         if exclude:
             tracks = [t for t in tracks if t.get("videoId") not in exclude]
-        if len(tracks) >= 5 or (tracks and not exclude):
+        # Lowered from >=5 to >=2 so niche tracks (3 vibe matches) stop
+        # triggering full ytmusicapi re-resolve on every "extend" click.
+        if len(tracks) >= 2 or (tracks and not exclude):
             return tracks[:limit]
     return None
 
@@ -605,7 +610,7 @@ async def get_recommended_playlists():
                     if artist:
                         artist_counts[artist] += 3
     except Exception as e:
-        print("Telemetry query error:", e)
+        log.warning("Telemetry query error: %s", e)
 
     # Cache key based on top genres & most played track
     cache_key = f"{genre_weights.most_common(4)}_{most_played_track.get('title') if most_played_track else ''}"
@@ -653,7 +658,7 @@ async def get_recommended_playlists():
                         "playlists": art_playlists
                     })
             except Exception as e:
-                print("Artist spotlight playlist search error:", e)
+                log.warning("Artist spotlight playlist search error: %s", e)
 
     # Genre lanes for user's top genres (up to 2 dominant genres)
     for g in top_genres[:2]:
@@ -680,7 +685,7 @@ async def get_recommended_playlists():
                 "playlists": playlists
             })
         except Exception as e:
-            print(f"Genre {g} playlist search error:", e)
+            log.warning("Genre %s playlist search error: %s", g, e)
 
     result_data = {
         "top_genres": top_genres,
