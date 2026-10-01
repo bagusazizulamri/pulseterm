@@ -735,12 +735,12 @@ class TerminalEqualizer {
                             <span class="eq-meta-tag">PROFILE:</span>
                             <span class="eq-preset-indicator font-bold">${this.getPresetDisplayName()}</span>
                         </div>
-                        <span class="eq-state-badge ${this.enabled ? 'is-active' : 'is-bypassed'}">${this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]'}</span>
+                        <span class="eq-state-badge ${this.enabled ? 'is-active' : 'is-bypassed'}" data-eq-dsp>${this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]'}</span>
                     </div>
                     <div class="eq-action-buttons">
-                        <button id="eq-power-btn" onclick="equalizer.toggleBypass()" class="tui-btn ${this.enabled ? '' : 'btn-danger'}" title="Toggle EQ DSP bypass">${this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]'}</button>
+                        <button id="eq-power-btn" onclick="equalizer.toggleBypass()" data-eq-power class="tui-btn ${this.enabled ? '' : 'btn-danger'}" title="Toggle EQ DSP bypass">${this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]'}</button>
                         <button id="eq-perfect-btn" onclick="equalizer.perfectTune()" class="tui-btn eq-perfect-btn" title="Instant Real-Time Spectral Perfect Tune" style="display: ${window.expPerfectTuneEnabled !== false ? 'inline-block' : 'none'}">[⚡ PERFECT TUNE]</button>
-                        <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" class="tui-btn ${this.autoMode ? 'active' : ''}" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
+                        <button id="eq-auto-btn" onclick="equalizer.toggleAutoMode()" data-eq-auto class="tui-btn ${this.autoMode ? 'active' : ''}" title="Toggle Auto-EQ per song change">${this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]'}</button>
                         <button id="spatial-panel-btn" onclick="spatial.cycleMode()" class="tui-btn spatial-toggle-btn ${isSpatialActive ? 'active' : ''}" title="Cycle 3D Spatial Audio Mode (X)" style="display: ${window.expSpatialEnabled !== false ? 'inline-block' : 'none'}">${spatialLabel}</button>
                         <button onclick="equalizer.applyPreset('flat')" class="tui-btn" title="Reset all bands to 0dB">[RESET FLAT]</button>
                     </div>
@@ -875,14 +875,15 @@ class TerminalEqualizer {
         // Update header badge on top bar
         const topBtn = document.getElementById('eq-toggle-btn');
         if (topBtn) {
+            const modern = window.modernLabel;
             if (!this.enabled) {
-                topBtn.textContent = '[EQ: BYPASS]';
+                topBtn.textContent = modern ? modern.eqOff() : '[EQ: BYPASS]';
                 topBtn.classList.remove('active');
             } else if (this.autoMode) {
-                topBtn.textContent = `[EQ: AUTO·${this.getPresetDisplayName()}]`;
+                topBtn.textContent = modern ? modern.eqAuto(this.getPresetDisplayName()) : `[EQ: AUTO·${this.getPresetDisplayName()}]`;
                 topBtn.classList.add('active');
             } else {
-                topBtn.textContent = `[EQ: ${this.getPresetDisplayName()}]`;
+                topBtn.textContent = modern ? modern.eqOn(this.getPresetDisplayName()) : `[EQ: ${this.getPresetDisplayName()}]`;
                 topBtn.classList.toggle('active', this.currentPreset !== 'flat');
             }
         }
@@ -890,13 +891,13 @@ class TerminalEqualizer {
         // Update power button
         const powerBtn = document.getElementById('eq-power-btn');
         if (powerBtn) {
-            powerBtn.textContent = this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]';
+            powerBtn.textContent = window.modernLabel ? window.modernLabel.eqPower(this.enabled) : (this.enabled ? '[EQ: ENABLED]' : '[EQ: BYPASS]');
             powerBtn.classList.toggle('btn-danger', !this.enabled);
         }
 
         // Update Auto-EQ buttons across UI
         document.querySelectorAll('#eq-auto-btn, #eq-auto-toggle-btn').forEach(btn => {
-            btn.textContent = this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]';
+            btn.textContent = window.modernLabel ? window.modernLabel.eqAutoOn(this.autoMode) : (this.autoMode ? '[AUTO: ON]' : '[AUTO: OFF]');
             btn.classList.toggle('active', this.autoMode);
         });
 
@@ -917,7 +918,7 @@ class TerminalEqualizer {
         const badge = document.querySelector('.eq-state-badge');
         if (badge) {
             badge.className = `eq-state-badge ${this.enabled ? 'is-active' : 'is-bypassed'}`;
-            badge.textContent = this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]';
+            badge.textContent = window.modernLabel ? window.modernLabel.dsp(this.enabled) : (this.enabled ? '[DSP: ACTIVE]' : '[DSP: BYPASSED]');
         }
 
         // Sliders

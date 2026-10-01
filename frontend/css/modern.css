@@ -939,6 +939,25 @@ body.ui-mode-modern .save-btn:hover {
     transform: translateY(-1px) !important;
 }
 
+/* State badge + player pills: clean sentence-case, no brackets */
+body.ui-mode-modern #player-state-badge,
+body.ui-mode-modern .tui-state-badge {
+    color: var(--seal) !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em !important;
+}
+
+body.ui-mode-modern #repeat-btn,
+body.ui-mode-modern #eq-toggle-btn,
+body.ui-mode-modern #spatial-toggle-btn,
+body.ui-mode-modern #spatial-panel-btn,
+body.ui-mode-modern #eq-power-btn,
+body.ui-mode-modern #eq-auto-btn,
+body.ui-mode-modern #eq-auto-toggle-btn {
+    font-weight: 600 !important;
+}
+
 /* =========================================================
    12. MODERN SCROLLBARS, MOTION & ACCESSIBILITY
    ========================================================= */

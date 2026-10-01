@@ -562,9 +562,9 @@ class SpatialAudioEngine {
     updateUI() {
         const panelBtn = document.getElementById('spatial-panel-btn');
         const dashBtn = document.getElementById('spatial-toggle-btn');
-        const label = `[SPATIAL: ${SPATIAL_CONFIGS[this.mode].name}]`;
+        const modeName = SPATIAL_CONFIGS[this.mode].name;
         const isActive = this.mode !== 'off';
-        
+        const label = window.modernLabel ? window.modernLabel.spatial(modeName) : `[SPATIAL: ${modeName}]`;
         if (panelBtn) {
             panelBtn.textContent = label;
             panelBtn.classList.toggle('active', isActive);
