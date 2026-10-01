@@ -53,6 +53,7 @@
 ## 6. Pola frontend (wajib tiru)
 - ES module murni (`"type":"module"`), tanpa bundler/framework/CDN. `eq-core.js` MURNI: data + fungsi tanpa DOM/AudioContext (bisa jalan di `node`). `equalizer.js` wiring graph. Jangan campur.
 - Fungsi murni di `eq-core.js`: `analyzeAndCompensate, classifySpectralProfile, computeTuneCorrections, assessAirEligibility, refineAirCompensation, AIR_POLICY_BY_ARCHETYPE, normalize_artist`.
+- Toast mode-aware: pakai `equalizer._toast(msg)` (lihat `frontend/js/equalizer.js`). Di Modern mode helper otomatis memanggil `ModernUiEngine.formatModernToast()` — bracket `[…]` dihilangkan dan akronim AUTO-EQ/PERFECT TUNE/DSP/SPATIAL dipertahankan uppercase (lihat §7 smartEQ + §6 whitespace & retro-bracket). JANGAN panggil `window.player.showToast(...)` langsung dari equalizer.js supaya toast konsisten lintas mode UI.
 
 ## 7. smartEQ — Pipeline & invariant (WAJIB patuhi)
 
@@ -150,6 +151,7 @@ T10 (`t10-air-gating`) = boundary AIR GATING.
 - DO NOT: tambah dependensi baru; ubah envelope; ubah panjang array gains; ubah kontrak WS; reset `_order` diam-diam; `print()` baru; framework CSS/JS baru; abstraksi sekali-pakai (interface/factory/config untuk nilai tetap).
 - Sederhanakan sengaja → komentar `ponytail:` berisi plafon + upgrade path.
 - Test: backend tiru `test_api.py` (setUp `ASGITransport`, tearDown `aclose`); frontend tiru `t10-air-gating.test.mjs` (`node:test` + `assert/strict`).
+- Toast UI konsisten lintas mode: panggil `equalizer._toast(msg)` (atau helper mode-aware lain) daripada `window.player.showToast` langsung di equalizer.js. Lihat §6.
 
 ## 9. Prompt tempel untuk model lain
 ```

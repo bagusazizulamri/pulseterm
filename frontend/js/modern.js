@@ -274,6 +274,27 @@ class ModernUiEngine {
         return t;
     }
 
+    // #4 cosmetic: format toast message untuk Modern mode. Hilangkan
+    // bracket pembungkus dan ubah jadi sentence-case (kecuali Akronim
+    // umum AUTO-EQ/PERFECT TUNE/DSP/SPATIAL). Dipakai equalizer.js agar
+    // toast AUTO-EQ & PERFECT TUNE konsisten dengan gaya Modern.
+    formatModernToast(text) {
+        const stripped = this.stripBrackets(text);
+        // Akronim dibiarkan uppercase (lihat cleanModernContent whitelist).
+        // Prefix emoji/karakter non-word diizinkan (mis. "⚡ PERFECT TUNE").
+        if (/^\W*(AUTO[\s-]?EQ|PERFECT[\s-]?TUNE|DSP|SPATIAL|RESET)/i.test(stripped)) {
+            return stripped;
+        }
+        // Sentence-case: cari huruf alphabet pertama dan kapitalkan, sisanya
+        // lowercase. Prefix emoji/karakter non-word dibiarkan apa adanya.
+        const lower = stripped.toLowerCase();
+        const firstLetterIdx = lower.search(/[a-z]/);
+        if (firstLetterIdx < 0) return lower; // tidak ada huruf alphabet
+        return lower.slice(0, firstLetterIdx)
+            + lower.charAt(firstLetterIdx).toUpperCase()
+            + lower.slice(firstLetterIdx + 1);
+    }
+
     cleanModernContent() {
         if (!this.isModern || this.isCleaning) return;
         this.isCleaning = true;

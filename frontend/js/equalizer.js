@@ -368,9 +368,7 @@ class TerminalEqualizer {
         if (this.autoMode && window.player?.currentSong) {
             this.onTrackChange(window.player.currentSong);
         }
-        if (window.player?.showToast) {
-            window.player.showToast(this.autoMode ? '[AUTO-EQ: ENABLED]' : '[AUTO-EQ: DISABLED]');
-        }
+        this._toast(this.autoMode ? '[AUTO-EQ: ENABLED]' : '[AUTO-EQ: DISABLED]');
         return this.autoMode;
     }
 
@@ -528,29 +526,35 @@ class TerminalEqualizer {
         }
     }
 
+    _toast(msg) {
+        // #5 cosmetic: mode-aware toast helper. Di Modern hilangkan
+        // bracket + sentence-case via modernUiEngine, di Retro biarkan
+        // apa adanya.
+        if (!window.player?.showToast) return;
+        const isModern = document.body.classList.contains('ui-mode-modern')
+            && window.modernUiEngine;
+        window.player.showToast(
+            isModern ? window.modernUiEngine.formatModernToast(msg) : msg
+        );
+    }
+
     async perfectTune() {
         this.initAudioContext();
         this.resume();
 
         if (this._isTuning) return;
         if (window.player?.crossfadeStarted) {
-            if (window.player?.showToast) {
-                window.player.showToast('[⚡ PERFECT TUNE: Tunggu crossfade selesai]');
-            }
+            this._toast('[⚡ PERFECT TUNE: Tunggu crossfade selesai]');
             return;
         }
 
         if (!this.tuneAnalyser || !window.player?.isPlaying) {
-            if (window.player?.showToast) {
-                window.player.showToast('[⚡ PERFECT TUNE: Putar lagu terlebih dahulu]');
-            }
+            this._toast('[⚡ PERFECT TUNE: Putar lagu terlebih dahulu]');
             return;
         }
 
         this._isTuning = true;
-        if (window.player?.showToast) {
-            window.player.showToast('[⚡ PERFECT TUNE: Menganalisis spektrum audio...]');
-        }
+        this._toast('[⚡ PERFECT TUNE: Menganalisis spektrum audio...]');
 
         try {
             const fftSize = this.tuneAnalyser.fftSize;
@@ -578,9 +582,7 @@ class TerminalEqualizer {
             }
 
             if (validFrames < 5) {
-                if (window.player?.showToast) {
-                    window.player.showToast('[⚡ PERFECT TUNE: Analisis dibatalkan]');
-                }
+                this._toast('[⚡ PERFECT TUNE: Analisis dibatalkan]');
                 return;
             }
 
@@ -592,9 +594,7 @@ class TerminalEqualizer {
 
             // Reject if silent or too low (level at 1 kHz < -90 dBFS)
             if (avgBandDb[5] < -90) {
-                if (window.player?.showToast) {
-                    window.player.showToast('[⚡ Level sinyal terlalu rendah untuk Perfect Tune]');
-                }
+                this._toast('[⚡ Level sinyal terlalu rendah untuk Perfect Tune]');
                 return;
             }
 
@@ -615,9 +615,7 @@ class TerminalEqualizer {
             this.updateUI();
             this.saveState();
 
-            if (window.player?.showToast) {
-                window.player.showToast(`[⚡ PERFECT EQ: ${hint}]`);
-            }
+            this._toast(`[⚡ PERFECT EQ: ${hint}]`);
         } finally {
             this._isTuning = false;
         }
