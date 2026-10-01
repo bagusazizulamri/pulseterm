@@ -80,7 +80,7 @@ VIBE_KEYWORDS = {
     "epic": ["epic", "cinematic", "orchestral", "anthemic", "grand", "megah", "kolosal"],
 }
 
-_TOKEN_RE = re.compile(r"[a-z0-9&+/\-]+")
+_TOKEN_RE = re.compile(r"[a-z0-9&+/\\-]+", re.I)
 _STOPWORDS = frozenset({
     "the", "a", "an", "and", "or", "of", "for", "to", "in", "on", "at", "with",
     "tanpa", "yang", "dan", "atau", "dari", "untuk", "dengan", "di", "ke", "lagu",
@@ -119,7 +119,31 @@ def _text(seed) -> str:
 
 
 def _tokens(text: str) -> set:
-    return {t for t in _TOKEN_RE.findall(text or "") if t and t not in _STOPWORDS}
+    return {t.lower() for t in _TOKEN_RE.findall(text or "") if t and t.lower() not in _STOPWORDS}
+
+
+# Normalize artist strings so "Adele", "adele", "Adele, Adele", and
+# "Adele - Topic" all collapse to a single identity for diversity caps and
+# same-artist matching. Pure string-only — no DB hit, no schema change.
+def normalize_artist(artist: str) -> str:
+    if not artist or not isinstance(artist, str):
+        return ""
+    # Drop " - Topic" / ", Topic" suffix (auto-generated YT Music channels).
+    # Match plain ASCII hyphen too — YT Music sometimes uses both.
+    a = re.sub(r"\s*[,‐-―\-]\s*topic\b.*$", "", artist, flags=re.I)
+    # Split on common separators
+    parts = [p.strip() for p in re.split(r"[,&;/]|\sfeat\.?\s|\sft\.?\s", a, flags=re.I) if p.strip()]
+    if not parts:
+        return ""
+    # Dedupe case-insensitively, keeping first-seen casing
+    seen = set()
+    out = []
+    for p in parts:
+        pl = p.lower()
+        if pl not in seen:
+            seen.add(pl)
+            out.append(p)
+    return ", ".join(out)
 
 
 def _order_lane(order, pos, ctx_len):
@@ -190,7 +214,9 @@ def rank_candidates(seed_prof: dict, seed_tokens: set, seed_artist: set, cands,
         if ct and ct in seen_titles:
             continue
 
-        art = (item.get("artist") or "").lower().strip()
+        art = normalize_artist(item.get("artist", "")).lower()
+        if not art:
+            art = (item.get("artist") or "").lower().strip()
         count = artist_counts.get(art, 0)
         # Cap at 2 tracks per artist in a single batch to prevent artist fatigue
         if count >= 2:
@@ -204,14 +230,21 @@ def rank_candidates(seed_prof: dict, seed_tokens: set, seed_artist: set, cands,
         if len(selected) >= limit:
             break
 
-    # If slots are still open, backfill from deferred pool
+    # If slots are still open, backfill from deferred pool — but re-apply
+    # the per-artist cap so a flood of one artist's variants can't sneak in.
     if len(selected) < limit and deferred:
         for item in deferred:
             ct = clean_title(item.get("title", ""))
             if ct and ct in seen_titles:
                 continue
+            art = normalize_artist(item.get("artist", "")).lower()
+            if not art:
+                art = (item.get("artist") or "").lower().strip()
+            if artist_counts.get(art, 0) >= 2:
+                continue
             if ct:
                 seen_titles.add(ct)
+            artist_counts[art] = artist_counts.get(art, 0) + 1
             selected.append(item)
             if len(selected) >= limit:
                 break
@@ -219,13 +252,13 @@ def rank_candidates(seed_prof: dict, seed_tokens: set, seed_artist: set, cands,
     # Anti-clustering: reorder so adjacent tracks are not from the same artist
     diversified = []
     pool = list(selected)
-    last_art = seed_artist_name.lower().strip() if seed_artist_name else None
+    last_art = normalize_artist(seed_artist_name).lower() if seed_artist_name else None
 
     while pool:
-        idx = next((i for i, item in enumerate(pool) if (item.get("artist") or "").lower().strip() != last_art), 0)
+        idx = next((i for i, item in enumerate(pool) if normalize_artist(item.get("artist", "")).lower() != last_art), 0)
         chosen = pool.pop(idx)
         diversified.append(chosen)
-        last_art = (chosen.get("artist") or "").lower().strip()
+        last_art = normalize_artist(chosen.get("artist", "")).lower()
 
     return diversified
 
@@ -327,7 +360,7 @@ def score_candidate(seed_profile: dict, seed_tokens: set, seed_artist: set, cand
     prof = profile(cand)
     genre_hit = [g for g in prof["genres"] if g in (seed_profile.get("genres") or [])]
     vibe_hit = [v for v in prof["vibes"] if v in (seed_profile.get("vibes") or [])]
-    cand_artist = set(_tokens(cand.get("artist", "")))
+    cand_artist = set(_tokens(normalize_artist(cand.get("artist", ""))))
     cand_tokens = set(prof["tokens"])
     same_artist = bool(seed_artist and cand_artist and (seed_artist & cand_artist))
 
@@ -552,7 +585,7 @@ async def get_recommendations(video_id: str, seed: dict = None, limit: int = 15,
         # lane. Mark it so same-rail candidates pass the filter honestly.
         seed_prof["rail"] = "watch"
     seed_tokens = set(seed_prof["tokens"])
-    seed_artist = _tokens(seed.get("artist", ""))
+    seed_artist = _tokens(normalize_artist(seed.get("artist", "")))
     seed_is_video = is_video_track(seed)
     tracks = rank_candidates(seed_prof, seed_tokens, seed_artist, cands,
                              limit=limit, exclude=exclude,
