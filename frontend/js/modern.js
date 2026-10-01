@@ -93,16 +93,16 @@ class ModernUiEngine {
             html.classList.add('ui-mode-modern');
             this.transformToModern();
             if (!quiet) {
-                const toast = window.showToast || (window.player && window.player.showToast);
-                if (typeof toast === 'function') toast('>> INTERFACE: MODERN LIQUID GLASS');
+                // #5 cosmetic: Di mode tujuan, kalau modern prose
+                // "Interface: modern liquid glass", kalau retro ">> INTERFACE:...".
+                this.showModernToast('>> INTERFACE: MODERN LIQUID GLASS');
             }
         } else {
             body.classList.remove('ui-mode-modern');
             html.classList.remove('ui-mode-modern');
             this.restoreToTui();
             if (!quiet) {
-                const toast = window.showToast || (window.player && window.player.showToast);
-                if (typeof toast === 'function') toast('>> INTERFACE: RETRO TUI');
+                this.showModernToast('>> INTERFACE: RETRO TUI');
             }
         }
 
@@ -282,7 +282,9 @@ class ModernUiEngine {
         const stripped = this.stripBrackets(text);
         // Akronim dibiarkan uppercase (lihat cleanModernContent whitelist).
         // Prefix emoji/karakter non-word diizinkan (mis. "⚡ PERFECT TUNE").
-        if (/^\W*(AUTO[\s-]?EQ|PERFECT[\s-]?TUNE|DSP|SPATIAL|RESET)/i.test(stripped)) {
+        // Tambahan PulseTerm #4/#5: IMPORTED, BUFFER, INTERFACE, UI SCALE,
+        // THEME adalah akronim untuk toast retro yang dipertahankan.
+        if (/^\W*(AUTO[\s-]?EQ|PERFECT[\s-]?TUNE|DSP|SPATIAL|RESET|IMPORTED|BUFFER|INTERFACE|UI[\s-]?SCALE|THEME)/i.test(stripped)) {
             return stripped;
         }
         // Sentence-case: cari huruf alphabet pertama dan kapitalkan, sisanya
@@ -293,6 +295,25 @@ class ModernUiEngine {
         return lower.slice(0, firstLetterIdx)
             + lower.charAt(firstLetterIdx).toUpperCase()
             + lower.slice(firstLetterIdx + 1);
+    }
+
+    // #5 cosmetic (shared): mode-aware toast helper. Di Modern hilangkan
+    // bracket + sentence-case via formatModernToast, di Retro biarkan
+    // apa adanya. expose ke window agar equalizer.js, app.js, dsb. bisa
+    // pakai tanpa duplikasi mode-detection.
+    showModernToast(msg) {
+        if (!msg) return;
+        const fallback = window.showToast
+            || (window.player && window.player.showToast);
+        if (typeof fallback !== 'function') return;
+        if (this.isModern) {
+            // Strip leading ">> " prefix gaya console retro, lalu format
+            // sentence-case (akronim dipertahankan via formatModernToast).
+            const stripped = String(msg).replace(/^\s*>>\s*/, '');
+            fallback(this.formatModernToast(stripped));
+        } else {
+            fallback(msg);
+        }
     }
 
     cleanModernContent() {
@@ -579,6 +600,19 @@ class ModernUiEngine {
 // Instantiate engine safely
 if (typeof window !== 'undefined') {
     window.modernUiEngine = new ModernUiEngine();
+    // #5 cosmetic (shared): expose mode-aware toast ke window supaya
+    // equalizer.js, app.js, dan modul lain cukup panggil 1 fungsi tanpa
+    // duplikasi deteksi mode. Modern→formatModernToast, Retro→msg apa
+    // adanya. Kalau engine belum siap, no-op (graceful).
+    window.showModernToast = (msg) => {
+        if (window.modernUiEngine && typeof window.modernUiEngine.showModernToast === 'function') {
+            window.modernUiEngine.showModernToast(msg);
+        } else if (window.showToast) {
+            window.showToast(msg);
+        } else if (window.player && window.player.showToast) {
+            window.player.showToast(msg);
+        }
+    };
 }
 
 export default ModernUiEngine;

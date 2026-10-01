@@ -529,13 +529,15 @@ class TerminalEqualizer {
     _toast(msg) {
         // #5 cosmetic: mode-aware toast helper. Di Modern hilangkan
         // bracket + sentence-case via modernUiEngine, di Retro biarkan
-        // apa adanya.
-        if (!window.player?.showToast) return;
-        const isModern = document.body.classList.contains('ui-mode-modern')
-            && window.modernUiEngine;
-        window.player.showToast(
-            isModern ? window.modernUiEngine.formatModernToast(msg) : msg
-        );
+        // apa adanya. Delegate ke shared window.showModernToast supaya
+        // mode-detection tidak diduplikasi di tiap module.
+        if (!msg) return;
+        if (typeof window.showModernToast === 'function') {
+            window.showModernToast(msg);
+            return;
+        }
+        // Fallback kalau modern.js belum load (early script).
+        if (window.player?.showToast) window.player.showToast(msg);
     }
 
     async perfectTune() {
