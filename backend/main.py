@@ -29,6 +29,12 @@ player_mgr = PlayerManager()
 class RealtimeHub:
     def __init__(self):
         self.connections: list[WebSocket] = []
+        # Coalesce rapid broadcasts (e.g. volume slider drag fires 60+/sec):
+        # we keep the *latest* payload pending and emit it on the next loop
+        # tick, so a slow client can never queue hundreds of stale sends and
+        # delay every other client.
+        self._pending: dict | None = None
+        self._flush_task: asyncio.Task | None = None
 
     async def connect(self, ws: WebSocket):
         await ws.accept()
@@ -38,22 +44,58 @@ class RealtimeHub:
         if ws in self.connections:
             self.connections.remove(ws)
 
-    async def broadcast(self, data: dict):
-        dead = []
-        for ws in self.connections:
+    def schedule_broadcast(self, data: dict):
+        """Coalescing enqueue: replace any pending payload, schedule a flush."""
+        self._pending = data
+        if self._flush_task is None or self._flush_task.done():
             try:
-                await ws.send_json(data)
-            except Exception:
-                dead.append(ws)
-        for ws in dead:
-            self.disconnect(ws)
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                return
+            self._flush_task = loop.create_task(self._flush_loop())
+
+    async def _flush_loop(self):
+        try:
+            await asyncio.sleep(0)  # yield to let more coalesce in
+        except Exception:
+            pass
+        payload = self._pending
+        self._pending = None
+        if payload is not None:
+            await self.broadcast(payload)
+        # If more schedule_broadcast() calls arrived while broadcast() was
+        # running, drain them now in the same task to avoid missing ticks.
+        if self._pending is not None:
+            # Recurse by re-entering; the loop's create_task chain keeps this
+            # bounded because each tick coalesces again.
+            await self._flush_loop()
+
+    async def broadcast(self, data: dict):
+        # Send to all clients concurrently so a single slow client does NOT
+        # delay every other client (a 5s mobile WebSocket can otherwise stall
+        # the whole hub and freeze the desktop UI).
+        if not self.connections:
+            return
+        results = await asyncio.gather(
+            *(self._safe_send(ws, data) for ws in list(self.connections)),
+            return_exceptions=True,
+        )
+        for ws, r in zip(list(self.connections), results):
+            if isinstance(r, Exception):
+                self.disconnect(ws)
+
+    async def _safe_send(self, ws, data):
+        try:
+            await ws.send_json(data)
+        except Exception:
+            raise
 
 hub = RealtimeHub()
 
 def broadcast_state():
+    # Coalesce instead of enqueueing one task per setter call.
     try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(hub.broadcast({"type": "status", "data": player_mgr.get_status()}))
+        hub.schedule_broadcast({"type": "status", "data": player_mgr.get_status()})
     except RuntimeError:
         pass
 
