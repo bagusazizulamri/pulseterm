@@ -236,7 +236,9 @@ async function doSearch() {
     const lowerQ = q.toLowerCase();
     if (lowerQ === ':reload' || lowerQ === ':refresh' || lowerQ === 'reload' || lowerQ === 'refresh') {
         if (input) { input.value = ''; input.blur(); }
-        showToast('>> BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
+        // #5 cosmetic: mode-aware toast. Modern → "Buffer refreshed
+        // (audio uninterrupted)", Retro tetap ">> BUFFER REFRESHED...".
+        showModernToast('>> BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
         await navigate(currentPage);
         return;
     }
@@ -474,10 +476,98 @@ async function playFromHistory(index) {
 }
 
 async function promptNewPlaylist() {
-    const name = prompt('Input playlist identifier:');
-    if (name) {
-        await createPlaylist(name);
-        renderPlaylists(document.getElementById('page-content'));
+    // #14+ PulseTerm: ganti native prompt() dengan <dialog> modal biar
+    // konsisten dengan IMPORT PLAYLIST modal. Fallback ke prompt()
+    // kalau DOM element tidak ada (mis. legacy page).
+    const modal = document.getElementById('create-playlist-modal');
+    if (!modal) {
+        const name = prompt('Input playlist identifier:');
+        if (name) {
+            await createPlaylist(name);
+            renderPlaylists(document.getElementById('page-content'));
+        }
+        return;
+    }
+    openCreatePlaylistModal();
+}
+
+function openCreatePlaylistModal() {
+    const modal = document.getElementById('create-playlist-modal');
+    if (!modal) return;
+    const nameInput = document.getElementById('create-name-input');
+    const errorEl = document.getElementById('create-error');
+    const submitBtn = document.getElementById('create-submit-btn');
+    if (nameInput) nameInput.value = '';
+    if (errorEl) {
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+    }
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '[+ CREATE]';
+    }
+    modal.showModal();
+    if (nameInput) nameInput.focus();
+}
+
+async function handleCreatePlaylist() {
+    const modal = document.getElementById('create-playlist-modal');
+    const nameInput = document.getElementById('create-name-input');
+    const errorEl = document.getElementById('create-error');
+    const submitBtn = document.getElementById('create-submit-btn');
+
+    const raw = (nameInput?.value || '').trim();
+    if (!raw) {
+        if (errorEl) {
+            errorEl.textContent = 'Playlist identifier cannot be empty.';
+            errorEl.classList.remove('hidden');
+        }
+        if (nameInput) nameInput.focus();
+        return;
+    }
+    // Backend (main.py:886) sudah truncate >120, tapi tampilkan feedback
+    // upfront.
+    const name = raw.length > 120 ? raw.slice(0, 120) : raw;
+
+    if (errorEl) {
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+    }
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '[CREATING...]';
+    }
+
+    try {
+        const res = await createPlaylist(name);
+        if (res && res.success) {
+            modal?.close();
+            const created = res.data?.name || name;
+            // #5 cosmetic: mode-aware toast untuk umpan balik sukses.
+            showModernToast(`[✓ PLAYLIST: ${created}]`);
+            await renderPlaylists(document.getElementById('page-content'));
+        } else {
+            const errMsg = res?.error || 'Failed to create playlist.';
+            if (errorEl) {
+                errorEl.textContent = errMsg;
+                errorEl.classList.remove('hidden');
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '[+ CREATE]';
+            }
+            if (nameInput) nameInput.focus();
+        }
+    } catch (e) {
+        if (errorEl) {
+            errorEl.textContent = `Failed to create playlist: ${e?.message || e}`;
+            errorEl.classList.remove('hidden');
+        }
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '[+ CREATE]';
+        }
+        if (nameInput) nameInput.focus();
     }
 }
 
@@ -564,7 +654,10 @@ async function handleImportPlaylist() {
             const count = res.data.count || (res.data.songs ? res.data.songs.length : 0);
             const plName = res.data.name || 'PLAYLIST';
             modal?.close();
-            showToast(`[✓ IMPORTED: ${plName} (${count} TRACKS)]`);
+            // #4 cosmetic: ganti bracket retro dengan mode-aware toast.
+            // Modern → "✓ Imported: ${plName} (${count} tracks)"
+            // Retro → "[✓ IMPORTED: ${plName} (${count} TRACKS)]" (apa adanya).
+            showModernToast(`[✓ IMPORTED: ${plName} (${count} TRACKS)]`);
             const content = document.getElementById('page-content');
             if (content && currentPage === 'playlists') {
                 await renderPlaylists(content);
@@ -765,7 +858,9 @@ function setUiScale(scale, notify = true) {
     localStorage.setItem('pulseterm_zoom', String(numericScale));
     setLocalSettings({ uiScale: numericScale });
     if (notify) {
-        showToast(`>> UI SCALE: ${Math.round(numericScale * 100)}%`);
+        // #5 cosmetic: mode-aware toast. Modern → "UI scale: 100%",
+        // Retro tetap ">> UI SCALE: 100%".
+        showModernToast(`>> UI SCALE: ${Math.round(numericScale * 100)}%`);
     }
 }
 
@@ -1012,6 +1107,45 @@ async function init() {
             }
         });
     });
+
+    // #14+ PulseTerm: Create playlist modal handlers (paralel dengan
+    // import modal). Enter key submit, Esc/close tutup, error tampil
+    // inline tanpa menutup modal.
+    const createModal = document.getElementById('create-playlist-modal');
+    const createSubmitBtn = document.getElementById('create-submit-btn');
+    const createCancelBtn = document.getElementById('create-cancel-btn');
+    const createNameInput = document.getElementById('create-name-input');
+
+    if (createSubmitBtn) {
+        createSubmitBtn.addEventListener('click', handleCreatePlaylist);
+    }
+    if (createCancelBtn && createModal) {
+        createCancelBtn.addEventListener('click', () => createModal.close());
+    }
+    if (createNameInput) {
+        createNameInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreatePlaylist();
+            }
+        });
+    }
+    // Reset state kalau modal ditutup (Esc / backdrop / close-esc) supaya
+    // buka berikutnya bersih.
+    if (createModal) {
+        createModal.addEventListener('close', () => {
+            if (createNameInput) createNameInput.value = '';
+            const errEl = document.getElementById('create-error');
+            if (errEl) {
+                errEl.classList.add('hidden');
+                errEl.textContent = '';
+            }
+            if (createSubmitBtn) {
+                createSubmitBtn.disabled = false;
+                createSubmitBtn.textContent = '[+ CREATE]';
+            }
+        });
+    }
 }
 
 const REPEAT_ORDER = ['none', 'all', 'one'];
@@ -1033,7 +1167,9 @@ function cycleTheme() {
     const nextTheme = THEME_LIST[(idx + 1) % THEME_LIST.length];
     window.setTheme(nextTheme);
     const names = { maclight: "MAC LIGHT", ytsoft: "YOUTUBE SOFT", oled: "OLED MONO", cyberpunk: "CYBERPUNK", nordic: "TOKYO SLATE", light: "SOLARIZED", liquidglass: "MAC LIQUID GLASS", softdark: "SOFT DARK" };
-    if (window.showToast) window.showToast(`>> THEME: ${names[nextTheme] || nextTheme.toUpperCase()}`);
+    // #5 cosmetic: mode-aware toast. Modern → "Theme: mac light",
+    // Retro tetap ">> THEME: MAC LIGHT".
+    showModernToast(`>> THEME: ${names[nextTheme] || nextTheme.toUpperCase()}`);
 }
 
 window.navigate = navigate;
@@ -1042,6 +1178,8 @@ window.setSearchFilter = setSearchFilter;
 window.playFromHistory = playFromHistory;
 window.promptNewPlaylist = promptNewPlaylist;
 window.openImportPlaylistModal = openImportPlaylistModal;
+window.openCreatePlaylistModal = openCreatePlaylistModal;
+window.handleCreatePlaylist = handleCreatePlaylist;
 window.openPlaylist = openPlaylist;
 window.deletePlaylistItem = deletePlaylistItem;
 window.toggleQueue = toggleQueue;
@@ -1214,7 +1352,9 @@ document.addEventListener('keydown', (e) => {
                          ((e.key === 'l' || e.key === 'L') && (e.ctrlKey || e.metaKey));
     if (isSoftReload) {
         e.preventDefault();
-        showToast('>> VIEW BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
+        // #5 cosmetic: mode-aware toast. Modern → "View buffer refreshed
+        // (audio uninterrupted)", Retro tetap ">> VIEW BUFFER...".
+        showModernToast('>> VIEW BUFFER REFRESHED (AUDIO UNINTERRUPTED)');
         navigate(currentPage);
         return;
     }

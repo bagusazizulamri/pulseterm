@@ -394,6 +394,26 @@
         </div>
     </dialog>
 
+    <!-- Create Playlist Modal (PulseTerm #14+: ganti native prompt() di app.js) -->
+    <dialog id="create-playlist-modal" class="tui-modal create-modal">
+        <div class="modal-head">
+            <span class="eyebrow-label">[+ CREATE NEW PLAYLIST]</span>
+            <button id="create-modal-close" class="tui-btn" onclick="document.getElementById('create-playlist-modal').close()">[CLOSE ESC]</button>
+        </div>
+        <div class="import-modal-body">
+            <p class="import-modal-desc">Pick a short identifier for your new playlist. Saved locally; can be edited or deleted later.</p>
+            <div class="import-field-group">
+                <label for="create-name-input">PLAYLIST IDENTIFIER (MAX 120 CHAR):</label>
+                <input type="text" id="create-name-input" class="import-input" placeholder="e.g. Workouts, Focus Beats, Sunday Vibes" autocomplete="off" spellcheck="false" maxlength="120" />
+            </div>
+            <div id="create-error" class="import-error hidden"></div>
+            <div class="import-modal-actions">
+                <button id="create-cancel-btn" class="tui-btn">[CANCEL]</button>
+                <button id="create-submit-btn" class="tui-btn tui-btn-primary">[+ CREATE]</button>
+            </div>
+        </div>
+    </dialog>
+
     <div id="context-menu" class="hidden" role="menu"></div>
     <div id="toast" role="status" aria-live="polite" class="hidden">
         <span class="tui-prompt-char">❯</span>
