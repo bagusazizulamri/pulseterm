@@ -12,9 +12,9 @@ export const SPATIAL_CONFIGS = {
     },
     studio: {
         name: 'STUDIO', label: 'Studio Monitors 3D', sideAzDeg: 55, sideElev: 0.15, radius: 1.5,
-        dryMix: 0.42, roomGain: 0.025, reverbDuration: 0.45, decayTau: 0.12, predelay: 0.012, cutoffFreq: 5000,
-        makeupDb: -8, eqHighDb: 0.5, sideWidth: 1.30, sideEqPresence: 9.5, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.06,
-        midGain: 1.15, midBodyDb: 0, haloDb: -13, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.013, haloDelayR: 0.023, erDb: -22,
+        dryMix: 0.55, roomGain: 0.018, reverbDuration: 0.40, decayTau: 0.10, predelay: 0.012, cutoffFreq: 5000,
+        makeupDb: -7, eqHighDb: 0.5, sideWidth: 1.30, sideEqPresence: 8.5, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.04,
+        midGain: 1.10, midBodyDb: 0, haloDb: -14, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.013, haloDelayR: 0.023, erDb: -23,
         bassMonoDb: -2.0
     },
     wide: {

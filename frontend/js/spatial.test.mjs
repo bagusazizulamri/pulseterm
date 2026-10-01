@@ -154,7 +154,30 @@ async function measureSignal(modeName, signalType) {
     const lrRatioDb = 20 * Math.log10((Math.sqrt(sumL2 / frames) + 1e-9) /
                                       (Math.sqrt(sumR2 / frames) + 1e-9));
 
-    return { rmsDb, peakDb, correlation, sideRatioDb, lrRatioDb };
+    // Muddy detector: Goertzel band-power 350 Hz (low-mid) vs 2500 Hz (vocal-mid).
+    // Output spectral energy di dua band: jika low-mid naik > vocal-mid = masking.
+    // Index: vocalBandDb - lowmidBandDb. Off mode ≈ 0 dB. Mode muddy = < -3 dB.
+    function goertzelMag(buf, targetHz) {
+        const N = buf.length;
+        const k = Math.round(N * targetHz / sampleRate);
+        const omega = 2 * Math.PI * k / N;
+        const coeff = 2 * Math.cos(omega);
+        let s0 = 0, s1 = 0, s2 = 0;
+        for (let i = 0; i < N; i++) {
+            s0 = buf[i] + coeff * s1 - s2;
+            s2 = s1;
+            s1 = s0;
+        }
+        return Math.sqrt(s1 * s1 + s2 * s2 - coeff * s1 * s2) / N;
+    }
+    const lowmidMag = (goertzelMag(L, 350) + goertzelMag(R, 350)) * 0.5;
+    const vocalMag = (goertzelMag(L, 2500) + goertzelMag(R, 2500)) * 0.5;
+    const lowmidBandDb = 20 * Math.log10(lowmidMag + 1e-9);
+    const vocalBandDb = 20 * Math.log10(vocalMag + 1e-9);
+    const articulationIdxDb = vocalBandDb - lowmidBandDb;
+
+    return { rmsDb, peakDb, correlation, sideRatioDb, lrRatioDb,
+             lowmidBandDb, vocalBandDb, articulationIdxDb };
 }
 
 async function runTests() {
@@ -197,7 +220,7 @@ async function runTests() {
     }
     
     console.table(results);
-    
+
     const off = results.off;
     let allPass = true;
 
@@ -255,6 +278,24 @@ async function runTests() {
                 name: "Side HRTF Ratio (>= -10 dB)",
                 val: cur.side3k.rmsDb - cur.lead1k.rmsDb,
                 pass: (cur.side3k.rmsDb - cur.lead1k.rmsDb) >= -10
+            },
+            // Muddy detector (Goal-aligned Articulation Index).
+            // Pakai sinyal noise broadband; ukur band-power 350 Hz (low-mid)
+            // vs 2500 Hz (vocal-mid) post-processing via Goertzel.
+            // off mode ≈ 0 dB (input flat). Mode aktif harus >= -3 dB.
+            // Jika < -3 dB = low-mid build-up = masking band = muddy.
+            {
+                name: "Muddy Articulation Idx (>= -3 dB) [STRICT]",
+                val: cur.noise.articulationIdxDb,
+                pass: cur.noise.articulationIdxDb >= -3.0
+            },
+            // Perbandingan muddy index: mode aktif tidak boleh terlalu turun
+            // dibanding off. Toleransi 4 dB (sedikit low-mid boost OK untuk
+            // warmth, tapi jangan masking).
+            {
+                name: "Muddy Drift (<= +4 dB)",
+                val: cur.noise.articulationIdxDb - off.noise.articulationIdxDb,
+                pass: (cur.noise.articulationIdxDb - off.noise.articulationIdxDb) <= 4.0
             }
         ];
 
