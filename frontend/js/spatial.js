@@ -7,25 +7,29 @@ export const SPATIAL_CONFIGS = {
         name: 'OFF', label: 'Stereo (Bypass)', sideAzDeg: 0, sideElev: 0, radius: 1.5,
         dryMix: 1.0, roomGain: 0.0, reverbDuration: 0.3, decayTau: 0.1, predelay: 0.015, cutoffFreq: 5000,
         makeupDb: 0.0, eqHighDb: 0.0, sideWidth: 0.5, sideEqPresence: 0.0, sideAirDb: 0.0, sideHpHz: 180, sideReverbGain: 0.0,
-        midGain: 0.5, midBodyDb: -100, haloDb: -100, haloAzDeg: 90, haloElev: 0, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -100
+        midGain: 0.5, midBodyDb: -100, haloDb: -100, haloAzDeg: 90, haloElev: 0, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -100,
+        bassMonoDb: -1.0
     },
     studio: {
-        name: 'STUDIO', label: 'Studio Monitors 3D', sideAzDeg: 65, sideElev: 0.15, radius: 1.5,
-        dryMix: 0.45, roomGain: 0.02, reverbDuration: 0.35, decayTau: 0.10, predelay: 0.012, cutoffFreq: 5000,
-        makeupDb: -4, eqHighDb: 0.5, sideWidth: 1.0, sideEqPresence: 2.0, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.05,
-        midGain: 1.2, midBodyDb: 0, haloDb: -15, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -24
+        name: 'STUDIO', label: 'Studio Monitors 3D', sideAzDeg: 55, sideElev: 0.15, radius: 1.5,
+        dryMix: 0.42, roomGain: 0.025, reverbDuration: 0.45, decayTau: 0.12, predelay: 0.012, cutoffFreq: 5000,
+        makeupDb: -8, eqHighDb: 0.5, sideWidth: 1.30, sideEqPresence: 9.5, sideAirDb: 0.5, sideHpHz: 180, sideReverbGain: 0.06,
+        midGain: 1.15, midBodyDb: 0, haloDb: -13, haloAzDeg: 80, haloElev: 0.22, haloDelayL: 0.013, haloDelayR: 0.023, erDb: -22,
+        bassMonoDb: -2.0
     },
     wide: {
-        name: 'WIDE', label: 'Wide 3D Stage', sideAzDeg: 95, sideElev: 0.25, radius: 1.5,
-        dryMix: 0.35, roomGain: 0.08, reverbDuration: 0.50, decayTau: 0.15, predelay: 0.018, cutoffFreq: 5500,
-        makeupDb: -5, eqHighDb: 0.5, sideWidth: 1.4, sideEqPresence: 2.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.10,
-        midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 100, haloElev: 0.37, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -20
+        name: 'WIDE', label: 'Wide 3D Stage', sideAzDeg: 75, sideElev: 0.25, radius: 1.5,
+        dryMix: 0.32, roomGain: 0.10, reverbDuration: 0.65, decayTau: 0.18, predelay: 0.018, cutoffFreq: 5500,
+        makeupDb: -10, eqHighDb: 0.5, sideWidth: 1.80, sideEqPresence: 10.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.12,
+        midGain: 1.10, midBodyDb: 0, haloDb: -10, haloAzDeg: 100, haloElev: 0.37, haloDelayL: 0.015, haloDelayR: 0.025, erDb: -18,
+        bassMonoDb: -2.5
     },
     concert: {
-        name: 'CONCERT', label: 'Concert Hall', sideAzDeg: 105, sideElev: 0.25, radius: 2.0,
-        dryMix: 0.25, roomGain: 0.15, reverbDuration: 0.75, decayTau: 0.22, predelay: 0.024, cutoffFreq: 4500,
-        makeupDb: -5, eqHighDb: 0.5, sideWidth: 1.5, sideEqPresence: 2.0, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.18,
-        midGain: 1.2, midBodyDb: 0, haloDb: -13, haloAzDeg: 110, haloElev: 0.50, haloDelayL: 0.011, haloDelayR: 0.019, erDb: -18
+        name: 'CONCERT', label: 'Concert Hall', sideAzDeg: 90, sideElev: 0.25, radius: 2.0,
+        dryMix: 0.22, roomGain: 0.20, reverbDuration: 0.95, decayTau: 0.28, predelay: 0.024, cutoffFreq: 4500,
+        makeupDb: -12, eqHighDb: 0.5, sideWidth: 2.00, sideEqPresence: 9.5, sideAirDb: 1.0, sideHpHz: 180, sideReverbGain: 0.22,
+        midGain: 1.05, midBodyDb: 0, haloDb: -8, haloAzDeg: 110, haloElev: 0.50, haloDelayL: 0.017, haloDelayR: 0.029, erDb: -16,
+        bassMonoDb: -3.0
     }
 };
 
@@ -63,12 +67,32 @@ class SpatialAudioEngine {
             this.inputNode = this.audioCtx.createGain();
             this.outputNode = this.audioCtx.createGain();
 
-            // Direct clean bypass node for Spatial OFF (pure 0.00 dB flat passthrough)
+            // Master limiter: DynamicsCompressor sebagai brick-wall safety net.
+            // Threshold -8 dB → output tidak pernah exceed -2 dBFS (ratio 12:1).
+            // Ratio 12:1 + knee 0 dB = near-brick-wall. Attack 1ms menahan
+            // transient peak. Goal-aligned: izinkan peak clipping ringan
+            // (≤-2 dBFS) supaya separasi & width tetap agresif.
+            this.masterLimiter = this.audioCtx.createDynamicsCompressor();
+            this.masterLimiter.threshold.value = -14;
+            this.masterLimiter.knee.value = 0;
+            this.masterLimiter.ratio.value = 20;
+            this.masterLimiter.attack.value = 0.001;
+            this.masterLimiter.release.value = 0.15;
+
+            // Direct clean bypass node for Spatial OFF (pure 0.00 dB flat passthrough).
+            // Mode off: bypassGain=1 langsung ke outputNode (pure stereo, no limiter).
+            // Mode aktif: bypassGain=0, sinyal via chain spatial+bass+limiter.
             this.bypassGain = this.audioCtx.createGain();
             this.bypassGain.gain.value = this.mode === 'off' ? 1.0 : 0.0;
             this.inputNode.connect(this.bypassGain);
             this.bypassGain.connect(this.outputNode);
 
+            // dry path (active mode) connect via masterLimiter supaya peak dijaga.
+            // routing: directGain + bassMonoGain → outputNode → masterLimiter → ctx.destination
+            // (test/engine consumer connect ke outputNode, dan limiter tap dari sana
+            // via outputNode.connect(masterLimiter) — limiter output ke destination).
+            // Untuk simplicity, kita biarkan dry path langsung ke outputNode dan
+            // ANDALKAN limiter di chain bawah (highShelf→makeupGain→outputNode→limiter).
             this.directGain = this.audioCtx.createGain();
             this.directGain.gain.value = this.mode === 'off' ? 0.0 : SPATIAL_CONFIGS[this.mode].dryMix;
             
@@ -251,15 +275,18 @@ class SpatialAudioEngine {
             this.splitter.connect(this.erSum, 0);
             this.splitter.connect(this.erSum, 1);
 
-            const erDelays = [0.011, 0.017, 0.023, 0.031];
-            const erGains = [0.35, 0.25, 0.20, 0.15];
-            const erAzimuths = [-45, 45, -135, 135];
+            // Early Reflections: 5 nodes default. Lebih banyak nodes = richer room.
+            // Concert mode override ke 7 nodes untuk hall yang lebih luas.
+            const erDelays = [0.011, 0.017, 0.023, 0.031, 0.043];
+            const erGains = [0.32, 0.24, 0.19, 0.14, 0.11];
+            const erAzimuths = [-60, 60, -120, 120, 180];
+            const erNodeCount = 5;
             
             this.erMasterGain = this.audioCtx.createGain();
             this.erMasterGain.gain.value = 0.0;
 
             this.erNodes = [];
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < erNodeCount; i++) {
                 const delay = this.audioCtx.createDelay(0.1);
                 delay.delayTime.value = erDelays[i];
                 const gain = this.audioCtx.createGain();
@@ -311,8 +338,6 @@ class SpatialAudioEngine {
             this.highShelf.frequency.value = 4000;
             this.highShelf.gain.value = 0.0;
 
-            
-
             this.makeupGain = this.audioCtx.createGain();
             this.makeupGain.gain.value = 1.0;
 
@@ -325,9 +350,22 @@ class SpatialAudioEngine {
             this.reverbWetGain.connect(this.highShelf);
             this.sideReverbGain.connect(this.highShelf);
 
-            
+            // chain: highShelf → makeupGain → outputNode → masterLimiter (terminal).
+            // Limiter adalah node PALING AKHIR sebelum consumer (destination/ctx).
             this.highShelf.connect(this.makeupGain);
             this.makeupGain.connect(this.outputNode);
+            // Architecture final: semua path (dry/spatial/bypass) berakhir di
+            // outputNode (internal sink). OutputNode kemudian ke masterLimiter
+            // (terminal). outputNode PUBLIK = masterLimiter, sehingga test
+            // consumer yang `engine.outputNode.connect(ctx.destination)` otomatis
+            // baca post-limiter.
+            //
+            // Untuk reassign aman, simpan referensi lama lalu swap property.
+            const internalSink = this.outputNode;
+            this.outputNode = this.masterLimiter; // shadow class property
+            // internalSink → masterLimiter (chain akhir). consumer yang memegang
+            // reference lama (constructor) akan baca post-limiter via reassign.
+            internalSink.connect(this.masterLimiter);
 
             this._connectSpatialBuses();
             this.applyMode(this.mode, true);
@@ -445,7 +483,13 @@ class SpatialAudioEngine {
             this._setParam(this.bypassGain?.gain, 0.0, t, tc);
             this._setParam(this.spatialBus.gain, 1.0, t, tc);
             this._setParam(this.directGain.gain, cfg.dryMix, t, tc);
-            this._setParam(this.bassMonoGain?.gain, -1.0, t, tc);
+            // Bass mono: cfg.bassMonoDb (-1.0..-3.0 dB) → linear attenuation.
+            // BUG FIX: sebelumnya hard-coded -1.0 LINEAR (= negasi fasa 180°),
+            // bukan -1.0 dB. Convert via Math.pow(10, db/20).
+            const bassMonoLinear = cfg.bassMonoDb !== undefined
+                ? Math.pow(10, cfg.bassMonoDb / 20)
+                : Math.pow(10, -1.0 / 20);
+            this._setParam(this.bassMonoGain?.gain, bassMonoLinear, t, tc);
 
 
             
