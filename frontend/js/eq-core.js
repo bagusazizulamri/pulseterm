@@ -238,7 +238,10 @@ export const SPECTRAL_ARCHETYPES = {
         label: 'Flat / Neutral',
         baseGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         preamp: 0,
-        targetTilt: -4.5,
+        // targetTilt=0: treat as "no target curve" so we only correct bands
+        // that are obviously deficient, never boost whole-spektra bands to
+        // chase a pink-noise slope the user never asked for.
+        targetTilt: 0,
         priorities: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         maxBoost: 2.0,
         maxCut: -2.0
@@ -612,11 +615,48 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat', ex
     });
 
     // 2. 3-point smoothing
-    const smoothed = rawDefect.map((d, i) => {
+    const rawSmoothed = rawDefect.map((d, i) => {
         if (i === 0) return 0.75 * rawDefect[0] + 0.25 * rawDefect[1];
         if (i === 9) return 0.75 * rawDefect[9] + 0.25 * rawDefect[8];
         return 0.25 * rawDefect[i - 1] + 0.5 * rawDefect[i] + 0.25 * rawDefect[i + 1];
     });
+
+    // 2a. INVARIAN: WAJIB clamp lagi ke ±maxCut/maxBoost per band supaya
+    //     smoothing bleeding dari tetangga tidak mengangkat band yang
+    //     seharusnya di-cut (mis. 250Hz muddy). Tanpa clamp ini, cut di
+    //     125Hz bisa "naik" jadi boost setelah smoothing 3-point.
+    const smoothed = rawSmoothed.map((s, i) =>
+        Math.max(arch.maxCut, Math.min(arch.maxBoost, s))
+    );
+
+    // 2b. Anti-mud guard (250Hz): bila 125Hz sudah hangat (> +1.5) dan
+    //     250Hz ingin dinaikkan sedikit (> +0.5), cap 250Hz ke 0 — 125Hz
+    //     sudah memberi body, 250 cukup rentan boxy/keruh.
+    //     Pengecualian: archetype yang memang sengaja cut lowMid
+    //     (metal, electronic) — di sana maxCut negatif membuat aturan ini
+    //     tidak pernah trigger.
+    if (archetypeKey !== 'metal' && archetypeKey !== 'electronic') {
+        if (smoothed[2] > 1.5 && smoothed[3] > 0.5) {
+            smoothed[3] = 0;
+        }
+    }
+
+    // 2c. Vocal-proximity guard (8k/16k): bila vokal sudah hadir kuat
+    //     di 2kHz (presDev > 2.0), kurangi offset air. Vokal kuat = kurang
+    //     butuh shimmer; tanpa guard ini base + kompensasi komulatif bisa
+    //     menyentuh +5dB di 16kHz → essy/sibilant.
+    let vocalPresenceDev = 0;
+    {
+        const _ref = measuredOctaveDb[5];
+        const _presActual = measuredOctaveDb[6] - _ref;
+        const _presExp = (6 - 5) * arch.targetTilt;
+        vocalPresenceDev = _presActual - _presExp;
+        if (vocalPresenceDev > 2.0) {
+            const reduce = Math.min(1.5, (vocalPresenceDev - 2.0) * 0.5);
+            if (smoothed[8] > 0) smoothed[8] = Math.max(0, smoothed[8] - reduce);
+            if (smoothed[9] > 0) smoothed[9] = Math.max(0, smoothed[9] - reduce);
+        }
+    }
 
     // 2b. AIR gating — tidak semua lagu boleh diberi efek/boost airy vocal.
     // Kalau top-end tidak eligible (lo-fi/roll-off, hiss saja, harsh/sibilant,
@@ -661,6 +701,10 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat', ex
     const midMod = (smoothed[4] + smoothed[5] + smoothed[6]) / 3;
     const trebleMod = (smoothed[7] + smoothed[8] + smoothed[9]) / 3;
 
+    // maxOffset dipakai untuk adaptive preamp. Pakai nilai finalGains (sudah
+    // di-air-gate) supaya budget mencerminkan energi riil yang akan di-boost.
+    const maxOffset = Math.max(0, ...finalGains);
+
     let tag = '';
     if (!airCheck.eligible) {
         // Jangan pernah klaim +AIR saat boost-nya ditahan — jujur ke UI.
@@ -691,7 +735,14 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat', ex
         airEligible: airCheck.eligible,
         airReason: airCheck.thin ? 'THIN' : airCheck.reason,
         airConfidence: airCheck.confidence,
-        airThin: !!airCheck.thin
+        airThin: !!airCheck.thin,
+        // Adaptive preamp: kalau kompensasi besar (maxOffset > 1.0), geser
+        // preamp ke bawah supaya total gain tidak melewati budget. Hanya
+        // offset ke bawah — preamp archetype tetap baseline bila kompensasi
+        // kecil/negatif (mencegah over-attenuation pada lagu netral).
+        preamp: Math.round(
+            (arch.preamp - 0.5 * Math.max(0, maxOffset - 1.0)) * 10
+        ) / 10
     };
 }
 
