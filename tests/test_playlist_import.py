@@ -48,22 +48,25 @@ class PlaylistImportTests(unittest.TestCase):
     def test_database_batch_insertion(self):
         async def _test():
             pid = await create_playlist("Batch Test Playlist")
+            # video_id harus lulus ^[A-Za-z0-9_-]{11}$ (lihat LOGIC_GUIDE §3).
+            # Test pakai ID 11-char valid supaya add_songs_to_playlist_batch
+            # tidak skip-nya (skip diam-diam = 'data rusak dibuang').
             tracks = [
-                {"video_id": f"vid_{i}", "title": f"Song {i}", "artist": f"Artist {i}", "thumbnail": f"http://thumb/{i}", "duration": 180 + i}
+                {"video_id": f"abcDEFgh{i:03d}", "title": f"Song {i}", "artist": f"Artist {i}", "thumbnail": f"http://thumb/{i}", "duration": 180 + i}
                 for i in range(10)
             ]
             await add_songs_to_playlist_batch(pid, tracks)
             songs = await get_playlist_songs(pid)
             self.assertEqual(len(songs), 10)
             for idx, s in enumerate(songs):
-                self.assertEqual(s["video_id"], f"vid_{idx}")
+                self.assertEqual(s["video_id"], f"abcDEFgh{idx:03d}")
                 self.assertEqual(s["title"], f"Song {idx}")
                 self.assertEqual(s["artist"], f"Artist {idx}")
                 self.assertEqual(s["position"], idx)
             # Add more to verify position offset calculation
             more_tracks = [
-                {"video_id": "vid_extra_1", "title": "Extra 1", "artist": "Artist Extra", "thumbnail": "", "duration": 200},
-                {"video_id": "vid_extra_2", "title": "Extra 2", "artist": "Artist Extra", "thumbnail": "", "duration": 210}
+                {"video_id": "abcDEFgh010", "title": "Extra 1", "artist": "Artist Extra", "thumbnail": "", "duration": 200},
+                {"video_id": "abcDEFgh011", "title": "Extra 2", "artist": "Artist Extra", "thumbnail": "", "duration": 210}
             ]
             await add_songs_to_playlist_batch(pid, more_tracks)
             all_songs = await get_playlist_songs(pid)
@@ -93,8 +96,10 @@ class PlaylistImportTests(unittest.TestCase):
         mock_playlist_data = {
             "name": "Mocked Hits",
             "tracks": [
-                {"video_id": "mock_vid_1", "title": "Hit 1", "artist": "Singer A", "thumbnail": "https://img/1.jpg", "duration": 210},
-                {"video_id": "mock_vid_2", "title": "Hit 2", "artist": "Singer B", "thumbnail": "https://img/2.jpg", "duration": 195}
+                # 11-char IDs (LOGIC_GUIDE §3). mockVID1234 (10) & mockVID678 (9)
+                # tidak valid, jadi perlu digit final biar persis 11.
+                {"video_id": "mockVID123a", "title": "Hit 1", "artist": "Singer A", "thumbnail": "https://img/1.jpg", "duration": 210},
+                {"video_id": "mockVID678b", "title": "Hit 2", "artist": "Singer B", "thumbnail": "https://img/2.jpg", "duration": 195}
             ]
         }
 
@@ -107,8 +112,8 @@ class PlaylistImportTests(unittest.TestCase):
                 self.assertEqual(data["name"], "Mocked Hits")
                 self.assertEqual(data["count"], 2)
                 self.assertEqual(len(data["songs"]), 2)
-                self.assertEqual(data["songs"][0]["video_id"], "mock_vid_1")
-                self.assertEqual(data["songs"][1]["video_id"], "mock_vid_2")
+                self.assertEqual(data["songs"][0]["video_id"], "mockVID123a")
+                self.assertEqual(data["songs"][1]["video_id"], "mockVID678b")
 
                 # Clean up created playlist
                 await delete_playlist(data["id"])

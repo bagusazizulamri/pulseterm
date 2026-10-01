@@ -36,7 +36,8 @@ class ApiTests(unittest.TestCase):
         self.assertIs(d['skipSilence'], True)
 
     def test_liked_roundtrip(self):
-        vid = 'like-test-001'
+        # 11-char id sesuai LOGIC_GUIDE §3 (regex _VIDEO_ID_RE)
+        vid = 'lTest0001ab'
         on = self.post('/api/library/liked/' + vid, {'title': 'Test song', 'artist': 'Test'}).json()
         self.assertTrue(on['data']['liked'])
         self.assertEqual(len(self.get('/api/library/liked').json()['data']), 1)

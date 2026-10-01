@@ -1,11 +1,17 @@
 import sys
 import os
+import re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import aiosqlite
 from contextlib import asynccontextmanager
 from config import DATABASE_PATH, CACHE_DIR
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), DATABASE_PATH)
+
+# Video ID YouTube selalu 11 char [A-Za-z0-9_-]. Dipakai untuk skip lagu
+# yang tidak valid di batch import tanpa mengganggu yang lain (lihat
+# LOGIC_GUIDE §3).
+_VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 @asynccontextmanager
 async def get_db():
@@ -143,7 +149,10 @@ async def add_songs_to_playlist_batch(playlist_id, songs):
             if not isinstance(s, dict):
                 continue
             vid = str(s.get("video_id", s.get("videoId", "")) or "").strip()
-            if not vid:
+            # Tolak video_id yang tidak lulus regex (lihat LOGIC_GUIDE §3).
+            # Sama dengan add_song_to_playlist: skip diam-diam untuk
+            # konsistensi dengan pola 'continue' lama yang sudah ada.
+            if not _VIDEO_ID_RE.match(vid):
                 continue
             try:
                 duration = max(0, int(s.get("duration", 0) or 0))

@@ -1,4 +1,5 @@
 import sys, os
+import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response, RedirectResponse
@@ -25,6 +26,39 @@ import httpx
 from fastapi import WebSocket, WebSocketDisconnect
 
 player_mgr = PlayerManager()
+
+# Pola validasi input dari frontend (snake + camel fallback) sebelum
+# masuk DB. video_id harus ^[A-Za-z0-9_-]{11}$ (lihat LOGIC_GUIDE §3).
+# String input dipotong 200 char agar DB tidak bengkak; int di-clamp >=0.
+_VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+_TEXT_FIELDS = ("title", "artist", "album", "thumbnail")
+_TEXT_MAX = 200
+_THUMB_MAX = 500
+
+
+def _validate_song_input(s):
+    """Return dict bersih atau None bila videoId tidak valid.
+
+    Dipakai di endpoint yang menerima song dari frontend. Frontend
+    wrapper sudah menyaring, tapi kontrak ini ditambah supaya bug
+    client / DevTools manual tidak bisa menyelipkan data rusak.
+    """
+    if not isinstance(s, dict):
+        return None
+    vid = str(s.get("video_id", s.get("videoId", "")) or "")
+    if not _VIDEO_ID_RE.match(vid):
+        return None
+    try:
+        duration = max(0, int(s.get("duration", 0) or 0))
+    except (TypeError, ValueError):
+        duration = 0
+    out = {"video_id": vid, "duration": duration}
+    for f in _TEXT_FIELDS:
+        raw = str(s.get(f, "") or "")
+        cap = _THUMB_MAX if f == "thumbnail" else _TEXT_MAX
+        out[f] = raw[:cap]
+    return out
+
 
 class RealtimeHub:
     def __init__(self):
@@ -892,20 +926,10 @@ async def import_playlist_endpoint(body: dict = None):
 @app.post("/api/playlists/{playlist_id}/songs")
 async def add_to_playlist(playlist_id: int, body: dict = None):
     body = body if isinstance(body, dict) else {}
-    vid = str(body.get("video_id", body.get("videoId", "")) or "")
-    if not vid:
-        return {"success": False, "error": "Missing video_id"}
-    try:
-        duration = max(0, int(body.get("duration", 0) or 0))
-    except (TypeError, ValueError):
-        duration = 0
-    await add_song_to_playlist(playlist_id, {
-        "video_id": vid,
-        "title": str(body.get("title", "") or ""),
-        "artist": str(body.get("artist", "") or ""),
-        "thumbnail": str(body.get("thumbnail", "") or ""),
-        "duration": duration,
-    })
+    song = _validate_song_input(body)
+    if not song:
+        return {"success": False, "error": "Invalid video id"}
+    await add_song_to_playlist(playlist_id, song)
     return {"success": True, "data": await get_playlist_songs(playlist_id)}
 
 @app.delete("/api/playlists/{playlist_id}/songs/{song_id}")
@@ -925,16 +949,10 @@ async def library_history():
 @app.post("/api/library/history")
 async def library_history_add(body: dict = None):
     body = body if isinstance(body, dict) else {}
-    vid = str(body.get("video_id", body.get("videoId", "")) or "")
-    title = str(body.get("title", "") or "")
-    artist = str(body.get("artist", "") or "")
-    try:
-        duration = max(0, int(body.get("duration", 0) or 0))
-    except (TypeError, ValueError):
-        duration = 0
-    if not vid:
-        return {"success": False, "error": "Missing video_id"}
-    await add_history(vid, title, artist, duration)
+    song = _validate_song_input(body)
+    if not song:
+        return {"success": False, "error": "Invalid video id"}
+    await add_history(song["video_id"], song.get("title", ""), song.get("artist", ""), song["duration"])
     return {"success": True}
 
 @app.delete("/api/library/history")
@@ -955,17 +973,12 @@ async def liked_ids_route():
 @app.post("/api/library/liked/{video_id}")
 async def toggle_liked(video_id: str, body: dict = None):
     body = body if isinstance(body, dict) else {}
-    try:
-        duration = max(0, int(body.get("duration", 0) or 0))
-    except (TypeError, ValueError):
-        duration = 0
-    song = {
-        "title": str(body.get("title", "") or ""),
-        "artist": str(body.get("artist", "") or ""),
-        "album": str(body.get("album", "") or ""),
-        "thumbnail": str(body.get("thumbnail", "") or ""),
-        "duration": duration,
-    }
+    # Path video_id wajib lulus regex (lihat LOGIC_GUIDE §3). Body song
+    # metadata lewat validator yang sama dengan endpoint lain.
+    if not _VIDEO_ID_RE.match(video_id):
+        return {"success": False, "error": "Invalid video id"}
+    song = _validate_song_input({**body, "video_id": video_id}) or {}
+    song.pop("video_id", None)
     state = await set_liked(video_id, song)
     return {"success": True, "data": {"videoId": video_id, "liked": state}}
 
