@@ -436,8 +436,13 @@ class TerminalEqualizer {
         const floatData = new Float32Array(binCount);
 
         // Accumulate linear power across 20 frames (~1.0 second, 50ms intervals)
+        // Plus: lantai noise HF dari bin 18-20kHz (rata-rata power) supaya
+        // assessAirEligibility bisa bedakan shimmer nada vs hiss (benchmark
+        // ballad Lee Haeri: 16kHz absolut rendah tapi masih nada, bukan noise).
         const frames = 20;
         const bandAccumPower = new Float64Array(10).fill(0);
+        let noiseAccumPower = 0;
+        let peakVocalAccum = 0;
         let validFrames = 0;
 
         for (let f = 0; f < frames; f++) {
@@ -449,6 +454,36 @@ class TerminalEqualizer {
                 const bandDb = bandPowerDb(floatData, sampleRate, fftSize, fc);
                 bandAccumPower[b] += Math.pow(10, bandDb / 10);
             }
+            // Noise floor 18-20kHz: rata-rata power bin langsung (bukan oktaf)
+            // Peak vokal 1.5-4kHz: bin tertinggi (formant/singer's formant).
+            // Benchmark Lee Haeri: band-average 2kHz menipu (terseret lembah
+            // antar-formant), padahal peak vokalnya hidup. Peak inilah yang
+            // menentukan ada/tidaknya vokal, bukan rata-rata oktaf.
+            {
+                const binHz = sampleRate / fftSize;
+                const kLo = Math.max(0, Math.floor(18000 / binHz));
+                const kHi = Math.min(binCount - 1, Math.ceil(20000 / binHz));
+                let s = 0, n = 0;
+                for (let k = kLo; k <= kHi; k++) {
+                    const v = floatData[k];
+                    if (Number.isFinite(v)) { s += Math.pow(10, v / 10); n++; }
+                }
+                if (n > 0) noiseAccumPower += s / n;
+            }
+            {
+                const binHz = sampleRate / fftSize;
+                const kLo = Math.max(0, Math.floor(1500 / binHz));
+                const kHi = Math.min(binCount - 1, Math.ceil(4000 / binHz));
+                let peak = -Infinity;
+                for (let k = kLo; k <= kHi; k++) {
+                    const v = floatData[k];
+                    if (Number.isFinite(v) && v > peak) peak = v;
+                }
+                if (peak > -Infinity) {
+                    // peak power diakumulasi linear supaya konsisten dengan band
+                    peakVocalAccum += Math.pow(10, peak / 10);
+                }
+            }
             validFrames++;
             await new Promise(r => setTimeout(r, 50));
         }
@@ -459,6 +494,9 @@ class TerminalEqualizer {
             const avgP = sumP / validFrames;
             return 10 * Math.log10(Math.max(avgP, 1e-12));
         });
+        const noiseFloorDb = 10 * Math.log10(Math.max(noiseAccumPower / validFrames, 1e-12));
+        const peakVocalDb = 10 * Math.log10(Math.max(peakVocalAccum / validFrames, 1e-12));
+        const airExtra = { noiseFloorDb, peakVocalDb };
 
         // Ensure track is not in a silent intro (< -85 dBFS at 1kHz)
         if (avgBandDb[5] < -85) return;
@@ -476,7 +514,7 @@ class TerminalEqualizer {
         }
 
         // Phase 3: Spectral deficiency filling relative to the (potentially reclassified) archetype
-        const calResult = analyzeAndCompensate(avgBandDb, effectiveArchetype);
+        const calResult = analyzeAndCompensate(avgBandDb, effectiveArchetype, airExtra);
         const { gains, hint } = calResult;
 
         if (token !== this._autoToken || !this.autoMode || !this.enabled) return;
@@ -498,8 +536,11 @@ class TerminalEqualizer {
                 try {
                     const fft2 = this.tuneAnalyser.fftSize;
                     const sr2 = this.audioCtx?.sampleRate || 48000;
-                    const data2 = new Float32Array(this.tuneAnalyser.frequencyBinCount);
+                    const binCount2 = this.tuneAnalyser.frequencyBinCount;
+                    const data2 = new Float32Array(binCount2);
                     const acc2 = new Float64Array(10).fill(0);
+                    let noiseAcc2 = 0;
+                    let peakAcc2 = 0;
                     let valid2 = 0;
                     for (let f = 0; f < frames; f++) {
                         if (laterToken !== this._autoToken || !this.autoMode || !this.enabled) return;
@@ -508,6 +549,28 @@ class TerminalEqualizer {
                             const bd = bandPowerDb(data2, sr2, fft2, EQ_FREQUENCIES[b]);
                             acc2[b] += Math.pow(10, bd / 10);
                         }
+                        {
+                            const binHz2 = sr2 / fft2;
+                            const kLo2 = Math.max(0, Math.floor(18000 / binHz2));
+                            const kHi2 = Math.min(binCount2 - 1, Math.ceil(20000 / binHz2));
+                            let s2 = 0, n2 = 0;
+                            for (let k = kLo2; k <= kHi2; k++) {
+                                const v2 = data2[k];
+                                if (Number.isFinite(v2)) { s2 += Math.pow(10, v2 / 10); n2++; }
+                            }
+                            if (n2 > 0) noiseAcc2 += s2 / n2;
+                        }
+                        {
+                            const binHz2 = sr2 / fft2;
+                            const kLoP = Math.max(0, Math.floor(1500 / binHz2));
+                            const kHiP = Math.min(binCount2 - 1, Math.ceil(4000 / binHz2));
+                            let peak2 = -Infinity;
+                            for (let k = kLoP; k <= kHiP; k++) {
+                                const v2 = data2[k];
+                                if (Number.isFinite(v2) && v2 > peak2) peak2 = v2;
+                            }
+                            if (peak2 > -Infinity) peakAcc2 += Math.pow(10, peak2 / 10);
+                        }
                         valid2++;
                         await new Promise(r => setTimeout(r, 50));
                     }
@@ -515,7 +578,9 @@ class TerminalEqualizer {
                     const laterDb = Array.from(acc2).map(sumP => 10 * Math.log10(Math.max(sumP / valid2, 1e-12)));
                     if (laterDb[5] < -85) return;
                     const laterArch = classifySpectralProfile(laterDb, effectiveArchetype) || effectiveArchetype;
-                    const laterResult = analyzeAndCompensate(laterDb, laterArch);
+                    const laterNoise = 10 * Math.log10(Math.max(noiseAcc2 / valid2, 1e-12));
+                    const laterPeak = 10 * Math.log10(Math.max(peakAcc2 / valid2, 1e-12));
+                    const laterResult = analyzeAndCompensate(laterDb, laterArch, { noiseFloorDb: laterNoise, peakVocalDb: laterPeak });
                     const { refineAirCompensation } = await import('./eq-core.js');
                     const merged = refineAirCompensation(calResult, laterResult);
                     if (laterToken !== this._autoToken || !this.autoMode || !this.enabled) return;

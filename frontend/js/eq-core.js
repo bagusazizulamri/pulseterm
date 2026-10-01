@@ -349,10 +349,34 @@ export function classifySpectralProfile(bandDb, metadataHint = 'flat') {
 }
 
 export const AIR_GATING = {
-    // Absolute noise floor: di bawah ini 16kHz dianggap tidak ada konten (hiss/noise saja)
+    // Absolute noise floor: 16kHz di bawah ini = tidak ada konten nada,
+    // tinggal hiss/lantai noise.
     floorDb: -70,
-    // Relative roll-off vs 1kHz: lebih curam dari ini = mastering memang di-roll-off / lossy / lo-fi
-    maxDropRelDb: -30,
+    // Roll-off relatif vs 1kHz: lebih curam dari ini = mastering memang
+    // di-roll-off / lossy / lo-fi. Dipilih -38dB dari benchmark ballad:
+    // Lee Haeri verse/chorus/bridge asli di -33..-35dB (mix gelap + opus),
+    // jadi ambang harus di bawah itu supaya rekaman studio modern tidak
+    // divonis ROLLED-OFF, sementara lo-fi/kaset asli (< -40dB) tetap ketahan.
+    maxDropRelDb: -38,
+    // Roll-off absolut: di bawah ini 16kHz dianggap memang disengaja
+    // (kaset/lo-fi/rip jelek). Syarat ganda dengan maxDropRelDb supaya
+    // mix gelap studio (relatif curam tapi absolut masih nada) lolos.
+    rolledAbsDb: -55,
+    // Cek konten nada vs noise di 16kHz: band 16kHz harus >= 6dB di atas
+    // lantai noise (bin 18-20kHz). Kalau tidak, yang di-boost cuma hiss.
+    // Benchmark Lee Haeri: bridge/outro/klimaks 8-12dB (nada jelas),
+    // verse/chorus pelan 5-6dB (nada tipis tapi ada).
+    toneAboveNoiseDb: 6.0,
+    // Zona tipis bernada (4..6dB di atas noise): bukan hiss murni, tapi juga
+    // bukan shimmer kuat. Air TIDAK dibuka penuh — hanya micro-lift 8kHz
+    // (+0.5 max) supaya vokal breathy tetap dibantu tanpa desis.
+    // Benchmark Lee Haeri: chorus/prechorus pelan di +5dB = THIN.
+    thinToneDb: 4.0,
+    // Terjun 8k->16k di atas ini = tidak ada shimmer asli (hiss bila di-boost).
+    // Dipilih 14dB dari benchmark Lee Haeri: chorus terjun ~14.8dB dengan
+    // 16kHz tinggal noise tipis (+5dB) -> blokir; verse/bridge terjun 8-11dB
+    // dengan 16kHz masih nada -> lewatkan ke mode THIN/eligible.
+    shimmerDropDb: 14.0,
     // 8kHz deviasi di atas pink-noise ref = sibilant/harsh (cymbal, ess, distortion)
     harshBrillDb: 4.0,
     // Gap 8kHz jauh lebih panas dari 16kHz = top-end kasar, jangan dongkrak air
@@ -407,7 +431,7 @@ export const AIR_POLICY_BY_ARCHETYPE = {
  * @param {string} archetypeKey - kunci archetype SmartEQ
  * @returns {{ eligible: boolean, reason: string, confidence: string, details: object }}
  */
-export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
+export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat', extra = null) {
     const fallback = { eligible: true, reason: '', confidence: 'HIGH', details: {} };
     if (!Array.isArray(measuredOctaveDb) || measuredOctaveDb.length !== 10) return fallback;
     const refDb = measuredOctaveDb[5]; // 1kHz reference
@@ -420,6 +444,10 @@ export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
     const brillDev = brillAbs - refDb - (8 - 5) * (-4.5);
     const airDev = airAbs - refDb - (9 - 5) * (-4.5);
     const presDev = measuredOctaveDb[6] - refDb - (6 - 5) * (-4.5); // 2kHz vocal presence
+    // Lantai noise HF dari bin 18-20kHz (opsional, dikirim equalizer.js dari
+    // analyser yang sama). Kalau band 16kHz tidak menonjol dari noise,
+    // isinya hiss — bukan shimmer nada.
+    const noiseFloor = (extra && Number.isFinite(extra.noiseFloorDb)) ? extra.noiseFloorDb : null;
 
     const no = (reason, details) => ({ eligible: false, reason, confidence: 'HIGH', details });
     const greyHold = (reason, details) =>
@@ -428,34 +456,89 @@ export function assessAirEligibility(measuredOctaveDb, archetypeKey = 'flat') {
         // saat vokal sudah masuk penuh (mis. intro piano -> verse).
         ({ eligible: false, reason, confidence: 'LOW', details });
 
-    // 1. Tidak ada konten HF asli — tinggal noise floor / artefak lossy
-    if (airAbs < AIR_GATING.floorDb) {
+    // 1. Tidak ada konten nada HF — 16kHz tidak menonjol dari lantai noise
+    //    (atau absolutnya di bawah floor). Yang di-boost cuma hiss.
+    //    Zona tipis (thinToneDb..toneAboveNoiseDb, mis. +4..+6dB): nada tipis
+    //    tapi ada — bukan hiss murni. Kembalikan THIN (bukan NO AIR CONTENT)
+    //    supaya pemanggil memberi micro-lift 8kHz, bukan blokir total.
+    //    Benchmark Lee Haeri: chorus/prechorus pelan di +5dB = THIN.
+    let thinAir = false;
+    if (noiseFloor !== null) {
+        const tn = airAbs - noiseFloor;
+        if (tn < AIR_GATING.thinToneDb) {
+            return no('NO AIR CONTENT', { airAbs, noiseFloor });
+        }
+        if (tn < AIR_GATING.toneAboveNoiseDb) thinAir = true;
+    } else if (airAbs < AIR_GATING.floorDb) {
         return no('NO AIR CONTENT', { airAbs, refDb });
     }
-    // 2. Roll-off disengaja / master vintage / lo-fi / kaset — hormati artis, jangan "koreksi"
-    if (airRel < AIR_GATING.maxDropRelDb) {
-        return no('ROLLED-OFF', { airRel, refDb });
+    // 2. Roll-off disengaja / master vintage / lo-fi / kaset — hormati artis, jangan "koreksi".
+    //    Tapi JANGAN vonis dari airRel saja: lagu gelap yang 16kHz-nya masih nada
+    //    (tone-noise >= ambang, mis. ballad studio yang mix-nya gelap) boleh lolos
+    //    ke gerbang berikutnya. ROLLED-OFF final hanya bila 16kHz-nya JUGA
+    //    tinggal noise (toneNoise < toneAboveNoiseDb).
+    const toneNoise = (noiseFloor !== null) ? (airAbs - noiseFloor) : null;
+    // Tanpa info noise (unit test / Perfect Tune): fallback ke absolut floor.
+    // -70 dBFS = tinggal hiss walaupun relatifnya tidak curam.
+    const hasTone = (toneNoise !== null)
+        ? (toneNoise >= AIR_GATING.toneAboveNoiseDb)
+        : (airAbs >= AIR_GATING.floorDb);
+    // ROLLED-OFF butuh DUA syarat: relatif curam DAN absolut lemah.
+    // Relatif saja tidak cukup (mix gelap studio bisa -33dB tapi masih nada).
+    // Absolut saja tidak cukup (intro pelan tapi top-end utuh).
+    const rolledRel = (airRel < AIR_GATING.maxDropRelDb);
+    const rolledAbs = (airAbs < AIR_GATING.rolledAbsDb);
+    if (rolledRel && (toneNoise !== null ? !hasTone : rolledAbs)) {
+        return no('ROLLED-OFF', { airRel, airAbs, refDb });
     }
-    // 3. Curam terjun 8k->16k = tidak ada shimmer asli, yang ada hiss bila di-boost
-    if ((brillAbs - airAbs) > 8) {
+    // 3. Curam terjun 8k->16k = tidak ada shimmer asli, yang ada hiss bila di-boost.
+    //    Syarat GANDA (pelajaran benchmark Lee Haeri chorus/prechorus):
+    //    terjun curam (>12dB, bukan >8dB) DAN 16kHz-nya tinggal noise.
+    //    Terjun 8-12dB dengan 16kHz masih nada = mix gelap bernada (vokal
+    //    breathy + cymbal lembut masih ada) -> lewatkan ke mode THIN/eligible.
+    if ((brillAbs - airAbs) > AIR_GATING.shimmerDropDb && (toneNoise === null || !hasTone)) {
         return no('NO SHIMMER', { brillAbs, airAbs });
     }
-    // 4. Sudah sibilant / harsh di 8k — tambah air = makin perih, essy, fatiguing
-    if (brillDev > AIR_GATING.harshBrillDb && airDev <= brillDev - 2) {
+    // 4. Sudah sibilant / harsh di 8k — tambah air = makin perih, essy, fatiguing.
+    //    Tanpa info noise (unit test / Perfect Tune): pakai aturan lama yang
+    //    ketat (8kHz panas + 16kHz ketinggalan 2dB = tahan).
+    //    Dengan info noise: hanya tahan bila 16kHz-nya JUGA tinggal noise
+    //    (ballad gelap yang 16kHz-nya masih nada = karakter mix, bukan harsh).
+    const gapDev = brillDev - airDev;
+    const harshHot = (brillDev > AIR_GATING.harshBrillDb) && (airDev <= brillDev - 2);
+    if (harshHot && (toneNoise === null || !hasTone)) {
         return no('HARSH', { brillDev, airDev });
     }
-    // 5. Gap 8k jauh di atas 16k — top-end kasar, lift air hanya menonjolkan sibilance
-    if ((brillDev - airDev) > AIR_GATING.harshGapDb) {
+    // 5. Gap 8k jauh di atas 16k — top-end kasar, lift air hanya menonjolkan sibilance.
+    //    Sama: tanpa info noise -> tahan; dengan info noise -> hanya bila noise.
+    if (gapDev > AIR_GATING.harshGapDb && (toneNoise === null || !hasTone)) {
         return no('SIBILANT', { brillDev, airDev });
     }
-    // 6. Vokal tidak present di 2k — "airy vocal" tidak relevan (drop/instrumental/scooped).
-    //    Tapi vokal RECESSED ballad (mix ke dalam, reverb tebal, verse belum masuk)
-    //    jatuh di zona abu-abu -6..-4 dB -> confidence LOW -> refinement yang memutuskan.
-    if (presDev < AIR_GATING.vocalMin2kDb) {
-        return no('NO VOCAL', { presDev });
+    // 6. Vokal tidak present — "airy vocal" tidak relevan (drop/instrumental/scooped).
+    //    Pelajaran benchmark Lee Haeri: band-AVERAGE 2kHz menipu untuk vokal
+    //    sopran/ballad. Rata-rata oktaf 1414-2828Hz terseret lembah di antara
+    //    formant, padahal PEAK vokal di dalam oktaf itu hidup (+0dB, bahkan
+    //    +4dB di prechorus). Jadi yang dinilai = VOCAL PEAK: bin tertinggi
+    //    dalam 1.5-4kHz (formant + singer's formant), relatif terhadap 1kHz.
+    //    NO VOCAL hanya bila peak-nya pun terkubur (peakDev <= -6dB).
+    //    Kalau peak hidup tapi average recessed = vokal ADA (mix ke dalam) ->
+    //    zona abu-abu -> refinement yang memutuskan.
+    //    (peak dihitung pemanggil dari analyser; fallback = rata-rata 2k+3k.)
+    const peakVocalDb = (extra && Number.isFinite(extra.peakVocalDb)) ? extra.peakVocalDb : null;
+    const peakDev = (peakVocalDb !== null)
+        ? (peakVocalDb - refDb + 4.5)
+        : ((presDev + ((measuredOctaveDb[6] + measuredOctaveDb[7]) / 2 - refDb + 6.75)) / 2);
+    if (peakDev <= -6.0) {
+        return no('NO VOCAL', { presDev, peakDev });
     }
     if (presDev < AIR_GATING.vocalGrey2kDb) {
-        return greyHold('NO VOCAL?', { presDev });
+        return greyHold('NO VOCAL?', { presDev, peakDev });
+    }
+    // Zona THIN (nada tipis di atas noise): lolos TAPI dengan mode hemat.
+    // thinAir=true -> pemanggil (analyzeAndCompensate) hanya memberi micro-lift
+    // 8kHz (+0.5 max), 16kHz tetap 0. Vokal breathy terbantu, hiss tidak ikut naik.
+    if (thinAir) {
+        return { eligible: true, reason: '', confidence: 'HIGH', thin: true, details: { airAbs, airRel, brillDev, airDev, presDev } };
     }
     return { eligible: true, reason: '', confidence: 'HIGH', details: { airAbs, airRel, brillDev, airDev, presDev } };
 }
@@ -512,7 +595,7 @@ export function refineAirCompensation(first, later) {
     };
 }
 
-export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
+export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat', extra = null) {
     const arch = SPECTRAL_ARCHETYPES[archetypeKey] || SPECTRAL_ARCHETYPES.flat;
     const refDb = measuredOctaveDb[5]; // 1kHz reference
 
@@ -541,8 +624,13 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
     // hiss, essy, tipis, atau fatiguing. Kalau eligible, tetap batasi boost
     // 16k sesuai karakter archetype (ballad/metal jauh lebih kecil dari pop/EDM).
     const airPolicy = AIR_POLICY_BY_ARCHETYPE[archetypeKey] || AIR_POLICY_BY_ARCHETYPE.flat;
-    const airCheck = assessAirEligibility(measuredOctaveDb, archetypeKey);
-    if (airCheck.eligible) {
+    const airCheck = assessAirEligibility(measuredOctaveDb, archetypeKey, extra);
+    if (airCheck.eligible && airCheck.thin) {
+        // Mode THIN: nada tipis di atas noise (ballad pelan). Hanya micro-lift
+        // 8kHz (+0.5 max), 16kHz tetap 0 — breathy terbantu, hiss tidak naik.
+        if (smoothed[9] > 0) smoothed[9] = 0;
+        if (smoothed[8] > 0.5) smoothed[8] = 0.5;
+    } else if (airCheck.eligible) {
         if (smoothed[9] > airPolicy.airMaxBoost) smoothed[9] = airPolicy.airMaxBoost;
         if (smoothed[8] > airPolicy.airMaxBoost + 0.5) smoothed[8] = airPolicy.airMaxBoost + 0.5;
     } else {
@@ -587,7 +675,8 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
         else if (bassMod < -0.8) tag = 'TIGHT BASS';
         else tag = `AIR HELD (${airCheck.reason})`;
         tag += suffix;
-    } else if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
+    } else if (airCheck.eligible && airCheck.thin) tag = '+AIR (thin)';
+    else if (trebleMod > 0.8 && bassMod > 0.8) tag = '+PUNCH · +AIR';
     else if (trebleMod > 0.8) tag = '+AIR';
     else if (bassMod > 0.8) tag = '+PUNCH';
     else if (midMod > 0.8) tag = '+VOCAL';
@@ -600,8 +689,9 @@ export function analyzeAndCompensate(measuredOctaveDb, archetypeKey = 'flat') {
         offsets: smoothed.map(s => Math.round(s * 10) / 10),
         hint: `${arch.name} (${tag})`,
         airEligible: airCheck.eligible,
-        airReason: airCheck.reason,
-        airConfidence: airCheck.confidence
+        airReason: airCheck.thin ? 'THIN' : airCheck.reason,
+        airConfidence: airCheck.confidence,
+        airThin: !!airCheck.thin
     };
 }
 

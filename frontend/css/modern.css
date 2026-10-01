@@ -40,45 +40,169 @@ body:not(.ui-mode-modern) .tui-ui-mode-choice button.active {
 }
 
 /* =========================================================
-   2. MODERN LIQUID GLASS MODE STYLES
+   2. MODERN LIQUID GLASS MODE STYLES — "Midnight Listening Room"
+   Direction: a calm, late-night listening room. Deep obsidian base,
+   one warm amber "lamp" accent + one cool sky secondary, quiet hairlines,
+   generous air, soft 20px geometry. Signature: the glowing "now playing"
+   ember card in the sidebar + the floating glass player dock.
    Active ONLY under html.ui-mode-modern and body.ui-mode-modern
    ========================================================= */
 html.ui-mode-modern,
 body.ui-mode-modern,
 body.ui-mode-modern[class*="theme-"] {
-    --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-    --font-term: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    --font-mono: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    --font-term: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 
-    /* High-End Static Liquid Glass Palette */
-    --paper: #090d16 !important;
-    --paper-2: rgba(22, 30, 48, 0.6) !important;
-    --paper-3: rgba(35, 48, 75, 0.5) !important;
-    --wash: rgba(14, 20, 32, 0.7) !important;
-    --line: rgba(255, 255, 255, 0.08) !important;
-    --line-focus: #38bdf8 !important;
-    --ink: #f8fafc !important;
-    --ink-2: #38bdf8 !important;
-    --ink-3: #94a3b8 !important;
-    --seal: #38bdf8 !important;
-    --seal-glow: rgba(56, 189, 248, 0.25) !important;
-    --glass: rgba(15, 23, 42, 0.75) !important;
+    /* Midnight Listening Room palette */
+    --paper: #0a0d14 !important;
+    --paper-2: rgba(19, 25, 40, 0.55) !important;
+    --paper-3: rgba(30, 41, 63, 0.5) !important;
+    --wash: rgba(13, 18, 30, 0.66) !important;
+    --line: rgba(255, 255, 255, 0.07) !important;
+    --line-soft: rgba(255, 255, 255, 0.045) !important;
+    --line-focus: #f5b45c !important;
+    --ink: #f4f1ea !important;
+    --ink-2: #f5b45c !important;
+    --ink-3: #8d94a7 !important;
+    --ink-dim: #5b6376 !important;
+    --seal: #f5b45c !important;
+    --seal-deep: #c77e2b !important;
+    --seal-glow: rgba(245, 180, 92, 0.22) !important;
+    --sky: #7cc4f5 !important;
+    --sky-glow: rgba(124, 196, 245, 0.16) !important;
+    --glass: rgba(13, 18, 30, 0.72) !important;
+    --card: rgba(255, 255, 255, 0.032) !important;
     --card-hover: rgba(255, 255, 255, 0.06) !important;
-    --highlight-bg: #0284c7 !important;
-    --highlight-fg: #ffffff !important;
+    --highlight-bg: #f5b45c !important;
+    --highlight-fg: #171106 !important;
+    --r-lg: 20px;
+    --r-md: 14px;
+    --r-sm: 10px;
 
-    /* Static, Calm, Elegant Dark Obsidian Ambient Glass (NO ANIMATION) */
-    background: radial-gradient(1100px 750px at 10% 10%, rgba(30, 58, 138, 0.25) 0%, transparent 60%),
-                radial-gradient(950px 650px at 90% 90%, rgba(14, 116, 144, 0.2) 0%, transparent 60%),
-                radial-gradient(800px 500px at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 70%),
-                #070a12 !important;
+    /* Warm lamp glow top-left, cool moon glow bottom-right, vignette */
+    background: radial-gradient(900px 520px at 12% -6%, rgba(245, 180, 92, 0.10) 0%, transparent 62%),
+                radial-gradient(1000px 700px at 96% 108%, rgba(56, 120, 200, 0.13) 0%, transparent 60%),
+                radial-gradient(1200px 900px at 50% 45%, rgba(16, 22, 38, 0.55) 0%, transparent 72%),
+                #070a11 !important;
     background-attachment: fixed !important;
     color: var(--ink) !important;
     font-family: var(--font-mono) !important;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.011em;
+    font-feature-settings: "cv11" 1, "ss01" 1;
 }
 
 body.ui-mode-modern * {
     font-family: inherit !important;
+}
+
+/* =========================================================
+   2b. LAYOUT RHYTHM — one spacing scale, one radius family
+   ========================================================= */
+body.ui-mode-modern {
+    --rail: 236px;
+    --player: 100px;
+    --pad: clamp(20px, 2.6vw, 40px);
+    --fs-body: 14px;
+}
+
+body.ui-mode-modern #app {
+    gap: 0;
+}
+
+/* Breathing room inside the scrolling page */
+body.ui-mode-modern #page-content {
+    padding: 28px var(--pad) 56px !important;
+}
+
+/* Section headers: quiet rule + amber eyebrow, consistent vertical rhythm */
+body.ui-mode-modern .page-header {
+    margin-bottom: 22px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid var(--line-soft) !important;
+}
+
+body.ui-mode-modern .page-header h1 {
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.025em !important;
+}
+
+body.ui-mode-modern .eyebrow {
+    margin: 30px 0 14px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    color: var(--seal) !important;
+}
+
+body.ui-mode-modern .eyebrow::after {
+    background: var(--line-soft) !important;
+    height: 1px !important;
+}
+
+/* Card grid: even columns, generous gutters, calm surfaces */
+body.ui-mode-modern .item-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    gap: 20px !important;
+}
+
+body.ui-mode-modern .item-card {
+    border-radius: var(--r-md) !important;
+    border: 1px solid var(--line-soft) !important;
+    background: var(--card) !important;
+    padding: 10px !important;
+    box-shadow: none !important;
+}
+
+body.ui-mode-modern .item-card:hover {
+    border-color: rgba(245, 180, 92, 0.35) !important;
+    background: var(--card-hover) !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38) !important;
+    transform: translateY(-3px) !important;
+}
+
+body.ui-mode-modern .cover-wrap {
+    border: none !important;
+    border-radius: var(--r-sm) !important;
+    background: var(--paper-3) !important;
+}
+
+body.ui-mode-modern .card-title {
+    margin-top: 12px !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    color: var(--ink) !important;
+}
+
+body.ui-mode-modern .card-subtitle {
+    margin-top: 3px !important;
+    font-size: 0.78rem !important;
+    color: var(--ink-3) !important;
+}
+
+/* Track lists: styled in section 7 (rows as soft cards) */
+
+/* Recommendation lanes: title + reason stacked tight, cards below */
+body.ui-mode-modern .recommend-lanes-container {
+    gap: 26px !important;
+}
+
+body.ui-mode-modern .lane-header {
+    border-bottom: 1px solid var(--line-soft) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+}
+
+body.ui-mode-modern .lane-title {
+    font-size: 0.82rem !important;
+    letter-spacing: 0.06em !important;
+    color: var(--seal) !important;
+}
+
+body.ui-mode-modern .lane-reason {
+    font-size: 0.76rem !important;
+    color: var(--ink-dim) !important;
 }
 
 /* =========================================================
@@ -95,36 +219,38 @@ body.ui-mode-modern #crt-toggle-btn {
    4. SLEEK LIQUID GLASS SIDEBAR
    ========================================================= */
 body.ui-mode-modern #sidebar {
-    background: rgba(11, 16, 28, 0.7) !important;
+    background: rgba(13, 18, 30, 0.66) !important;
     backdrop-filter: blur(32px) saturate(190%) !important;
     -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
-    padding: 18px 12px 14px !important;
+    border-right: 1px solid var(--line-soft) !important;
+    box-shadow: none !important;
+    padding: 20px 14px 16px !important;
+    gap: 10px !important;
 }
 
 body.ui-mode-modern .tui-brand {
-    padding-bottom: 1.25rem !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-    margin-bottom: 0.75rem !important;
+    padding: 2px 6px 16px !important;
+    border-bottom: 1px solid var(--line-soft) !important;
+    margin-bottom: 10px !important;
 }
 
 body.ui-mode-modern .tui-logo {
-    font-size: 1.2rem !important;
+    font-size: 1.05rem !important;
     font-weight: 700 !important;
-    letter-spacing: -0.02em !important;
-    background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%) !important;
+    letter-spacing: 0.01em !important;
+    background: linear-gradient(120deg, #ffffff 30%, #e8d9bd 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
 }
 
 body.ui-mode-modern .tui-sub {
-    font-size: 0.65rem !important;
+    font-size: 0.62rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.08em !important;
-    color: #38bdf8 !important;
-    opacity: 0.9 !important;
-    margin-top: 2px !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    color: var(--seal) !important;
+    opacity: 0.85 !important;
+    margin-top: 3px !important;
 }
 
 /* Modern Navigation Rail Buttons */
@@ -148,10 +274,10 @@ body.ui-mode-modern .rail-nav .nav-btn:hover {
 }
 
 body.ui-mode-modern .rail-nav .nav-btn.active {
-    background: rgba(56, 189, 248, 0.12) !important;
-    border: 1px solid rgba(56, 189, 248, 0.25) !important;
-    color: #38bdf8 !important;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
+    background: rgba(245, 180, 92, 0.12) !important;
+    border: 1px solid rgba(245, 180, 92, 0.25) !important;
+    color: #f5b45c !important;
+    box-shadow: 0 4px 16px rgba(245, 180, 92, 0.15) !important;
 }
 
 body.ui-mode-modern .key-badge.is-modern-icon {
@@ -170,20 +296,38 @@ body.ui-mode-modern .nav-text {
     letter-spacing: 0 !important;
 }
 
-/* Sidebar Footer / Telemetry */
+/* Sidebar Footer / Telemetry — one quiet card, aligned rows */
 body.ui-mode-modern .sidebar-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
-    padding-top: 1rem !important;
+    border-top: none !important;
+    margin-top: auto !important;
+    padding: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--line-soft) !important;
+    border-radius: var(--r-md) !important;
+    gap: 9px !important;
+}
+
+body.ui-mode-modern .sidebar-stat-row {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.04em !important;
+}
+
+body.ui-mode-modern .sidebar-stat-row .tui-dim {
+    color: var(--ink-dim) !important;
+    text-transform: uppercase !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.1em !important;
 }
 
 body.ui-mode-modern .tui-bitrate-badge {
     border-radius: 9999px !important;
-    border: 1px solid rgba(56, 189, 248, 0.25) !important;
-    background: rgba(56, 189, 248, 0.08) !important;
-    color: #38bdf8 !important;
-    font-size: 0.65rem !important;
+    border: 1px solid rgba(245, 180, 92, 0.25) !important;
+    background: rgba(245, 180, 92, 0.08) !important;
+    color: #f5b45c !important;
+    font-size: 0.62rem !important;
     font-weight: 600 !important;
     padding: 3px 10px !important;
+    letter-spacing: 0.03em !important;
 }
 
 body.ui-mode-modern .tui-mute-btn {
@@ -191,8 +335,44 @@ body.ui-mode-modern .tui-mute-btn {
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     background: rgba(255, 255, 255, 0.05) !important;
     color: var(--ink) !important;
-    font-size: 0.75rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
     padding: 3px 10px !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* Volume slider — hairline track, ember thumb */
+body.ui-mode-modern .volume-wrap input[type="range"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 100% !important;
+    height: 4px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+body.ui-mode-modern .volume-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 13px !important;
+    height: 13px !important;
+    border-radius: 50% !important;
+    background: #f5b45c !important;
+    border: 2px solid #171106 !important;
+    box-shadow: 0 0 10px rgba(245, 180, 92, 0.5) !important;
+    transition: transform 0.12s ease !important;
+}
+body.ui-mode-modern .volume-wrap input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15) !important;
+}
+body.ui-mode-modern .volume-wrap input[type="range"]::-moz-range-thumb {
+    width: 13px !important;
+    height: 13px !important;
+    border-radius: 50% !important;
+    background: #f5b45c !important;
+    border: 2px solid #171106 !important;
+    box-shadow: 0 0 10px rgba(245, 180, 92, 0.5) !important;
 }
 
 /* =========================================================
@@ -217,8 +397,8 @@ body.ui-mode-modern .search-bar {
 
 body.ui-mode-modern .search-bar:focus-within {
     background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(56, 189, 248, 0.5) !important;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(245, 180, 92, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(245, 180, 92, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 body.ui-mode-modern #search-input {
@@ -230,9 +410,9 @@ body.ui-mode-modern #search-input {
 
 body.ui-mode-modern .search-go {
     border-radius: 9999px !important;
-    border: 1px solid rgba(56, 189, 248, 0.3) !important;
-    background: rgba(56, 189, 248, 0.15) !important;
-    color: #38bdf8 !important;
+    border: 1px solid rgba(245, 180, 92, 0.3) !important;
+    background: rgba(245, 180, 92, 0.15) !important;
+    color: #f5b45c !important;
     font-size: 0.78rem !important;
     font-weight: 600 !important;
     padding: 0.35rem 0.9rem !important;
@@ -258,15 +438,19 @@ body.ui-mode-modern .top-bar-actions .tui-btn:hover {
 }
 
 /* =========================================================
-   6. BOTTOM LIQUID GLASS PLAYER BAR
+   6. BOTTOM LIQUID GLASS PLAYER BAR — floating dock
+   The dock lifts off the canvas: rounded slab, hairline edge,
+   warm ember glow behind the play control (the signature).
    ========================================================= */
 body.ui-mode-modern #player-bar {
-    background: rgba(13, 19, 33, 0.85) !important;
-    backdrop-filter: blur(36px) saturate(210%) !important;
-    -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.45) !important;
-    padding: 0 1.5rem !important;
+    background: rgba(13, 18, 30, 0.82) !important;
+    backdrop-filter: blur(36px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 22px !important;
+    margin: 0 18px 16px !important;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    padding: 0 1.4rem !important;
 }
 
 body.ui-mode-modern .player-cover {
@@ -302,20 +486,20 @@ body.ui-mode-modern #play-btn {
     width: 46px !important;
     height: 46px !important;
     border-radius: 50% !important;
-    background: #f8fafc !important;
-    color: #0f172a !important;
+    background: #f4f1ea !important;
+    color: #171106 !important;
     border: none !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-size: 1rem !important;
-    box-shadow: 0 4px 18px rgba(248, 250, 252, 0.25) !important;
+    box-shadow: 0 4px 20px rgba(245, 180, 92, 0.35), 0 0 0 1px rgba(245, 180, 92, 0.25) !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 body.ui-mode-modern #play-btn:hover {
     transform: scale(1.06) !important;
-    box-shadow: 0 6px 24px rgba(248, 250, 252, 0.4) !important;
+    box-shadow: 0 6px 28px rgba(245, 180, 92, 0.5), 0 0 0 1px rgba(245, 180, 92, 0.35) !important;
 }
 
 body.ui-mode-modern #play-btn:active {
@@ -366,63 +550,58 @@ body.ui-mode-modern .ctrl-btn:hover {
 
 body.ui-mode-modern .ctrl-btn.active,
 body.ui-mode-modern .ctrl-btn.on {
-    color: #38bdf8 !important;
-    background: rgba(56, 189, 248, 0.12) !important;
-    border-color: rgba(56, 189, 248, 0.25) !important;
+    color: #f5b45c !important;
+    background: rgba(245, 180, 92, 0.12) !important;
+    border-color: rgba(245, 180, 92, 0.25) !important;
 }
 
-/* Progress Slider */
+/* Progress Slider — dock-aware: hairline sits inside the dock's top edge */
 body.ui-mode-modern #progress-bar {
-    height: 5px !important;
+    top: 0 !important;
+    left: 24px !important;
+    right: 24px !important;
+    height: 16px !important;
+    background: transparent !important;
+    overflow: visible !important;
+}
+
+body.ui-mode-modern #progress-bar::before {
+    top: 6px !important;
+    height: 3px !important;
+    background: rgba(255, 255, 255, 0.10) !important;
     border-radius: 9999px !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    overflow: hidden !important;
     transition: height 0.15s ease !important;
 }
 
-body.ui-mode-modern #progress-bar:hover {
-    height: 8px !important;
+body.ui-mode-modern #progress-bar:hover::before {
+    top: 5px !important;
+    height: 5px !important;
 }
 
 body.ui-mode-modern #progress-fill {
+    top: 6px !important;
+    height: 3px !important;
     border-radius: 9999px !important;
-    background: linear-gradient(90deg, #38bdf8, #818cf8) !important;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
+    background: linear-gradient(90deg, #f5b45c, #f8d9a4) !important;
+    box-shadow: 0 0 12px rgba(245, 180, 92, 0.5) !important;
+}
+
+body.ui-mode-modern #progress-bar:hover #progress-fill {
+    top: 5px !important;
+    height: 5px !important;
+}
+
+body.ui-mode-modern #progress-buffered {
+    top: 6px !important;
+    height: 3px !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-radius: 9999px !important;
 }
 
 /* =========================================================
-   7. MAIN PAGE VIEWS (Cards, Shelves, Lists, Headers)
+   7. MAIN PAGE VIEWS — surfaces & shelves
+   (header/grid/card typography lives in section 2b)
    ========================================================= */
-body.ui-mode-modern .page-header {
-    margin-bottom: 1.5rem !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-    padding-bottom: 1rem !important;
-}
-
-body.ui-mode-modern .page-header h1 {
-    font-size: 1.5rem !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.02em !important;
-    color: #f8fafc !important;
-    border: none !important;
-}
-
-body.ui-mode-modern .eyebrow {
-    font-size: 0.85rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em !important;
-    color: #38bdf8 !important;
-    margin-top: 1.75rem !important;
-    margin-bottom: 0.85rem !important;
-    border: none !important;
-    text-transform: capitalize !important;
-}
-
-/* Modern Card Grid */
-body.ui-mode-modern .item-grid {
-    gap: 1.15rem !important;
-}
-
 body.ui-mode-modern .card {
     border-radius: 16px !important;
     background: rgba(255, 255, 255, 0.035) !important;
@@ -437,27 +616,14 @@ body.ui-mode-modern .card {
 body.ui-mode-modern .card:hover {
     transform: translateY(-4px) !important;
     background: rgba(255, 255, 255, 0.065) !important;
-    border-color: rgba(56, 189, 248, 0.35) !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(245, 180, 92, 0.35) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 180, 92, 0.12) !important;
 }
 
 body.ui-mode-modern .card .cover-wrap img,
 body.ui-mode-modern .cover-fallback {
     border-radius: 12px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-body.ui-mode-modern .card-title {
-    font-size: 0.92rem !important;
-    font-weight: 600 !important;
-    color: #f8fafc !important;
-    margin-top: 10px !important;
-    letter-spacing: -0.01em !important;
-}
-
-body.ui-mode-modern .card-subtitle {
-    font-size: 0.78rem !important;
-    color: #94a3b8 !important;
 }
 
 /* Modern Track List Rows */
@@ -483,31 +649,31 @@ body.ui-mode-modern .list-item:hover {
 }
 
 body.ui-mode-modern .list-item.is-playing {
-    background: rgba(56, 189, 248, 0.12) !important;
-    border-color: rgba(56, 189, 248, 0.35) !important;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.12) !important;
+    background: rgba(245, 180, 92, 0.12) !important;
+    border-color: rgba(245, 180, 92, 0.35) !important;
+    box-shadow: 0 4px 16px rgba(245, 180, 92, 0.12) !important;
 }
 
 body.ui-mode-modern .list-title {
     font-weight: 600 !important;
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
     font-size: 0.92rem !important;
 }
 
 body.ui-mode-modern .list-artist {
     font-size: 0.78rem !important;
-    color: #94a3b8 !important;
+    color: #8d94a7 !important;
 }
 
 body.ui-mode-modern .rank {
     font-size: 0.82rem !important;
     font-weight: 600 !important;
-    color: #64748b !important;
+    color: #5b6376 !important;
     min-width: 24px !important;
 }
 
 body.ui-mode-modern .list-item.is-playing .rank {
-    color: #38bdf8 !important;
+    color: #f5b45c !important;
 }
 
 /* Modern Filter Buttons & Quick Chips */
@@ -518,20 +684,20 @@ body.ui-mode-modern .filter-btn {
     font-weight: 600 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     background: rgba(255, 255, 255, 0.04) !important;
-    color: #94a3b8 !important;
+    color: #8d94a7 !important;
     transition: all 0.2s ease !important;
 }
 
 body.ui-mode-modern .filter-btn:hover {
     background: rgba(255, 255, 255, 0.08) !important;
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
 }
 
 body.ui-mode-modern .filter-btn.active {
-    background: rgba(56, 189, 248, 0.15) !important;
-    border-color: rgba(56, 189, 248, 0.4) !important;
-    color: #38bdf8 !important;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
+    background: rgba(245, 180, 92, 0.15) !important;
+    border-color: rgba(245, 180, 92, 0.4) !important;
+    color: #f5b45c !important;
+    box-shadow: 0 4px 16px rgba(245, 180, 92, 0.15) !important;
 }
 
 body.ui-mode-modern .quick-tag-btn {
@@ -539,7 +705,7 @@ body.ui-mode-modern .quick-tag-btn {
     background: rgba(255, 255, 255, 0.035) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     font-size: 0.78rem !important;
-    color: #cbd5e1 !important;
+    color: #c9cdd8 !important;
     padding: 4px 12px !important;
     transition: all 0.2s ease !important;
 }
@@ -547,7 +713,7 @@ body.ui-mode-modern .quick-tag-btn {
 body.ui-mode-modern .quick-tag-btn:hover {
     background: rgba(255, 255, 255, 0.08) !important;
     border-color: rgba(255, 255, 255, 0.16) !important;
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
 }
 
 /* Empty States */
@@ -562,12 +728,12 @@ body.ui-mode-modern .empty-state {
 body.ui-mode-modern .empty-state h3 {
     font-size: 1.1rem !important;
     font-weight: 700 !important;
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
     margin-bottom: 0.5rem !important;
 }
 
 body.ui-mode-modern .empty-state p {
-    color: #94a3b8 !important;
+    color: #8d94a7 !important;
     font-size: 0.85rem !important;
 }
 
@@ -579,17 +745,17 @@ body.ui-mode-modern #queue-panel,
 body.ui-mode-modern #equalizer-panel,
 body.ui-mode-modern #visualizer-panel,
 body.ui-mode-modern #lyrics-panel {
-    background: rgba(13, 19, 33, 0.88) !important;
-    backdrop-filter: blur(36px) saturate(210%) !important;
-    -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 24px !important;
-    box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    background: rgba(13, 18, 30, 0.88) !important;
+    backdrop-filter: blur(40px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 32px rgba(245, 180, 92, 0.08) !important;
 }
 
 body.ui-mode-modern .drawer-head {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding-bottom: 1rem !important;
+    padding-bottom: 14px !important;
 }
 
 body.ui-mode-modern .drawer-head h2,
@@ -603,7 +769,7 @@ body.ui-mode-modern .drawer-head h3 {
 body.ui-mode-modern .drawer-head button.tui-btn {
     border-radius: 9999px !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
     color: var(--ink-3) !important;
     padding: 0.4rem 0.9rem !important;
     font-weight: 600 !important;
@@ -644,7 +810,7 @@ body.ui-mode-modern .modern-seg-btn {
     border-radius: 10px !important;
     border: 1px solid transparent !important;
     background: transparent !important;
-    color: #94a3b8 !important;
+    color: #8d94a7 !important;
     font-size: 0.85rem !important;
     font-weight: 600 !important;
     cursor: pointer !important;
@@ -652,19 +818,19 @@ body.ui-mode-modern .modern-seg-btn {
 }
 
 body.ui-mode-modern .modern-seg-btn:hover {
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
     background: rgba(255, 255, 255, 0.05) !important;
 }
 
 body.ui-mode-modern .modern-seg-btn.active {
-    background: rgba(56, 189, 248, 0.15) !important;
-    border-color: rgba(56, 189, 248, 0.35) !important;
-    color: #38bdf8 !important;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15) !important;
+    background: rgba(245, 180, 92, 0.15) !important;
+    border-color: rgba(245, 180, 92, 0.35) !important;
+    color: #f5b45c !important;
+    box-shadow: 0 4px 16px rgba(245, 180, 92, 0.15) !important;
 }
 
 /* =========================================================
-   11. QUEUE / LYRICS / EQUALIZER / TOAST / CONTEXT PANELS
+   10. QUEUE / LYRICS / EQUALIZER / TOAST / CONTEXT PANELS
    ========================================================= */
 body.ui-mode-modern #queue-panel,
 body.ui-mode-modern #lyrics-panel,
@@ -688,7 +854,7 @@ body.ui-mode-modern .lyrics-drawer-head h2 {
     font-weight: 700 !important;
     font-size: 1.05rem !important;
     letter-spacing: -0.01em !important;
-    color: #f8fafc !important;
+    color: #f4f1ea !important;
 }
 
 /* Suggestion dropdown + context menu + toast */
@@ -699,8 +865,8 @@ body.ui-mode-modern .suggestion-item {
 }
 
 body.ui-mode-modern .suggestion-item:hover {
-    background: rgba(56, 189, 248, 0.12) !important;
-    color: #f8fafc !important;
+    background: rgba(245, 180, 92, 0.12) !important;
+    color: #f4f1ea !important;
 }
 
 body.ui-mode-modern #context-menu button {
@@ -712,7 +878,7 @@ body.ui-mode-modern #context-menu button {
 body.ui-mode-modern .q-rank,
 body.ui-mode-modern .rank {
     font-variant-numeric: tabular-nums !important;
-    color: #94a3b8 !important;
+    color: #8d94a7 !important;
 }
 
 /* Player-bar glyph buttons: render as clean pill labels */
@@ -742,10 +908,10 @@ body.ui-mode-modern #eq-perfect-btn {
 }
 
 /* =========================================================
-   12. SETTINGS CONTROLS & FORM INPUTS IN MODERN MODE
+   11. SETTINGS CONTROLS & FORM INPUTS IN MODERN MODE
    ========================================================= */
 body.ui-mode-modern input[type="range"] {
-    accent-color: #38bdf8 !important;
+    accent-color: #f5b45c !important;
 }
 
 body.ui-mode-modern select,
@@ -759,16 +925,89 @@ body.ui-mode-modern input[type="text"] {
 
 body.ui-mode-modern .save-btn {
     border-radius: 12px !important;
-    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%) !important;
+    background: linear-gradient(135deg, #c77e2b 0%, #f5b45c 100%) !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     border: none !important;
     padding: 12px !important;
-    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(245, 180, 92, 0.3) !important;
     letter-spacing: normal !important;
 }
 
 body.ui-mode-modern .save-btn:hover {
-    box-shadow: 0 6px 24px rgba(56, 189, 248, 0.45) !important;
+    box-shadow: 0 6px 24px rgba(245, 180, 92, 0.45) !important;
     transform: translateY(-1px) !important;
+}
+
+/* =========================================================
+   12. MODERN SCROLLBARS, MOTION & ACCESSIBILITY
+   ========================================================= */
+/* Slim, quiet scrollbars — visible only on hover */
+body.ui-mode-modern ::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-track {
+    background: transparent !important;
+    border-left: none !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 9999px !important;
+    border: 2px solid transparent !important;
+    background-clip: content-box !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 180, 92, 0.35) !important;
+    background-clip: content-box !important;
+    border: 2px solid transparent !important;
+}
+
+/* Firefox */
+body.ui-mode-modern #page-content,
+body.ui-mode-modern #sidebar {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent !important;
+}
+
+/* Visible amber focus for keyboard users */
+body.ui-mode-modern :focus-visible {
+    outline: 2px solid #f5b45c !important;
+    outline-offset: 2px !important;
+    border-radius: 6px !important;
+}
+
+/* Respect users who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+    body.ui-mode-modern .item-card,
+    body.ui-mode-modern .item-card:hover,
+    body.ui-mode-modern .card,
+    body.ui-mode-modern .card:hover,
+    body.ui-mode-modern .list-item,
+    body.ui-mode-modern .nav-btn,
+    body.ui-mode-modern #play-btn,
+    body.ui-mode-modern .save-btn {
+        transform: none !important;
+        transition: background 0.12s ease, border-color 0.12s ease !important;
+    }
+
+    body.ui-mode-modern #progress-bar,
+    body.ui-mode-modern #progress-fill {
+        transition: none !important;
+    }
+}
+
+/* Narrow screens: keep the dock breathing room intact */
+@media (max-width: 760px) {
+    body.ui-mode-modern #player-bar {
+        margin: 0 10px 10px !important;
+        padding: 0 0.9rem !important;
+    }
+
+    body.ui-mode-modern #page-content {
+        padding: 20px 16px 48px !important;
+    }
 }

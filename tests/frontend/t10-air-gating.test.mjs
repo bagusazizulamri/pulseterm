@@ -24,13 +24,24 @@ describe('T10: Air eligibility — tidak semua lagu boleh di-airy', () => {
         assert.ok(res.hint.includes('AIR HELD'), `hint harus jujur AIR HELD, got ${res.hint}`);
     });
 
-    test('Vintage roll-off disengaja (16kHz -35dB rel 1kHz) -> dihormati, tidak dikoreksi', () => {
-        const rolled = pink({ 8: -10, 9: -17 }); // airRel = -18-17 = -35
+    test('Vintage roll-off disengaja (16kHz lemah total) -> dihormati, tidak dikoreksi', () => {
+        // Kaset/lo-fi asli: relatif curam (-40dB) DAN absolut lemah (-65dB).
+        // Syarat ganda ROLLED-OFF (benchmark Lee Haeri: mix gelap studio di
+        // -33..-35dB relatif tapi absolut masih nada -> harus LOLOS, bukan vonis).
+        const rolled = pink({ 8: -12, 9: -22 }); // airRel = -40, airAbs = -60
         const check = assessAirEligibility(rolled);
         assert.equal(check.eligible, false);
         assert.equal(check.reason, 'ROLLED-OFF');
         const res = analyzeAndCompensate(rolled, 'pop');
         assert.ok(res.offsets[9] <= 0);
+    });
+
+    test('Mix gelap studio (relatif curam tapi masih nada) -> bukan ROLLED-OFF', () => {
+        // Kasus Lee Haeri verse: airRel -35dB tapi absolut -50dB (masih nada).
+        // Tidak boleh divonis ROLLED-OFF — gerbang lain yang menilai.
+        const dark = pink({ 8: -6, 9: -17 }); // airRel = -35, airAbs = -55+...
+        const check = assessAirEligibility(dark);
+        assert.notEqual(check.reason, 'ROLLED-OFF', JSON.stringify(check));
     });
 
     test('Lagu harsh/sibilant (8kHz panas, 16kHz ketinggalan) -> air ditahan', () => {
@@ -42,41 +53,45 @@ describe('T10: Air eligibility — tidak semua lagu boleh di-airy', () => {
         assert.ok(!res.hint.includes('+AIR'), `got ${res.hint}`);
     });
 
-    test('Vokal absen total (scooped dalam) -> NO VOCAL final, bukan abu-abu', () => {
-        // extra -8dB di 2kHz => presDev = -8.0 < ambang -6.0 => NO VOCAL final
+    test('Vokal absen total (peak pun terkubur) -> NO VOCAL final, bukan abu-abu', () => {
+        // Drop/instrumental: peak 1.5-4kHz ikut terkubur.
+        // peakDev = peak - ref + 4.5 <= -6  =>  peak <= ref - 10.5
         const noVocal = pink({ 6: -8 });
-        const check = assessAirEligibility(noVocal);
+        const extra = { peakVocalDb: -20 - 10.5 - 1 }; // peakDev = -7.0
+        const check = assessAirEligibility(noVocal, 'electronic', extra);
         assert.equal(check.eligible, false);
         assert.equal(check.reason, 'NO VOCAL');
         assert.equal(check.confidence, 'HIGH');
-        const res = analyzeAndCompensate(noVocal, 'electronic');
+        const res = analyzeAndCompensate(noVocal, 'electronic', extra);
         assert.equal(res.airEligible, false);
         assert.ok(!res.hint.includes('+AIR'), `got ${res.hint}`);
         assert.ok(!res.hint.includes('check again'), `vonis final tidak boleh check-again, got ${res.hint}`);
     });
 
-    test('Vokal recessed ballad (Lee Haeri style, 2kHz -5dB) -> abu-abu, bukan vonis', () => {
-        // Ballad intim: vokal di-mix agak ke dalam + reverb tebal.
-        // extra -5dB di 2kHz => presDev = -5.0 -> zona abu-abu -6..-4
+    test('Vokal recessed ballad (Lee Haeri style, peak hidup) -> abu-abu, bukan vonis', () => {
+        // Ballad intim: band-average 2kHz recessed -5dB TAPI peak vokal hidup
+        // (formant sopran). Peak yang menentukan, bukan rata-rata oktaf.
         const recessed = pink({ 6: -5 });
-        const check = assessAirEligibility(recessed, 'sad_ballad');
+        const extra = { peakVocalDb: -20 + 2 }; // peakDev = +6.5 (hidup)
+        const check = assessAirEligibility(recessed, 'sad_ballad', extra);
         assert.equal(check.eligible, false);
         assert.equal(check.reason, 'NO VOCAL?');
         assert.equal(check.confidence, 'LOW');
-        const res = analyzeAndCompensate(recessed, 'sad_ballad');
+        const res = analyzeAndCompensate(recessed, 'sad_ballad', extra);
         assert.ok(res.hint.includes('check again'), `harus ada penanda ukur-ulang, got ${res.hint}`);
     });
 
     test('Refinement: intro piano (abu-abu) -> verse vokal masuk -> air dibuka kembali', () => {
-        // Snapshot 1 (detik 1.8): intro piano muffled, vokal belum masuk penuh
-        // (2kHz recessed -5dB + top-end keroll-off 8dB -> butuh +AIR tapi vokal abu-abu)
+        // Snapshot 1 (detik 1.8): intro piano muffled + vokal recessed
+        // (peak hidup tapi average abu-abu) -> LOW.
+        // Snapshot 2 (detik ~10): verse ballad penuh muffled, vokal present.
+        const mkExtra = (peakDev) => ({ peakVocalDb: -20 - 4.5 + peakDev });
         const intro = EQ_FREQUENCIES.map((_, i) => -20 + (i - 5) * (-4.2) - (i >= 8 ? 8 : 0) + (i === 6 ? -5 : 0));
-        const first = analyzeAndCompensate(intro, 'sad_ballad');
+        const first = analyzeAndCompensate(intro, 'sad_ballad', mkExtra(6.0));
         assert.equal(first.airEligible, false);
         assert.equal(first.airConfidence, 'LOW');
-        // Snapshot 2 (detik ~10): verse ballad penuh muffled, vokal present
         const verse = EQ_FREQUENCIES.map((_, i) => -20 + (i - 5) * (-4.2) - (i >= 8 ? 8 : 0));
-        const later = analyzeAndCompensate(verse, 'sad_ballad');
+        const later = analyzeAndCompensate(verse, 'sad_ballad', mkExtra(10.0));
         assert.equal(later.airEligible, true);
         assert.ok(later.offsets[9] > 0, `sanity: verse muffled harus butuh air, got ${later.offsets[9]}`);
         const merged = refineAirCompensation(first, later);
