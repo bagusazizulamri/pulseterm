@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from dataclasses import asdict, is_dataclass
 
-from config import APP_PORT, APP_HOST, CORS_ORIGINS, CACHE_DIR
+from config import APP_PORT, APP_HOST, CORS_ORIGINS, CACHE_DIR, MAX_FILE_SIZE
 from database import (init_db, get_playlists, get_playlist_songs,
     create_playlist, add_song_to_playlist, add_songs_to_playlist_batch, remove_song_from_playlist,
     delete_playlist, add_history, get_history, clear_history,
@@ -271,6 +271,8 @@ async def proxy_audio(video_id: str, request: Request):
     import logging
     import time
     from fastapi.responses import StreamingResponse
+    import time
+    from fastapi.responses import StreamingResponse
 
     t0 = time.monotonic()
     log = logging.getLogger("pulseterm.audio")
@@ -367,6 +369,17 @@ async def proxy_audio(video_id: str, request: Request):
 
     length = upstream.headers.get("content-length")
     if length:
+        # Guard against runaway upstream claiming multi-GB content. A 4-min Opus
+        # track is ~5 MB; an honest YouTube response will always be well under
+        # MAX_FILE_SIZE (100 MB), so anything larger is broken/malicious.
+        try:
+            if int(length) > MAX_FILE_SIZE:
+                await upstream.aclose()
+                log.warning("audio: id=%s rejected, content-length=%s > %s",
+                            video_id, length, MAX_FILE_SIZE)
+                return JSONResponse({"success": False, "error": "Upstream content too large"}, status_code=502)
+        except (TypeError, ValueError):
+            pass
         resp_headers["Content-Length"] = length
 
     async def gen():

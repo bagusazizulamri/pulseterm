@@ -38,6 +38,41 @@ class PlayerManagerTests(unittest.TestCase):
         self.assertEqual(self.p.next_song().video_id, "ddddddddddd")
         self.assertEqual(self.p.next_song().video_id, "bbbbbbbbbbb")
 
+    def test_truncate_preserves_user_shuffle(self):
+        """Regression: when context overflows MAX_CONTEXT, the user's existing
+        shuffle order must survive — only the dropped prefix is removed.
+        """
+        songs = [{'videoId': f'{i:011d}', 'title': f't{i}', 'artist': 'a'} for i in range(305)]
+        mgr = PlayerManager()
+        mgr.set_context(songs, index=0, shuffle=True)
+        # Reverse order — this is the user's "shuffle" they care about.
+        custom_order = list(reversed(range(305)))
+        mgr.set_order(custom_order, pos=0)
+        # Append one more so context overflows 300.
+        mgr.append_recommendations([{'videoId': '99999999999', 'title': 'extra'}])
+        # After overflow: context length must be 300, NOT 306.
+        self.assertEqual(len(mgr.context), 300)
+        # The first 6 original songs must have been dropped (306 - 300 = 6 dropped).
+        remaining_ids = [s.video_id for s in mgr.context]
+        self.assertNotIn('00000000000', remaining_ids)
+        self.assertNotIn('00000000005', remaining_ids)
+        self.assertIn('00000000006', remaining_ids)
+        # The shuffle must still be a permutation of [0..299].
+        self.assertEqual(sorted(mgr.order), list(range(300)))
+        # And it must NOT be the trivial identity order (the regression case).
+        self.assertNotEqual(mgr.order, list(range(300)))
+
+    def test_truncate_keeps_current_track_playable(self):
+        songs = [{'videoId': f'{i:011d}', 'title': f't{i}', 'artist': 'a'} for i in range(305)]
+        mgr = PlayerManager()
+        mgr.set_context(songs, index=200, shuffle=True)
+        mgr.append_recommendations([{'videoId': '99999999999', 'title': 'extra'}])
+        # Current song was at index 200; after dropping 6, it lives at 194.
+        self.assertEqual(mgr.current_song.video_id, f'{200:011d}')
+        self.assertEqual(mgr.context_index, 194)
+        # order_pos must still resolve to a valid position in order.
+        self.assertIn(mgr.order_pos, range(len(mgr.order)))
+
     def test_remove_context_upcoming(self):
         self.p.remove_context_item(1)
         self.assertEqual([x["song"]["video_id"] for x in self.p.upcoming()], ["ccccccccccc"])

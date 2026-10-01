@@ -374,10 +374,18 @@ class PlayerManager:
                 self._rec_reasons[song.video_id] = reason
             added.append(song)
         # Cap the lane so a runaway client/seed cannot grow context unbounded.
+        # Preserve the user's shuffle/reorder: _order holds permutation indices
+        # into _context, so dropping the first N context slots means the
+        # surviving _order entries must be re-mapped by `-N`, NOT reset to
+        # range(len(_context)) which would silently undo the user's shuffle.
         MAX_CONTEXT = 300
         if len(self._context) > MAX_CONTEXT:
+            drop = len(self._context) - MAX_CONTEXT
+            # All existing _order entries point to indices 0..len-1; shift down
+            # by `drop` and drop any that fall below 0.
+            remapped = [i - drop for i in self._order if i - drop >= 0]
             self._context = self._context[-MAX_CONTEXT:]
-            self._order = list(range(len(self._context)))
+            self._order = remapped or list(range(len(self._context)))
             if self._current:
                 try:
                     self._context_index = next(i for i, s in enumerate(self._context)
@@ -386,7 +394,7 @@ class PlayerManager:
                     self._context_index = len(self._context) - 1
             else:
                 self._context_index = len(self._context) - 1
-            self._order_pos = self._order.index(self._context_index)
+            self._order_pos = self._order.index(self._context_index) if self._context_index in self._order else 0
             self.refresh_auto_markers()
         self.save_state()
         return added

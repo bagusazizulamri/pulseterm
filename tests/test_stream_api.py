@@ -60,6 +60,25 @@ class StreamApiTests(unittest.TestCase):
                     self.assertNotIn(':', c.args[0] if c.args else c.kwargs.get('video_id', ''))
         asyncio.run(run())
 
+    def test_oversized_content_length_is_rejected(self):
+        """Upstream claiming >100 MB of audio must be rejected so a broken
+        upstream response cannot OOM the proxy.
+        """
+        async def run():
+            fake_client = AsyncMock()
+            async def fake_send(request, **kwargs):
+                return httpx.Response(200, headers={
+                    'content-type': 'audio/webm',
+                    'content-length': str(200 * 1024 * 1024),
+                }, content=b'')
+            fake_client.send.side_effect = fake_send
+            with patch('main.stream.get_stream_url_async', new=AsyncMock(return_value='https://unused.test/audio')):
+                with patch('main.get_proxy_client', return_value=fake_client):
+                    r = await self.client.get('/api/player/audio/xxxxxxxxxxx')
+            self.assertEqual(r.status_code, 502)
+            self.assertIn('too large', r.json().get('error', '').lower())
+        asyncio.run(run())
+
     def test_stream_proxy_uses_cache_and_returns_audio(self):
         async def run():
             with patch('main.stream.get_stream_url_async', new=AsyncMock(return_value='https://unused.test/audio')) as resolver:
