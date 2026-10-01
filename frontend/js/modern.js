@@ -16,54 +16,6 @@ const ICONS = {
     next: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>`
 };
 
-/**
- * Mode-aware control labels. Retro (TUI) keeps the bracketed telemetry
- * text; Modern renders clean sentence-case pills. All dynamic writers
- * (equalizer, spatial, player) read these when `window.modernLabel` exists,
- * so labels never flash back to terminal style in Modern UI.
- */
-function stripBrackets(text) {
-    return String(text || '').replace(/^\[|\]$/g, '').trim();
-}
-
-function titleCaseWord(word) {
-    if (!word) return word;
-    const up = word.toUpperCase();
-    if (up === 'EQ' || up === 'DSP' || up === 'HQ' || up === 'OPUS' || up === 'VIZ' || up === 'CRT') return up;
-    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-}
-
-function prettifyBracket(text) {
-    const inner = stripBrackets(text).replace(/·/g, '·');
-    // "EQ: AUTO·FLAT" -> "EQ · Auto Flat" ; "[SPATIAL: OFF]" -> "Spatial · Off"
-    const [head, ...rest] = inner.split(':');
-    if (!rest.length) return head.split(/[\s·]+/).filter(Boolean).map(titleCaseWord).join(' ');
-    const tail = rest.join(':');
-    return [titleCaseWord(head.trim()), ...tail.split('·').map(s => s.trim()).filter(Boolean).map(titleCaseWord)].join(' · ');
-}
-
-const modernLabel = {
-    eqTop(enabled, autoMode, preset) {
-        if (!enabled) return 'EQ Off';
-        return autoMode ? `EQ · Auto ${preset}` : `EQ · ${preset}`;
-    },
-    eqOn(preset) { return `EQ · ${preset}`; },
-    eqOff() { return 'EQ Off'; },
-    eqPower(enabled) { return enabled ? 'EQ On' : 'EQ Off'; },
-    eqAuto(on) { return on ? 'Auto On' : 'Auto Off'; },
-    eqAutoOn(on) { return on ? 'Auto On' : 'Auto Off'; },
-    dsp(enabled) { return enabled ? 'DSP Active' : 'DSP Off'; },
-    spatial(modeName) { return `Spatial · ${titleCaseWord(String(modeName || 'off'))}`; },
-    badges: {
-        '[EQ: BYPASS]': 'EQ Off', '[EQ: ENABLED]': 'EQ On',
-        '[AUTO: ON]': 'Auto On', '[AUTO: OFF]': 'Auto Off',
-        '[DSP: ACTIVE]': 'DSP Active', '[DSP: BYPASSED]': 'DSP Off',
-        '[SPATIAL: OFF]': 'Spatial · Off',
-        '[PLAYING]': 'Playing', '[PAUSED]': 'Paused', '[IDLE]': 'Idle',
-        '[REP: OFF]': 'Repeat Off', '[REP: ALL]': 'Repeat All', '[REP: ONE]': 'Repeat One'
-    }
-};
-
 class ModernUiEngine {
     constructor() {
         this.mode = 'tui';
@@ -76,10 +28,6 @@ class ModernUiEngine {
         // Attach global hooks immediately
         window.switchUiMode = (m) => this.setMode(m);
         window.getUiMode = () => this.mode;
-        // Shared label helpers for dynamic writers (EQ / Spatial / quality).
-        // Retro keeps bracketed telemetry; Modern reads these instead.
-        window.modernLabel = modernLabel;
-        window.modernPrettify = prettifyBracket;
 
         this.init();
     }
@@ -379,20 +327,12 @@ class ModernUiEngine {
             }
             const qualityBadge = document.getElementById('player-audio-quality');
             if (qualityBadge) {
-                // Static + dynamic ("[TIER · CODEC KBPS]") quality pills -> clean
-                const m = qualityBadge.textContent.trim().match(/^\[?\s*(HQ|SQ)\s*·\s*(.+?)\s*\]?$/);
+                const m = qualityBadge.textContent.trim().match(/^\[(HQ|SQ)\s*·\s*(.+)\]$/);
                 if (m) this.cleanText(qualityBadge, `${m[1]} · ${m[2]}`);
             }
             const repeatBtn = document.getElementById('repeat-btn');
             if (repeatBtn && repeatBtn.children.length === 0) {
-                const raw = repeatBtn.textContent.trim();
-                // player.js now writes via window.modernPrettify when present,
-                // but a TUI-shaped value can flash in before that — normalize it.
-                if (raw.startsWith('[') && raw.endsWith(']') && window.modernPrettify) {
-                    this.cleanText(repeatBtn, window.modernPrettify(raw));
-                    return;
-                }
-                const t = this.stripBrackets(raw);
+                const t = this.stripBrackets(repeatBtn.textContent);
                 const map = { 'REP: OFF': 'Repeat Off', 'REP: ALL': 'Repeat All', 'REP: ONE': 'Repeat One' };
                 if (map[t]) this.cleanText(repeatBtn, map[t]);
             }
@@ -418,34 +358,8 @@ class ModernUiEngine {
             }
             const eqToggle = document.getElementById('eq-toggle-btn');
             if (eqToggle && eqToggle.children.length === 0) {
-                const t = eqToggle.textContent.trim();
-                if (t.startsWith('[') && t.endsWith(']')) {
-                    // Dynamic EQ labels ("[EQ: AUTO·FLAT]") read via shared helper
-                    this.cleanText(eqToggle, prettifyBracket(t));
-                }
-            }
-            // Static EQ / DSP / Spatial / quality pills -> shared helpers
-            document.querySelectorAll('[data-eq-power], [data-eq-auto], [data-eq-dsp]').forEach(el => {
-                const t = el.textContent.trim();
-                if (!t.startsWith('[') || !t.endsWith(']')) return;
-                const map = {
-                    '[EQ: BYPASS]': 'EQ Off', '[EQ: ENABLED]': 'EQ On',
-                    '[AUTO: ON]': 'Auto On', '[AUTO: OFF]': 'Auto Off',
-                    '[DSP: ACTIVE]': 'DSP Active', '[DSP: BYPASSED]': 'DSP Off'
-                };
-                this.cleanText(el, map[t] || prettifyBracket(t));
-            });
-            document.querySelectorAll('#spatial-toggle-btn, #spatial-panel-btn').forEach(el => {
-                if (el.children.length > 0) return;
-                const t = el.textContent.trim();
-                if (/^\[SPATIAL:/i.test(t)) this.cleanText(el, prettifyBracket(t));
-            });
-            const quality = document.getElementById('player-audio-quality');
-            if (quality && quality.children.length === 0) {
-                const t = quality.textContent.trim();
-                if (t.startsWith('[') && t.endsWith(']')) {
-                    this.cleanText(quality, t.slice(1, -1).trim().replace(/\s*·\s*/g, ' · '));
-                }
+                const t = this.stripBrackets(eqToggle.textContent);
+                if (/^EQ\s*:/i.test(t)) this.cleanText(eqToggle, t.replace(/^EQ\s*:\s*/i, ''));
             }
 
             // 2. Clean Page Headers & ASCII frames (┌─ ... ─┐)

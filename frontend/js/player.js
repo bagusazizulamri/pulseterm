@@ -1992,17 +1992,11 @@ const player = {
             if (backdrop) backdrop.style.backgroundImage = 'none';
         }
         const badge = document.getElementById('player-state-badge');
-        if (badge) {
-            const modern = window.modernLabel;
-            const label = this.currentSong ? (this.isPlaying ? '[PLAYING]' : '[PAUSED]') : '[IDLE]';
-            badge.textContent = modern && modern.badges[label] ? modern.badges[label] : label;
-        }
+        if (badge) badge.textContent = this.currentSong ? (this.isPlaying ? '[PLAYING]' : '[PAUSED]') : '[IDLE]';
         const repeat = document.getElementById('repeat-btn');
         if (repeat) {
             repeat.dataset.state = this.repeatMode;
-            const modern = window.modernLabel;
-            const label = this.repeatMode === 'none' ? '[REP: OFF]' : (this.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
-            repeat.textContent = modern ? window.modernPrettify(label) : label;
+            repeat.textContent = this.repeatMode === 'none' ? '[REP: OFF]' : (this.repeatMode === 'all' ? '[REP: ALL]' : '[REP: ONE]');
         }
         const shuffle = document.getElementById('shuffle-btn'); if (shuffle) shuffle.classList.toggle('on', this.shuffleMode);
         const vizTrack = document.getElementById('viz-now-playing');
