@@ -74,6 +74,11 @@ body.ui-mode-modern[class*="theme-"] {
     --m-on-accent: #04121d;
     --m-danger: #ff6f85;
     --m-danger-soft: rgba(255, 111, 133, 0.14);
+    /* EQ band hues — semantic, not theme colours; light themes override for contrast */
+    --m-eq-bass: #4f9dff;
+    --m-eq-mid: #fbbf24;
+    --m-eq-vocal: #34d399;
+    --m-eq-treble: #a78bfa;
     --m-danger-line: rgba(255, 111, 133, 0.34);
     --m-bass: #c084fc;
     --m-mid: #4cc2ff;
@@ -320,6 +325,17 @@ body.ui-mode-modern.theme-softdark {
     --m-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.36);
     --m-shadow-2: 0 10px 28px -8px rgba(0, 0, 0, 0.44);
     --m-shadow-3: 0 28px 62px -14px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================================
+   /* Light themes wash out the light EQ band hues — darken for legibility */
+body.ui-mode-modern.theme-maclight,
+body.ui-mode-modern.theme-ytsoft,
+body.ui-mode-modern.theme-light {
+    --m-eq-bass: #1d6fd6;
+    --m-eq-mid: #a16207;
+    --m-eq-vocal: #047857;
+    --m-eq-treble: #6d28d9;
 }
 
 /* =========================================================
@@ -1651,7 +1667,886 @@ body.ui-mode-modern .artwork-modal-body img {
 }
 
 /* =========================================================
-   23. ACCESSIBILITY
+   23. DETAIL PASS — closes gaps the 22 sections above
+   missed: classes that only exist in JS-rendered markup or
+   that retro style.css still owned. Same token system.
+   ========================================================= */
+
+/* --- 23a. item-card: registry/recommendation cards.
+       Rendered by app.js; structurally identical to .card but
+       retro style.css owned it, so it fell through to
+       --paper-2 / --line. Alias it into the glass system. --- */
+body.ui-mode-modern .item-card {
+    position: relative !important;
+    cursor: pointer !important;
+    background: var(--m-surface) !important;
+    backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-r-lg) !important;
+    box-shadow: var(--m-shadow-2), inset 0 1px 0 var(--m-highlight) !important;
+    overflow: hidden !important;
+    padding: 10px !important;
+    transition: transform var(--m-base) var(--m-spring),
+                box-shadow var(--m-base) var(--m-ease),
+                border-color var(--m-base) var(--m-ease) !important;
+}
+
+body.ui-mode-modern .item-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: var(--m-accent-line) !important;
+    background: var(--m-surface) !important;
+    box-shadow: var(--m-shadow-3), 0 0 0 1px var(--m-accent-soft),
+                inset 0 1px 0 var(--m-highlight) !important;
+}
+
+body.ui-mode-modern .item-card:hover .cover,
+body.ui-mode-modern .item-card:hover .cover-fallback {
+    filter: none !important;
+    transform: scale(1.05) !important;
+}
+
+body.ui-mode-modern .item-card:hover .card-title { color: var(--m-accent) !important; }
+
+/* Hover play overlay was an opaque black slab (rgba(0,0,0,.65))
+   with mono text — reads as a terminal artifact on artwork. */
+body.ui-mode-modern .card-play-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background: var(--m-overlay) !important;
+    backdrop-filter: blur(14px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+    color: var(--m-text) !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    opacity: 0 !important;
+    transition: opacity var(--m-base) var(--m-ease) !important;
+}
+
+body.ui-mode-modern .item-card:hover .card-play-overlay { opacity: 1 !important; }
+body.ui-mode-modern .play-icon { font-size: 1rem !important; line-height: 1 !important; }
+body.ui-mode-modern .play-text { font-weight: 700 !important; }
+
+/* --- 23b. Keyboard roving focus.
+       Retro pinned `outline: 2px solid var(--seal)` + --wash,
+       which flashed the terminal seal colour mid-list. --- */
+body.ui-mode-modern .list-item.keyboard-focus,
+body.ui-mode-modern .item-card.keyboard-focus {
+    outline: none !important;
+    outline-offset: -1px !important;
+    background: var(--m-surface-2) !important;
+    border-color: var(--m-accent-line) !important;
+    box-shadow: inset 3px 0 0 var(--m-accent) !important;
+    border-radius: var(--m-r-sm) !important;
+}
+
+/* --- 23c. Modal shell.
+       Only .artwork-modal was covered; import-playlist-modal and
+       create-playlist-modal are the same <dialog class="tui-modal">
+       and were falling back to the retro dialog frame. --- */
+body.ui-mode-modern dialog.tui-modal {
+    background: var(--m-surface) !important;
+    backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-r-xl) !important;
+    box-shadow: var(--m-shadow-3), inset 0 1px 0 var(--m-highlight) !important;
+    color: var(--m-text) !important;
+    padding: 0 !important;
+    max-width: min(560px, 92vw) !important;
+}
+
+body.ui-mode-modern dialog.tui-modal::backdrop {
+    background: color-mix(in srgb, var(--m-canvas-a) 74%, transparent) !important;
+    backdrop-filter: blur(6px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(6px) saturate(120%) !important;
+}
+
+body.ui-mode-modern .modal-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    padding: 16px 20px !important;
+    border-bottom: 1px solid var(--m-border) !important;
+    background: var(--m-surface-2) !important;
+    border-radius: var(--m-r-xl) var(--m-r-xl) 0 0 !important;
+}
+
+body.ui-mode-modern .import-modal-body { padding: 20px !important; }
+
+body.ui-mode-modern .import-modal-desc {
+    font-size: 0.78rem !important;
+    color: var(--m-text-3) !important;
+    line-height: 1.6 !important;
+    margin: 0 0 16px !important;
+}
+
+body.ui-mode-modern .import-field-group { margin-bottom: 14px !important; }
+
+body.ui-mode-modern .import-field-group > label {
+    display: block !important;
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    color: var(--m-text-3) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6px !important;
+}
+
+body.ui-mode-modern .import-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-r-sm) !important;
+    color: var(--m-text) !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.8rem !important;
+    padding: 10px 12px !important;
+    transition: border-color var(--m-base) var(--m-ease),
+                box-shadow var(--m-base) var(--m-ease) !important;
+}
+
+body.ui-mode-modern .import-input:focus {
+    outline: none !important;
+    border-color: var(--m-accent) !important;
+    box-shadow: 0 0 0 3px var(--m-accent-soft) !important;
+}
+
+body.ui-mode-modern .import-modal-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin-top: 20px !important;
+}
+
+body.ui-mode-modern .import-status,
+body.ui-mode-modern .import-error {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 0.74rem !important;
+    padding: 10px 12px !important;
+    border-radius: var(--m-r-sm) !important;
+    margin-top: 12px !important;
+}
+
+body.ui-mode-modern .import-status {
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    color: var(--m-text-2) !important;
+}
+
+body.ui-mode-modern .import-error {
+    background: var(--m-danger-soft) !important;
+    border: 1px solid var(--m-danger) !important;
+    color: var(--m-danger) !important;
+    font-weight: 600 !important;
+}
+
+body.ui-mode-modern .import-error.hidden,
+body.ui-mode-modern .import-status.hidden { display: none !important; }
+
+body.ui-mode-modern .import-spinner {
+    animation: modern-spin 0.9s linear infinite !important;
+    color: var(--m-accent) !important;
+}
+
+/* --- 23d. Settings drawer rows.
+       Retro drew every group with `1px dashed var(--line)` and a
+       seal-coloured uppercase label — both read as terminal art. --- */
+body.ui-mode-modern .setting-group {
+    padding: 16px 0 !important;
+    border-bottom: 1px solid var(--m-border) !important;
+}
+
+body.ui-mode-modern .setting-group > label {
+    color: var(--m-text-3) !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+}
+
+body.ui-mode-modern .drawer-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    padding: 16px 18px !important;
+    border-bottom: 1px solid var(--m-border) !important;
+    background: var(--m-surface-2) !important;
+    flex-shrink: 0 !important;
+}
+
+body.ui-mode-modern .drawer-head h2,
+body.ui-mode-modern .drawer-head h3 {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: var(--m-text) !important;
+    margin: 0 !important;
+}
+
+body.ui-mode-modern .drawer-head-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+body.ui-mode-modern .settings-content {
+    padding: 6px 18px 18px !important;
+}
+
+@keyframes modern-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- 23e. Queue rows.
+       player.js builds these: queue-item > [queue-grip, q-rank,
+       list-info, q-menu.icon-btn]. None were styled. --- */
+body.ui-mode-modern .queue-grip {
+    color: var(--m-accent) !important;
+    font-size: 0.72rem !important;
+    flex-shrink: 0 !important;
+    width: 1rem !important;
+    text-align: center !important;
+}
+
+body.ui-mode-modern .q-rank {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: var(--m-text-3) !important;
+    min-width: 2.6rem !important;
+    flex-shrink: 0 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+body.ui-mode-modern .list-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+}
+
+body.ui-mode-modern .list-info .list-title {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* The live stream row — retro only had .active. */
+body.ui-mode-modern .queue-item.is-now-playing,
+body.ui-mode-modern .queue-item.active {
+    background: var(--m-accent-soft) !important;
+    border-color: var(--m-accent-line) !important;
+    box-shadow: inset 3px 0 0 var(--m-accent) !important;
+}
+
+body.ui-mode-modern .queue-item.is-now-playing .list-title {
+    color: var(--m-accent) !important;
+}
+
+body.ui-mode-modern .queue-item.is-now-playing .q-artist { color: var(--m-text-2) !important; }
+
+body.ui-mode-modern .icon-btn,
+body.ui-mode-modern .q-menu {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: var(--m-pill) !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--m-text-3) !important;
+    font-size: 0.8rem !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: background var(--m-fast) var(--m-ease),
+                color var(--m-fast) var(--m-ease) !important;
+}
+
+body.ui-mode-modern .icon-btn:hover,
+body.ui-mode-modern .q-menu:hover {
+    background: var(--m-surface-3) !important;
+    color: var(--m-text) !important;
+}
+
+body.ui-mode-modern .queue-empty {
+    padding: 28px 18px !important;
+    text-align: center !important;
+    font-size: 0.78rem !important;
+    color: var(--m-text-3) !important;
+}
+
+body.ui-mode-modern .queue-continue-note {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    margin-top: 6px !important;
+    border-radius: var(--m-r-sm) !important;
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    font-size: 0.72rem !important;
+    color: var(--m-text-3) !important;
+}
+
+/* --- 23f. Now-playing deck.
+       Retro forced var(--font-term) on the telemetry stack and
+       drew a dashed head rule — both leaked the terminal look. --- */
+body.ui-mode-modern .now-playing-head {
+    border-bottom: 1px solid var(--m-border) !important;
+}
+
+body.ui-mode-modern .eyebrow-label {
+    font-family: var(--m-font) !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    color: var(--m-text-3) !important;
+}
+
+body.ui-mode-modern .now-artist-label {
+    font-family: var(--m-font) !important;
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text-2) !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .now-cover-img {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    display: block !important;
+    border-radius: var(--m-r) !important;
+}
+
+body.ui-mode-modern .now-deck-telemetry {
+    font-family: var(--m-font) !important;
+    background: var(--m-surface) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-r) !important;
+    padding: 12px !important;
+    gap: 10px !important;
+}
+
+body.ui-mode-modern .deck-tel-label,
+body.ui-mode-modern .spec-label {
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    color: var(--m-text-3) !important;
+    text-transform: uppercase !important;
+}
+
+body.ui-mode-modern .spec-val,
+body.ui-mode-modern .deck-tel-time {
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text-2) !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+body.ui-mode-modern .now-art-zoom-btn { width: 100% !important; justify-content: center !important; }
+
+body.ui-mode-modern .lyrics-head-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+}
+
+body.ui-mode-modern .lyrics-empty {
+    padding: 28px 12px !important;
+    text-align: center !important;
+    font-size: 0.82rem !important;
+    color: var(--m-text-3) !important;
+}
+
+/* --- 23g. EQ band chips.
+       Retro pinned #3b82f6/#f59e0b/#10b981/#8b5cf6 — the only
+       colours in the app that ignored the theme entirely. --- */
+body.ui-mode-modern .eq-fader-hint {
+    color: var(--m-text-2) !important;
+    border-color: var(--m-border) !important;
+    background: var(--m-surface-2) !important;
+}
+
+body.ui-mode-modern .eq-fader-hint.type-bass {
+    color: var(--m-eq-bass) !important;
+    border-color: color-mix(in srgb, var(--m-eq-bass) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--m-eq-bass) 12%, transparent) !important;
+}
+
+body.ui-mode-modern .eq-fader-hint.type-mid {
+    color: var(--m-eq-mid) !important;
+    border-color: color-mix(in srgb, var(--m-eq-mid) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--m-eq-mid) 12%, transparent) !important;
+}
+
+body.ui-mode-modern .eq-fader-hint.type-vocal {
+    color: var(--m-eq-vocal) !important;
+    border-color: color-mix(in srgb, var(--m-eq-vocal) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--m-eq-vocal) 12%, transparent) !important;
+}
+
+body.ui-mode-modern .eq-fader-hint.type-treble {
+    color: var(--m-eq-treble) !important;
+    border-color: color-mix(in srgb, var(--m-eq-treble) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--m-eq-treble) 12%, transparent) !important;
+}
+
+body.ui-mode-modern .eq-fader-legend {
+    color: var(--m-text-3) !important;
+    border: 1px solid var(--m-border) !important;
+    border-top: none !important;
+    background: var(--m-surface-2) !important;
+    font-size: 0.66rem !important;
+}
+
+body.ui-mode-modern .eq-head-title,
+body.ui-mode-modern .eq-macro-head,
+body.ui-mode-modern .viz-head-title {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    color: var(--m-text) !important;
+    letter-spacing: 0.05em !important;
+}
+
+body.ui-mode-modern .eq-head-title h3,
+body.ui-mode-modern .eq-macro-head h3,
+body.ui-mode-modern .viz-head-title h3 {
+    font-size: inherit !important;
+    color: inherit !important;
+    margin: 0 !important;
+}
+
+body.ui-mode-modern .eq-meta-tag,
+body.ui-mode-modern .auto-badge {
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    color: var(--m-text-3) !important;
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 3px 9px !important;
+}
+
+body.ui-mode-modern .eq-val-accent {
+    color: var(--m-accent) !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+body.ui-mode-modern .eq-perfect-btn { border-color: var(--m-accent-line) !important; color: var(--m-accent) !important; }
+body.ui-mode-modern .eq-rack { padding: 14px 0 16px !important; }
+body.ui-mode-modern .eq-telemetry-row { gap: 14px !important; flex-wrap: wrap !important; }
+
+/* --- 23h. Recommendation lanes. Dashed header rule + seal title. --- */
+body.ui-mode-modern .lane-header {
+    border-bottom: 1px solid var(--m-border) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+body.ui-mode-modern .lane-title {
+    font-family: var(--m-font) !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: var(--m-text) !important;
+}
+
+body.ui-mode-modern .lane-reason {
+    font-family: var(--m-font) !important;
+    font-size: 0.72rem !important;
+    color: var(--m-text-3) !important;
+    opacity: 1 !important;
+}
+
+body.ui-mode-modern .recommend-lanes-container { gap: 26px !important; }
+
+/* --- 23i. Empty states. Retro used a dashed border + paper slab. --- */
+body.ui-mode-modern .empty-state {
+    max-width: 46ch !important;
+    margin: 48px auto !important;
+    padding: 30px 26px !important;
+    background: var(--m-surface) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-r-lg) !important;
+    box-shadow: var(--m-shadow-2), inset 0 1px 0 var(--m-highlight) !important;
+    text-align: center !important;
+}
+
+body.ui-mode-modern .empty-state .label {
+    display: inline-block !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.14em !important;
+    color: var(--m-accent) !important;
+    background: var(--m-accent-soft) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 4px 12px !important;
+    margin-bottom: 12px !important;
+}
+
+body.ui-mode-modern .empty-state h3 {
+    font-size: 1rem !important;
+    color: var(--m-text) !important;
+    margin-bottom: 8px !important;
+}
+
+body.ui-mode-modern .empty-state p {
+    font-size: 0.78rem !important;
+    color: var(--m-text-3) !important;
+    line-height: 1.65 !important;
+}
+
+body.ui-mode-modern .empty-icon { color: var(--m-accent) !important; opacity: 0.8 !important; }
+body.ui-mode-modern .empty-title { color: var(--m-text) !important; }
+body.ui-mode-modern .empty-desc { color: var(--m-text-3) !important; line-height: 1.6 !important; }
+
+/* --- 23j. Lyric line internals.
+       Word-by-word karaoke highlight + romanisation were still
+       carrying retro's var(--ink) / --seal colours. --- */
+body.ui-mode-modern .lrc-word { transition: color var(--m-fast) linear !important; }
+body.ui-mode-modern .lyric-line .lrc-word.sung,
+body.ui-mode-modern .lyric-line.sung { color: var(--m-text-3) !important; }
+body.ui-mode-modern .lyric-line.active .lrc-word { color: var(--m-text) !important; }
+body.ui-mode-modern .lyric-roman,
+body.ui-mode-modern .lyric-trans {
+    font-family: var(--m-font) !important;
+    font-size: 0.72rem !important;
+    color: var(--m-text-3) !important;
+    letter-spacing: 0 !important;
+}
+body.ui-mode-modern .plain-lyric {
+    font-family: var(--m-font) !important;
+    font-size: 1.05rem !important;
+    line-height: 1.9 !important;
+    color: var(--m-text-2) !important;
+    letter-spacing: 0 !important;
+}
+body.ui-mode-modern .lyric-timestamp {
+    font-size: 0.62rem !important;
+    color: var(--m-text-3) !important;
+    font-variant-numeric: tabular-nums !important;
+}
+body.ui-mode-modern .lyric-content { letter-spacing: 0 !important; color: var(--m-text) !important; }
+body.ui-mode-modern .lyrics-scroll-wrap { min-height: 0 !important; }
+body.ui-mode-modern .lyrics-ambient-backdrop { opacity: 0.5 !important; }
+body.ui-mode-modern .lyrics-loading-state {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    padding: 40px !important;
+    color: var(--m-text-3) !important;
+    font-size: 0.78rem !important;
+}
+body.ui-mode-modern .lyrics-spinner {
+    animation: modern-spin 0.9s linear infinite !important;
+    color: var(--m-accent) !important;
+    display: inline-block !important;
+}
+body.ui-mode-modern .lyrics-load-text { color: var(--m-text-3) !important; }
+body.ui-mode-modern .lyrics-toggle { min-width: 84px !important; justify-content: center !important; }
+
+/* --- 23k. Sidebar footer telemetry rows.
+       Retro forced var(--font-term) + 9.5-10px; the STREAM/VIZ/VOL
+       labels were the most obviously terminal-flavoured text left. --- */
+body.ui-mode-modern .sidebar-stat-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.08em !important;
+}
+body.ui-mode-modern .tui-dim,
+body.ui-mode-modern .sidebar-stat-row .tui-dim {
+    font-family: var(--m-font) !important;
+    font-size: 0.62rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    color: var(--m-text-3) !important;
+}
+body.ui-mode-modern .tui-val {
+    font-family: var(--m-font) !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    color: var(--m-text-2) !important;
+    font-variant-numeric: tabular-nums !important;
+}
+body.ui-mode-modern .is-hq,
+body.ui-mode-modern .tui-bitrate-badge {
+    font-family: var(--m-font) !important;
+    font-size: 0.6rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    color: var(--m-accent) !important;
+    background: var(--m-accent-soft) !important;
+    border: 1px solid var(--m-accent-line) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 2px 8px !important;
+    white-space: nowrap !important;
+}
+
+/* --- 23l. Rail nav labels + quick tag chips. --- */
+body.ui-mode-modern .nav-btn .nav-text {
+    font-family: var(--m-font) !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    color: var(--m-text-2) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+body.ui-mode-modern .quick-tags {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 14px !important;
+}
+body.ui-mode-modern .quick-tags button {
+    font-family: var(--m-font) !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text-2) !important;
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 4px 12px !important;
+    cursor: pointer !important;
+    transition: background var(--m-fast) var(--m-ease),
+                border-color var(--m-fast) var(--m-ease) !important;
+}
+body.ui-mode-modern .quick-tags button:hover {
+    background: var(--m-accent-soft) !important;
+    border-color: var(--m-accent-line) !important;
+    color: var(--m-accent) !important;
+}
+
+/* --- 23m. Small odds and ends. --- */
+body.ui-mode-modern .keys {
+    margin-top: 18px !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.7rem !important;
+    line-height: 1.8 !important;
+    color: var(--m-text-3) !important;
+}
+body.ui-mode-modern .like-btn { color: var(--m-text-3) !important; }
+body.ui-mode-modern .like-btn.is-liked,
+body.ui-mode-modern .like-btn.active { color: var(--m-danger) !important; }
+body.ui-mode-modern .search-results-info {
+    font-family: var(--m-font) !important;
+    font-size: 0.72rem !important;
+    color: var(--m-text-3) !important;
+    margin-bottom: 12px !important;
+}
+body.ui-mode-modern .title-row { display: flex !important; align-items: center !important; gap: 8px !important; }
+body.ui-mode-modern .clock-sep,
+body.ui-mode-modern .context-divider { color: var(--m-text-3) !important; opacity: 0.5 !important; }
+body.ui-mode-modern .ui-mode-choice-btn { border-radius: var(--m-pill) !important; }
+body.ui-mode-modern .list-meta-actions { display: flex !important; align-items: center !important; gap: 10px !important; }
+body.ui-mode-modern .list-duration {
+    font-family: var(--m-font) !important;
+    font-size: 0.7rem !important;
+    color: var(--m-text-3) !important;
+    font-variant-numeric: tabular-nums !important;
+    text-align: right !important;
+    min-width: 44px !important;
+}
+
+/* --- 23n. EQ deck internals.
+       .eq-ascii-curve is monospace ASCII art (terminal artefact),
+       same family as the CRT overlay already hidden. --- */
+body.ui-mode-modern .eq-ascii-curve { display: none !important; }
+
+body.ui-mode-modern .eq-faders {
+    display: grid !important;
+    grid-template-columns: repeat(10, minmax(46px, 1fr)) !important;
+    gap: 6px !important;
+    min-width: 460px !important;
+    flex: 1 !important;
+}
+
+body.ui-mode-modern .eq-scale {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.62rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text-3) !important;
+    padding: 16px 8px 24px 0 !important;
+    border-right: 1px solid var(--m-border) !important;
+    user-select: none !important;
+}
+
+body.ui-mode-modern .eq-profile-wrap,
+body.ui-mode-modern .eq-presets-ribbon,
+body.ui-mode-modern .eq-presets-chips,
+body.ui-mode-modern .eq-action-buttons {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+}
+
+body.ui-mode-modern .eq-presets-chips,
+body.ui-mode-modern .eq-presets-ribbon { margin-bottom: 10px !important; }
+
+body.ui-mode-modern .eq-slider-vertical {
+    writing-mode: vertical-lr !important;
+    direction: rtl !important;
+    accent-color: var(--m-accent) !important;
+}
+
+body.ui-mode-modern .lyric-jump-icon { color: var(--m-accent) !important; }
+body.ui-mode-modern .lyric-line[data-dist="0"] .lyric-jump-icon { color: var(--m-accent) !important; }
+
+body.ui-mode-modern .now-deck-sidebar,
+body.ui-mode-modern .now-playing-content,
+body.ui-mode-modern .now-head-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+}
+body.ui-mode-modern .now-head-meta { gap: 2px !important; }
+
+body.ui-mode-modern .now-playing-content { gap: 16px !important; padding: 20px 24px !important; }
+
+/* --- 23o. Buttons retro sized in fixed pixels or seal-coloured. --- */
+body.ui-mode-modern .play-btn {
+    min-height: 40px !important;
+    padding: 8px 20px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: var(--m-on-accent) !important;
+    background: var(--m-accent) !important;
+    border: 1px solid var(--m-accent) !important;
+    border-radius: var(--m-pill) !important;
+    box-shadow: 0 4px 16px var(--m-accent-glow) !important;
+}
+body.ui-mode-modern .play-btn:hover {
+    background: var(--m-accent) !important;
+    color: var(--m-on-accent) !important;
+    filter: brightness(1.08) !important;
+}
+body.ui-mode-modern .play-btn[data-state="playing"] {
+    box-shadow: 0 0 0 4px var(--m-accent-soft) !important;
+}
+body.ui-mode-modern .spatial-toggle-btn { min-width: 108px !important; }
+
+/* Retro pinned .sidebar-viz-btn to width:118px height:22px — a
+   terminal meter, not a glass chip. */
+body.ui-mode-modern .sidebar-viz-btn,
+body.ui-mode-modern .tui-mini-viz {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: 26px !important;
+    min-width: 92px !important;
+    font-family: var(--m-font) !important;
+    font-size: 0.64rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    color: var(--m-accent) !important;
+    background: var(--m-accent-soft) !important;
+    border: 1px solid var(--m-accent-line) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 3px 12px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+}
+body.ui-mode-modern .sidebar-viz-btn:hover {
+    border-color: var(--m-accent) !important;
+    box-shadow: 0 0 0 3px var(--m-accent-soft) !important;
+}
+
+body.ui-mode-modern .seg-icon { font-size: 0.86rem !important; line-height: 1 !important; flex-shrink: 0 !important; }
+body.ui-mode-modern .seg-label { font-weight: 600 !important; letter-spacing: 0 !important; }
+
+body.ui-mode-modern .text-btn {
+    font-family: var(--m-font) !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: var(--m-text-3) !important;
+    background: none !important;
+    border: none !important;
+    padding: 4px 6px !important;
+    cursor: pointer !important;
+    transition: color var(--m-fast) var(--m-ease) !important;
+}
+body.ui-mode-modern .text-btn:hover { color: var(--m-accent) !important; }
+
+body.ui-mode-modern .queue-btn,
+body.ui-mode-modern .queue-continue-toggle {
+    font-family: var(--m-font) !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: var(--m-text-2) !important;
+    background: var(--m-surface-2) !important;
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-pill) !important;
+    padding: 5px 12px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+body.ui-mode-modern .queue-btn:hover,
+body.ui-mode-modern .queue-continue-toggle:hover {
+    border-color: var(--m-accent-line) !important;
+    color: var(--m-accent) !important;
+}
+body.ui-mode-modern .queue-continue-toggle.active {
+    background: var(--m-accent-soft) !important;
+    border-color: var(--m-accent-line) !important;
+    color: var(--m-accent) !important;
+}
+body.ui-mode-modern .continue-hint {
+    font-size: 0.66rem !important;
+    color: var(--m-text-3) !important;
+    font-style: italic !important;
+}
+
+body.ui-mode-modern .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    width: auto !important;
+    justify-content: flex-end !important;
+}
+
+/* =========================================================
+   24. ACCESSIBILITY
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
     body.ui-mode-modern *,
