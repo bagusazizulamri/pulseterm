@@ -271,6 +271,139 @@ class ModernUiEngine {
     stripBrackets(text) {
         const t = String(text || '').trim();
         if (t.startsWith('[') && t.endsWith(']')) return t.slice(1, -1).trim();
+        // Also strip leading "[X] " prefix in mixed strings like "[ONE] Repeat single track".
+        const leadingMatch = t.match(/^\[([A-Z][A-Z0-9 +×#.,&\-:/!%_]+)\]\s*/);
+        if (leadingMatch) return t.slice(leadingMatch[0].length).trim();
+        // Strip trailing " [X]" suffix (rare).
+        return t.replace(/\s+\[[A-Z][A-Z0-9 +×#.,&\-:/!%_]+\]\s*$/, '').trim();
+    }
+
+    /**
+     * Convert a TUI-style bracketed label into a friendly Title-Case form.
+     * Phase 2: expanded to ~60 known labels discovered via codebase audit.
+     */
+    prettyLabel(raw) {
+        const t = this.stripBrackets(raw);
+        const map = {
+            // Buttons / actions
+            'NEW PLAYLIST': 'New Playlist',
+            'CLEAR HISTORY': 'Clear History',
+            'PURGE HISTORY': 'Purge History',
+            'CLEAR ALL': 'Clear All',
+            'COMMIT CONFIG TO FLASH': 'Commit Config',
+            'CREATE': 'Create',
+            '+ CREATE': 'Create',
+            '+ CREATE NEW PLAYLIST': 'Create Playlist',
+            '+ ADD': 'Add',
+            '+ ADD TO QUEUE': 'Add to Queue',
+            'DELETE PLAYLIST': 'Delete Playlist',
+            'SAVE': 'Save',
+            'CANCEL': 'Cancel',
+            'BROWSE': 'Browse',
+            'IMPORT': 'Import',
+            'EXPORT': 'Export',
+            'YES': 'Yes',
+            'NO': 'No',
+            'OK': 'OK',
+            'CONFIRM': 'Confirm',
+            'DONE': 'Done',
+            'PURGE': 'Purge',
+            'OPEN': 'Open',
+            'SEARCH': 'Search',
+            'EXEC': 'Search',
+            'CLOSE ×': 'Close',
+            'CLOSE ESC': 'Close',
+            'UNDO': 'Undo',
+            'LOAD': 'Load',
+            'PLAYING': 'Playing',
+            'PAUSED': 'Paused',
+            'IDLE': 'Idle',
+            'SHUF': 'Shuffle',
+            'QUEUE': 'Queue',
+            'LYRICS': 'Lyrics',
+            'AUTOPLAY': 'Autoplay',
+            // Theme
+            'MAC LIGHT': 'Mac Light',
+            'YOUTUBE SOFT': 'YouTube Soft',
+            'OLED MONO': 'OLED Mono',
+            'CYBERPUNK': 'Cyberpunk',
+            'TOKYO SLATE': 'Tokyo Slate',
+            'SOLARIZED': 'Solarized',
+            'MAC LIQUID GLASS': 'Mac Liquid Glass',
+            'SOFT DARK': 'Soft Dark',
+            // Zoom / DPI
+            '85% COMPACT': '85% Compact',
+            '90% CONDENSED': '90% Condensed',
+            '100% STANDARD': '100% Standard',
+            '110% LARGE': '110% Large',
+            '120% HI-DPI': '120% Hi-DPI',
+            '+ ZOOM IN': 'Zoom In',
+            '- ZOOM OUT': 'Zoom Out',
+            '100% RESET': '100% Reset',
+            // Viz / EQ / DSP
+            'VIZ: CAVA': 'Visualizer',
+            'CRT: OFF': 'CRT Off',
+            'CRT: ON': 'CRT On',
+            'EQ: FLAT': 'EQ Flat',
+            'EQ: ENABLED': 'EQ On',
+            'EQ: BYPASS': 'EQ Off',
+            'DSP: ACTIVE': 'DSP Active',
+            'DSP: BYPASSED': 'DSP Bypassed',
+            'REP: OFF': 'Repeat Off',
+            'REP: ALL': 'Repeat All',
+            'REP: ONE': 'Repeat One',
+            'SPATIAL: OFF': 'Spatial Off',
+            'SPATIAL: ON': 'Spatial On',
+            'FOLLOW: ON': 'Follow On',
+            'FOLLOW: OFF': 'Follow Off',
+            'SCRIPT: DUAL': 'Dual',
+            'SCRIPT: ROMAN': 'Roman',
+            'AUTO: OFF': 'Auto Off',
+            'AUTO: ON': 'Auto On',
+            'AUTO-EQ: DISABLED': 'Auto-EQ Off',
+            'AUTO-EQ: ENABLED': 'Auto-EQ On',
+            // Headers / sections
+            'ALL': 'All',
+            'ALBUMS': 'Albums',
+            'ARTISTS': 'Artists',
+            'SONGS': 'Songs',
+            'PLAYLIST': 'Playlist',
+            'PLAYLISTS': 'Playlists',
+            'QUEUE': 'Queue',
+            // Status
+            'ACTIVE STREAM': 'Active Stream',
+            'BUFFER: FETCHING': 'Buffering',
+            'QUERY: IN-PROGRESS': 'Searching',
+            'QUERY: READY': 'Ready',
+            'QUERY: ZERO-MATCH': 'No results',
+            'REGISTRY: VOID': 'Empty',
+            'REPOSITORY: CLEAN': 'Up to date',
+            'PLAYLIST: EMPTY': 'No tracks yet',
+            // Toast action / control
+            'CONFIG': 'Settings',
+            'STATUS: IDLE': 'Idle',
+            'STATUS: BUFFERING': 'Buffering',
+            'STATUS: ERROR': 'Error',
+            'PULSETERM AUDIO ENGINE': 'PulseTerm Audio',
+            'PULSETERM TUI': 'PulseTerm TUI',
+            'NO IMG': 'No image',
+            'PL': 'Playlist',
+            'SONG': 'Song',
+            'ONE': 'One',
+            'NONE': 'None',
+            'FLAT': 'Flat',
+            'RESET FLAT': 'Reset',
+            'CREATING...': 'Creating...',
+            'IMPORTING...': 'Importing...',
+            'IMPORT PLAYLIST FROM YOUTUBE': 'Import from YouTube',
+            'AUDIO QUALITY': 'Audio Quality',
+            'FOLLOW LYRICS': 'Follow',
+        };
+        if (map[t]) return map[t];
+        // Generic fallback: title-case uppercase strings with spaces.
+        if (/^[A-Z0-9 +×#.,&\-:/!%_]+$/.test(t) && t === t.toUpperCase() && /[A-Z]/.test(t)) {
+            return t.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase().replace(/×/g, '×'));
+        }
         return t;
     }
 
@@ -458,34 +591,37 @@ class ModernUiEngine {
                 if (btn.children.length > 0) return;
                 const current = btn.textContent.trim();
                 if (current.startsWith('[') && current.endsWith(']')) {
-                    const text = this.stripBrackets(current);
-                    // Pretty-mapping for known labels → human-readable form.
-                    const map = {
-                        'MAC LIGHT': 'Mac Light',
-                        'YOUTUBE SOFT': 'YouTube Soft',
-                        'OLED MONO': 'OLED Mono',
-                        'CYBERPUNK': 'Cyberpunk',
-                        'TOKYO SLATE': 'Tokyo Slate',
-                        'SOLARIZED': 'Solarized',
-                        'MAC LIQUID GLASS': 'Mac Liquid Glass',
-                        'SOFT DARK': 'Soft Dark',
-                        '85% COMPACT': '85% Compact',
-                        '90% CONDENSED': '90% Condensed',
-                        '100% STANDARD': '100% Standard',
-                        '110% LARGE': '110% Large',
-                        '120% HI-DPI': '120% Hi-DPI',
-                        '100% RESET': 'Reset Zoom',
-                        '- ZOOM OUT': 'Zoom Out',
-                        '+ ZOOM IN': 'Zoom In',
-                    };
-                    let cleaned = map[text];
-                    if (cleaned === undefined) {
-                        // Keep EQ/DSP telemetry uppercase-ish, prettify the rest
-                        cleaned = /^(EQ|DSP|SPATIAL|AUTO|PERFECT|RESET)/i.test(text)
-                            ? text
-                            : (text.charAt(0) + text.slice(1).toLowerCase());
-                    }
-                    this.cleanText(btn, cleaned);
+                    const cleaned = this.prettyLabel(current);
+                    if (cleaned !== current) this.cleanText(btn, cleaned);
+                }
+            });
+
+            // 4b. Universal bracket-text sweep: catch *all* buttons whose entire
+            // visible label is `[X]` and not already covered by section 4 above.
+            // Includes .tui-btn, .btn, .action-btn, .toggle-btn, .spatial-toggle-btn,
+            // .tui-clear-btn, .btn-danger, .drawer-head-actions button, etc.
+            const extraSelectors = [
+                '.tui-btn', '.btn', '.action-btn', '.toggle-btn', '.spatial-toggle-btn',
+                '.tui-clear-btn', '.btn-danger', '.drawer-head-actions button',
+                '.viz-actions button', '.zoom-stepper-row button', '.zoom-presets-grid button',
+                '.setting-group button', '.search-filters button', '.quick-tags button',
+                '.nav-text', '.save-btn', '.lyrics-head-actions .tui-btn'
+            ];
+            document.querySelectorAll(extraSelectors.join(', ')).forEach(btn => {
+                if (!(btn instanceof HTMLElement)) return;
+                if (btn.children.length > 0) return;
+                if (btn.id === 'play-btn' || btn.id === 'repeat-btn') return;
+                if (btn.classList.contains('glyph-play') || btn.classList.contains('glyph-pause')) return;
+                const current = btn.textContent.trim();
+                if (!current) return;
+                // Skip if already processed by section 4 (theme-btn, filter-btn, etc).
+                if (btn.classList.contains('theme-btn') || btn.classList.contains('filter-btn')
+                    || btn.classList.contains('quick-tag-btn') || btn.classList.contains('zoom-preset-btn')) {
+                    return;
+                }
+                if (current.startsWith('[') && current.endsWith(']')) {
+                    const cleaned = this.prettyLabel(current);
+                    if (cleaned && cleaned !== current) this.cleanText(btn, cleaned);
                 }
             });
 

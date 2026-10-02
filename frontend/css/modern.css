@@ -1294,3 +1294,1083 @@ body.ui-mode-modern .quick-tag-btn.active {
     border-color: transparent !important;
     box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
 }
+
+/* =========================================================
+   24. PHASE 2 FOUNDATION — Glass surface + Universal text reset
+   ========================================================= */
+body.ui-mode-modern {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(56, 189, 248, 0.08), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(168, 85, 247, 0.06), transparent 60%),
+        linear-gradient(180deg, #0b1220 0%, #0f172a 50%, #0b1220 100%) !important;
+    background-attachment: fixed !important;
+    color: #e2e8f0 !important;
+}
+
+/* Universal text reset — kill retro monospace/uppercase/letter-spacing
+   that retro CSS leaks in via inheritance or low-priority .tui-* classes. */
+body.ui-mode-modern,
+body.ui-mode-modern button,
+body.ui-mode-modern input,
+body.ui-mode-modern select,
+body.ui-mode-modern textarea,
+body.ui-mode-modern label,
+body.ui-mode-modern h1,
+body.ui-mode-modern h2,
+body.ui-mode-modern h3,
+body.ui-mode-modern h4,
+body.ui-mode-modern h5,
+body.ui-mode-modern h6,
+body.ui-mode-modern p,
+body.ui-mode-modern span,
+body.ui-mode-modern div,
+body.ui-mode-modern a {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+                 "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    font-feature-settings: normal !important;
+}
+
+body.ui-mode-modern button,
+body.ui-mode-modern .tui-btn,
+body.ui-mode-modern .btn,
+body.ui-mode-modern .action-btn,
+body.ui-mode-modern .toggle-btn,
+body.ui-mode-modern .tui-clear-btn {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                color 180ms ease, box-shadow 180ms ease, transform 120ms ease !important;
+}
+
+body.ui-mode-modern button:focus,
+body.ui-mode-modern input:focus,
+body.ui-mode-modern select:focus,
+body.ui-mode-modern textarea:focus,
+body.ui-mode-modern a:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35) !important;
+}
+
+/* =========================================================
+   25. SCROLLBAR + SELECTION (Modern)
+   ========================================================= */
+body.ui-mode-modern ::-webkit-scrollbar {
+    width: 10px !important;
+    height: 10px !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4) !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.4) !important;
+    border-radius: 9999px !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.65) !important;
+    background-clip: padding-box !important;
+}
+
+body.ui-mode-modern ::-webkit-scrollbar-corner {
+    background: transparent !important;
+}
+
+body.ui-mode-modern ::selection {
+    background: rgba(56, 189, 248, 0.4) !important;
+    color: #ffffff !important;
+}
+
+body.ui-mode-modern ::-moz-selection {
+    background: rgba(56, 189, 248, 0.4) !important;
+    color: #ffffff !important;
+}
+
+/* =========================================================
+   26. PAGE HEADER + HEADINGS (Modern)
+   ========================================================= */
+body.ui-mode-modern .page-header {
+    background: rgba(15, 23, 42, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 16px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 16px !important;
+    backdrop-filter: blur(20px) saturate(1.5) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.ui-mode-modern .page-header h1,
+body.ui-mode-modern .page-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    letter-spacing: -0.02em !important;
+    color: #f8fafc !important;
+    background: none !important;
+    text-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.ui-mode-modern .eyebrow {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    color: #38bdf8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 6px !important;
+}
+
+body.ui-mode-modern .section-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    color: #f8fafc !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    margin: 16px 0 10px !important;
+}
+
+body.ui-mode-modern .deck-h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    color: #f8fafc !important;
+    text-transform: none !important;
+    letter-spacing: -0.01em !important;
+    background: none !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .deck-specs-box,
+body.ui-mode-modern .deck-telemetry-box,
+body.ui-mode-modern .deck-progress-track,
+body.ui-mode-modern .deck-progress-bar {
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    color: #f8fafc !important;
+}
+
+/* =========================================================
+   27. EMPTY STATE / TOAST / SUGGESTION / QUEUE (Modern)
+   ========================================================= */
+body.ui-mode-modern .empty-state {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 16px !important;
+    padding: 32px 20px !important;
+    backdrop-filter: blur(10px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(1.4) !important;
+}
+
+body.ui-mode-modern .empty-icon {
+    font-size: 2.4rem !important;
+    color: #38bdf8 !important;
+    margin-bottom: 8px !important;
+    opacity: 0.6 !important;
+}
+
+body.ui-mode-modern .empty-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.05rem !important;
+    color: #f8fafc !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 6px !important;
+}
+
+body.ui-mode-modern .empty-desc {
+    font-size: 0.85rem !important;
+    color: #94a3b8 !important;
+    line-height: 1.5 !important;
+}
+
+body.ui-mode-modern #toast,
+body.ui-mode-modern .toast {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(20px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.6) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 12px 18px !important;
+}
+
+body.ui-mode-modern #toast-action {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 4px 12px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+}
+
+body.ui-mode-modern .suggestion-list {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(20px) saturate(1.5) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+    padding: 4px !important;
+}
+
+body.ui-mode-modern .suggestion-item {
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #f8fafc !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    transition: background 120ms ease !important;
+}
+
+body.ui-mode-modern .suggestion-item:hover,
+body.ui-mode-modern .suggestion-item.active {
+    background: rgba(56, 189, 248, 0.15) !important;
+}
+
+body.ui-mode-modern .queue-item {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 8px !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .queue-item:hover {
+    background: rgba(56, 189, 248, 0.06) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+body.ui-mode-modern .q-remove {
+    background: transparent !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    color: #f87171 !important;
+    border-radius: 9999px !important;
+    padding: 4px 12px !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+}
+
+body.ui-mode-modern .q-remove:hover {
+    background: rgba(248, 113, 113, 0.15) !important;
+}
+
+/* =========================================================
+   28. PLAYER BAR INNER CONTROLS (Modern)
+   ========================================================= */
+body.ui-mode-modern #player-bar .player-inner {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .player-cover,
+body.ui-mode-modern .now-cover-frame {
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ui-mode-modern .player-info,
+body.ui-mode-modern .player-meta {
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .player-info b,
+body.ui-mode-modern .player-info .title,
+body.ui-mode-modern .player-info .player-title {
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    background: none !important;
+    text-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.ui-mode-modern .player-subtitle,
+body.ui-mode-modern .player-meta-artist {
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .player-status,
+body.ui-mode-modern .tui-state-badge,
+body.ui-mode-modern #player-state-badge {
+    border-radius: 9999px !important;
+    padding: 4px 12px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern #player-audio-quality,
+body.ui-mode-modern .tui-bitrate-badge {
+    border-radius: 9999px !important;
+    padding: 4px 10px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern #player-bar .player-controls .tui-btn,
+body.ui-mode-modern #player-bar .player-controls button,
+body.ui-mode-modern #player-bar .player-right .tui-btn,
+body.ui-mode-modern #player-bar .player-right button,
+body.ui-mode-modern #lyrics-toggle {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: #f8fafc !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    cursor: pointer !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease, transform 120ms ease !important;
+}
+
+body.ui-mode-modern #player-bar .player-controls .tui-btn:hover,
+body.ui-mode-modern #player-bar .player-controls button:hover,
+body.ui-mode-modern #player-bar .player-right .tui-btn:hover,
+body.ui-mode-modern #player-bar .player-right button:hover,
+body.ui-mode-modern #lyrics-toggle:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern #player-bar .player-controls .tui-btn.active,
+body.ui-mode-modern #player-bar .player-controls button.active,
+body.ui-mode-modern #player-bar .player-right .tui-btn.active,
+body.ui-mode-modern #player-bar .player-right button.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+body.ui-mode-modern .volume-wrap {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 9999px !important;
+    padding: 4px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+body.ui-mode-modern .tui-mute-btn,
+body.ui-mode-modern #mute-btn {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    color: #94a3b8 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern .tui-mute-btn:hover,
+body.ui-mode-modern #mute-btn:hover {
+    color: #38bdf8 !important;
+}
+
+body.ui-mode-modern #progress-bar,
+body.ui-mode-modern .progress {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 9999px !important;
+    height: 6px !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .player-clock {
+    color: #94a3b8 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    background: none !important;
+    border: none !important;
+    text-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* =========================================================
+   29. SEARCH BAR + SIDEBAR + TOP BAR MISC (Modern)
+   ========================================================= */
+body.ui-mode-modern #search-bar,
+body.ui-mode-modern .search-bar {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 9999px !important;
+    padding: 6px 12px !important;
+    color: #f8fafc !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+body.ui-mode-modern #search-bar:focus,
+body.ui-mode-modern .search-bar:focus {
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    background: rgba(56, 189, 248, 0.06) !important;
+}
+
+body.ui-mode-modern #search-bar::placeholder,
+body.ui-mode-modern .search-bar::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+body.ui-mode-modern .tui-prompt-wrap {
+    background: transparent !important;
+    border: none !important;
+    color: #38bdf8 !important;
+    padding: 0 !important;
+}
+
+body.ui-mode-modern .tui-prompt-char,
+body.ui-mode-modern .term-cursor {
+    color: #38bdf8 !important;
+    background: none !important;
+    text-shadow: none !important;
+    animation: modern-blink 1.1s steps(1) infinite !important;
+}
+
+@keyframes modern-blink {
+    0%, 50%   { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+body.ui-mode-modern .sidebar-footer {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #94a3b8 !important;
+}
+
+body.ui-mode-modern .sidebar-stat-row {
+    color: #94a3b8 !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .tui-stat {
+    color: #38bdf8 !important;
+    font-weight: 600 !important;
+}
+
+body.ui-mode-modern .sidebar-viz-btn {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .sidebar-viz-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .rank {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .save-btn {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    color: #ffffff !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .tui-clear-btn,
+body.ui-mode-modern #search-clear-btn {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+    border-radius: 9999px !important;
+    padding: 2px 8px !important;
+    font-size: 0.74rem !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern .tui-clear-btn:hover {
+    background: rgba(248, 113, 113, 0.15) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    color: #f87171 !important;
+}
+
+body.ui-mode-modern .toggle-btn,
+body.ui-mode-modern .spatial-toggle-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .toggle-btn:hover,
+body.ui-mode-modern .spatial-toggle-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .toggle-btn.active,
+body.ui-mode-modern .spatial-toggle-btn.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+}
+
+/* =========================================================
+   30. CARDS / ARTWORK / LYRICS / BANNER / SPEC (Modern)
+   ========================================================= */
+body.ui-mode-modern .q-artist,
+body.ui-mode-modern .card-subtitle,
+body.ui-mode-modern .player-meta-artist,
+body.ui-mode-modern .cover-zoom-prompt {
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .banner-sub {
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .card-title,
+body.ui-mode-modern .queue-card .title,
+body.ui-mode-modern .playlist-card .title {
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+}
+
+body.ui-mode-modern .artwork-meta-footer {
+    background: rgba(15, 23, 42, 0.65) !important;
+    color: #f8fafc !important;
+    border: none !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+body.ui-mode-modern .cover,
+body.ui-mode-modern .cover-frame,
+body.ui-mode-modern .cover-wrap {
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+}
+
+body.ui-mode-modern .banner-tag {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    border-radius: 9999px !important;
+    padding: 4px 10px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .spec-label {
+    color: #94a3b8 !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+body.ui-mode-modern .spec-val,
+body.ui-mode-modern .deck-spec-row .spec-val,
+body.ui-mode-modern .tui-val {
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .lyrics-plain-banner {
+    background: rgba(15, 23, 42, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .lyric-line {
+    color: #cbd5e1 !important;
+    background: none !important;
+    border: none !important;
+    padding: 8px 0 !important;
+    text-shadow: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+}
+
+body.ui-mode-modern .lyric-line.active {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.06) !important;
+}
+
+body.ui-mode-modern .lyric-line.sung {
+    color: #64748b !important;
+}
+
+body.ui-mode-modern .lyric-orig,
+body.ui-mode-modern .lyric-trans,
+body.ui-mode-modern .lyric-roman {
+    background: none !important;
+    color: inherit !important;
+    text-shadow: none !important;
+}
+
+body.ui-mode-modern .lyrics-empty-box {
+    background: rgba(15, 23, 42, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    color: #94a3b8 !important;
+}
+
+body.ui-mode-modern .artwork-modal {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(20px) saturate(1.5) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .artwork-modal-body {
+    background: rgba(15, 23, 42, 0.55) !important;
+    color: #f8fafc !important;
+    border-radius: 12px !important;
+}
+
+body.ui-mode-modern .recommend-lane {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 14px !important;
+    padding: 12px !important;
+}
+
+body.ui-mode-modern .quick-tag-label {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    border-radius: 9999px !important;
+    padding: 4px 10px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .seek-tooltip {
+    background: rgba(15, 23, 42, 0.92) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    color: #f8fafc !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+    font-size: 0.74rem !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+}
+
+/* =========================================================
+   31. DRAWERS / EQ DECK / VIZ (Modern)
+   ========================================================= */
+body.ui-mode-modern #equalizer-panel,
+body.ui-mode-modern #settings-panel,
+body.ui-mode-modern #queue-panel,
+body.ui-mode-modern #visualizer-drawer,
+body.ui-mode-modern #now-playing,
+body.ui-mode-modern .drawer {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(24px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5) !important;
+    color: #f8fafc !important;
+}
+
+body.ui-mode-modern .drawer-head {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 16px !important;
+}
+
+body.ui-mode-modern .drawer-head-actions .tui-btn,
+body.ui-mode-modern .drawer-head-actions button {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .drawer-head-actions .tui-btn:hover,
+body.ui-mode-modern .drawer-head-actions button:hover {
+    background: rgba(248, 113, 113, 0.15) !important;
+    border-color: rgba(248, 113, 113, 0.3) !important;
+    color: #f87171 !important;
+}
+
+body.ui-mode-modern .eq-section-title,
+body.ui-mode-modern .deck-tel-head,
+body.ui-mode-modern .deck-tel-time {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    letter-spacing: -0.01em !important;
+}
+
+body.ui-mode-modern .eq-body,
+body.ui-mode-modern .eq-control-deck,
+body.ui-mode-modern .eq-macro-box,
+body.ui-mode-modern .eq-macro-deck,
+body.ui-mode-modern .eq-rack-section {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 12px !important;
+}
+
+body.ui-mode-modern .eq-fader-channel,
+body.ui-mode-modern .eq-fader-track {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 9999px !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .eq-fader-track .progress-fill,
+body.ui-mode-modern .eq-fader-track .progress {
+    background: linear-gradient(180deg, #38bdf8, #0284c7) !important;
+    border-radius: 9999px !important;
+}
+
+body.ui-mode-modern .eq-fader-freq {
+    color: #94a3b8 !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+}
+
+body.ui-mode-modern .eq-fader-val {
+    color: #38bdf8 !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+}
+
+body.ui-mode-modern .eq-ascii-curve,
+body.ui-mode-modern .eq-curve-wrap {
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px !important;
+}
+
+body.ui-mode-modern .eq-legend-item,
+body.ui-mode-modern .eq-legend-dot {
+    color: #94a3b8 !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .eq-preset-indicator {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    border-radius: 9999px !important;
+    padding: 4px 10px !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .viz-body {
+    background: rgba(15, 23, 42, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+}
+
+body.ui-mode-modern .viz-actions .tui-btn,
+body.ui-mode-modern .viz-actions button {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .viz-actions .tui-btn:hover,
+body.ui-mode-modern .viz-actions button:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* =========================================================
+   32. VIZ / MISC / FORMS / TYPE BADGES (Modern)
+   ========================================================= */
+body.ui-mode-modern .viz-telemetry,
+body.ui-mode-modern .viz-track-label {
+    color: #f8fafc !important;
+    font-weight: 600 !important;
+    background: none !important;
+    border: none !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern .tui-mini-viz {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .tui-logo {
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    background: none !important;
+    text-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+body.ui-mode-modern .tui-brand {
+    color: #38bdf8 !important;
+    background: none !important;
+    border: none !important;
+}
+
+body.ui-mode-modern .tui-sub {
+    color: #94a3b8 !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .tui-icon-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern .tui-icon-btn:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+    color: #38bdf8 !important;
+}
+
+body.ui-mode-modern .nav-text {
+    color: inherit !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .keys {
+    color: #64748b !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+body.ui-mode-modern input[type="text"],
+body.ui-mode-modern input[type="number"],
+body.ui-mode-modern input[type="search"],
+body.ui-mode-modern input[type="email"],
+body.ui-mode-modern input[type="url"],
+body.ui-mode-modern textarea {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    color: #f8fafc !important;
+    padding: 8px 12px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+body.ui-mode-modern input[type="text"]:focus,
+body.ui-mode-modern input[type="number"]:focus,
+body.ui-mode-modern input[type="search"]:focus,
+body.ui-mode-modern textarea:focus {
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    background: rgba(56, 189, 248, 0.06) !important;
+}
+
+body.ui-mode-modern input::placeholder,
+body.ui-mode-modern textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+body.ui-mode-modern .tui-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .tui-btn-primary,
+body.ui-mode-modern .btn-primary,
+body.ui-mode-modern .action-btn-primary {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 8px 18px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+body.ui-mode-modern .btn-danger {
+    background: rgba(248, 113, 113, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    border-radius: 9999px !important;
+    padding: 6px 14px !important;
+}
+
+body.ui-mode-modern .btn-danger:hover {
+    background: rgba(248, 113, 113, 0.25) !important;
+    border-color: rgba(248, 113, 113, 0.5) !important;
+}
+
+body.ui-mode-modern .cover-zoom-prompt,
+body.ui-mode-modern .cover-telemetry {
+    background: rgba(15, 23, 42, 0.65) !important;
+    color: #94a3b8 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+body.ui-mode-modern .type-bass,
+body.ui-mode-modern .type-mid,
+body.ui-mode-modern .type-treble,
+body.ui-mode-modern .type-vocal {
+    border-radius: 9999px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 2px 8px !important;
+}
+
+body.ui-mode-modern .type-bass {
+    background: rgba(168, 85, 247, 0.15) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+}
+
+body.ui-mode-modern .type-mid {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .type-treble {
+    background: rgba(251, 191, 36, 0.15) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
+}
+
+body.ui-mode-modern .type-vocal {
+    background: rgba(248, 113, 113, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+}
