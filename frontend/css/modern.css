@@ -772,3 +772,525 @@ body.ui-mode-modern .save-btn:hover {
     box-shadow: 0 6px 24px rgba(56, 189, 248, 0.45) !important;
     transform: translateY(-1px) !important;
 }
+
+/* =========================================================
+   13. THEME PALETTE GRID → GLASS CARD GRID (Modern)
+   ========================================================= */
+body.ui-mode-modern .theme-options {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+    gap: 10px !important;
+    padding: 4px 0 !important;
+}
+
+body.ui-mode-modern .theme-btn {
+    border-radius: 14px !important;
+    padding: 10px 14px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(1.4) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease, transform 180ms ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.ui-mode-modern .theme-btn:hover {
+    background: rgba(56, 189, 248, 0.10) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.18) !important;
+}
+
+body.ui-mode-modern .theme-btn.active {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.4), rgba(56, 189, 248, 0.25)) !important;
+    border-color: rgba(56, 189, 248, 0.55) !important;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.28) !important;
+    color: #ffffff !important;
+}
+
+body.ui-mode-modern .theme-swatch {
+    border-radius: 8px !important;
+    width: 22px !important;
+    height: 22px !important;
+    flex-shrink: 0 !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* =========================================================
+   14. ZOOM PRESETS → COMPACT GLASS CHIPS (Modern)
+   ========================================================= */
+body.ui-mode-modern .zoom-presets-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+}
+
+body.ui-mode-modern .zoom-preset-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease, transform 180ms ease !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern .zoom-preset-btn:hover {
+    background: rgba(56, 189, 248, 0.10) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+body.ui-mode-modern .zoom-preset-btn.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+body.ui-mode-modern .zoom-stepper-row {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    flex-wrap: wrap !important;
+}
+
+body.ui-mode-modern .zoom-stepper-row .tui-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 8px 16px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+}
+
+/* =========================================================
+   15. EQ CHIP GRID + STATE BADGES (Modern)
+   ========================================================= */
+body.ui-mode-modern .eq-chip {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 7px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    cursor: pointer !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease, transform 180ms ease !important;
+}
+
+body.ui-mode-modern .eq-chip:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+body.ui-mode-modern .eq-chip.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+body.ui-mode-modern .eq-state-badge {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 6px 14px !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    color: #f8fafc !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+}
+
+body.ui-mode-modern .eq-action-buttons .tui-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 7px 16px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    cursor: pointer !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease !important;
+}
+
+body.ui-mode-modern .eq-action-buttons .tui-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+body.ui-mode-modern #eq-perfect-btn.active,
+body.ui-mode-modern #eq-auto-toggle-btn.active,
+body.ui-mode-modern #spatial-panel-btn.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+/* =========================================================
+   16. SECTION DIVIDERS → CLEAN HORIZONTAL LINES (Modern)
+   ========================================================= */
+body.ui-mode-modern hr,
+body.ui-mode-modern .section-divider {
+    border: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    margin: 16px 0 !important;
+    background: none !important;
+    height: 0 !important;
+}
+
+body.ui-mode-modern .section-title,
+body.ui-mode-modern .viz-telemetry {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #94a3b8 !important;
+}
+
+/* =========================================================
+   17. HEADERS & DRAWER TITLES → CLEAN TYPOGRAPHY (Modern)
+   ========================================================= */
+body.ui-mode-modern .drawer-head h2,
+body.ui-mode-modern .drawer-head h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    letter-spacing: -0.01em !important;
+    color: #f8fafc !important;
+    background: none !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.ui-mode-modern .setting-group {
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    margin-bottom: 12px !important;
+    backdrop-filter: blur(8px) saturate(1.3) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(1.3) !important;
+}
+
+body.ui-mode-modern .setting-group > label {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+}
+
+body.ui-mode-modern .toggle-group label,
+body.ui-mode-modern .toggle-group label.check {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #e2e8f0 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+
+body.ui-mode-modern .toggle-group input[type="checkbox"] {
+    accent-color: #38bdf8 !important;
+    width: 16px !important;
+    height: 16px !important;
+    cursor: pointer !important;
+}
+
+/* =========================================================
+   18. TRACK CARDS → ELEVATED GLASS (Modern)
+   ========================================================= */
+body.ui-mode-modern .card,
+body.ui-mode-modern .queue-card,
+body.ui-mode-modern .playlist-card,
+body.ui-mode-modern .track-card,
+body.ui-mode-modern [class*="-card"] {
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(12px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+    transition: background 200ms ease, border-color 200ms ease,
+                box-shadow 200ms ease, transform 200ms ease !important;
+}
+
+body.ui-mode-modern .card:hover,
+body.ui-mode-modern .queue-card:hover,
+body.ui-mode-modern .playlist-card:hover,
+body.ui-mode-modern .track-card:hover {
+    background: rgba(56, 189, 248, 0.06) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15) !important;
+}
+
+/* =========================================================
+   19. RANGE SLIDERS → CUSTOM GLASS THUMB (Modern)
+   ========================================================= */
+body.ui-mode-modern input[type="range"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    height: 6px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    accent-color: #38bdf8 !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 2px 12px rgba(56, 189, 248, 0.5) !important;
+    cursor: pointer !important;
+    transition: transform 120ms ease, box-shadow 120ms ease !important;
+}
+
+body.ui-mode-modern input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15) !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.65) !important;
+}
+
+body.ui-mode-modern input[type="range"]::-moz-range-thumb {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 2px 12px rgba(56, 189, 248, 0.5) !important;
+    cursor: pointer !important;
+}
+
+body.ui-mode-modern input[type="range"]::-moz-range-track {
+    height: 6px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* =========================================================
+   20. SELECT DROPDOWNS (Modern)
+   ========================================================= */
+body.ui-mode-modern select {
+    border-radius: 10px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #f8fafc !important;
+    padding: 8px 12px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    cursor: pointer !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+}
+
+body.ui-mode-modern select option {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+}
+
+/* =========================================================
+   21. SIDEBAR → PREMIUM GLASS COLUMN (Modern)
+   ========================================================= */
+body.ui-mode-modern #sidebar {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(24px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+body.ui-mode-modern .nav-btn {
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease !important;
+}
+
+body.ui-mode-modern .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.ui-mode-modern .nav-btn.active {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+    color: #38bdf8 !important;
+}
+
+body.ui-mode-modern .key-badge {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+}
+
+/* =========================================================
+   22. PLAYER BAR → FLOATING GLASS DOCK (Modern)
+   ========================================================= */
+body.ui-mode-modern #player-bar {
+    background: rgba(15, 23, 42, 0.7) !important;
+    backdrop-filter: blur(28px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.6) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 0 !important;
+}
+
+body.ui-mode-modern #progress-fill {
+    background: linear-gradient(90deg, #0284c7, #38bdf8) !important;
+    border-radius: 9999px !important;
+}
+
+body.ui-mode-modern #play-btn {
+    border-radius: 9999px !important;
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border: none !important;
+    width: 48px !important;
+    height: 48px !important;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4) !important;
+    font-size: 1.2rem !important;
+    transition: transform 120ms ease, box-shadow 120ms ease !important;
+}
+
+body.ui-mode-modern #play-btn:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 6px 24px rgba(56, 189, 248, 0.55) !important;
+}
+
+/* =========================================================
+   23. TOP BAR → GLASS NAV (Modern)
+   ========================================================= */
+body.ui-mode-modern #top-bar {
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(20px) saturate(1.5) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+body.ui-mode-modern .top-bar-actions .tui-badge,
+body.ui-mode-modern .top-bar-actions .tui-btn {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: #f8fafc !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease !important;
+}
+
+body.ui-mode-modern .top-bar-actions .tui-badge:hover,
+body.ui-mode-modern .top-bar-actions .tui-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .top-bar-actions .tui-badge.active,
+body.ui-mode-modern .top-bar-actions .tui-btn.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}
+
+body.ui-mode-modern .term-prompt {
+    color: #38bdf8 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+}
+
+body.ui-mode-modern .filter-btn,
+body.ui-mode-modern .search-filters button,
+body.ui-mode-modern .quick-tag-btn {
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 6px 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #f8fafc !important;
+    transition: background 180ms ease, border-color 180ms ease,
+                box-shadow 180ms ease !important;
+}
+
+body.ui-mode-modern .filter-btn:hover,
+body.ui-mode-modern .search-filters button:hover,
+body.ui-mode-modern .quick-tag-btn:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+body.ui-mode-modern .filter-btn.active,
+body.ui-mode-modern .search-filters button.active,
+body.ui-mode-modern .quick-tag-btn.active {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.32) !important;
+}

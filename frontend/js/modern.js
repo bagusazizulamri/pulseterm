@@ -425,6 +425,17 @@ class ModernUiEngine {
                 if (h.textContent !== text) h.textContent = text;
             });
 
+            // 2b. Clean EQ / deck section titles (┌─ GENRES & SOUND PROFILES ─┐ etc.)
+            document.querySelectorAll('.eq-section-title, .deck-h3').forEach(el => {
+                const raw = el.textContent.trim();
+                let cleaned = raw
+                    .replace(/^[┌─\s]+/, '')
+                    .replace(/[─┐\s]+$/, '')
+                    .replace(/[─]+/g, '')
+                    .trim();
+                if (cleaned && cleaned !== raw) el.textContent = cleaned;
+            });
+
             // 3. Clean Eyebrows ([ 01 // TRENDING TRACKS ])
             document.querySelectorAll('.eyebrow').forEach(eb => {
                 const current = eb.textContent.trim();
@@ -443,15 +454,37 @@ class ModernUiEngine {
                 if (eb.textContent !== text) eb.textContent = text;
             });
 
-            document.querySelectorAll('.filter-btn, .search-filters button, .quick-tag-btn, #eq-auto-btn, #eq-auto-toggle-btn, #spatial-panel-btn, #eq-perfect-btn, .zoom-preset-btn').forEach(btn => {
+            document.querySelectorAll('.filter-btn, .search-filters button, .quick-tag-btn, #eq-auto-btn, #eq-auto-toggle-btn, #spatial-panel-btn, #eq-perfect-btn, .zoom-preset-btn, .theme-btn').forEach(btn => {
                 if (btn.children.length > 0) return;
                 const current = btn.textContent.trim();
                 if (current.startsWith('[') && current.endsWith(']')) {
                     const text = this.stripBrackets(current);
-                    // Keep EQ/DSP telemetry uppercase-ish, prettify the rest
-                    const cleaned = /^(EQ|DSP|SPATIAL|AUTO|PERFECT|RESET)/i.test(text)
-                        ? text
-                        : (text.charAt(0) + text.slice(1).toLowerCase());
+                    // Pretty-mapping for known labels → human-readable form.
+                    const map = {
+                        'MAC LIGHT': 'Mac Light',
+                        'YOUTUBE SOFT': 'YouTube Soft',
+                        'OLED MONO': 'OLED Mono',
+                        'CYBERPUNK': 'Cyberpunk',
+                        'TOKYO SLATE': 'Tokyo Slate',
+                        'SOLARIZED': 'Solarized',
+                        'MAC LIQUID GLASS': 'Mac Liquid Glass',
+                        'SOFT DARK': 'Soft Dark',
+                        '85% COMPACT': '85% Compact',
+                        '90% CONDENSED': '90% Condensed',
+                        '100% STANDARD': '100% Standard',
+                        '110% LARGE': '110% Large',
+                        '120% HI-DPI': '120% Hi-DPI',
+                        '100% RESET': 'Reset Zoom',
+                        '- ZOOM OUT': 'Zoom Out',
+                        '+ ZOOM IN': 'Zoom In',
+                    };
+                    let cleaned = map[text];
+                    if (cleaned === undefined) {
+                        // Keep EQ/DSP telemetry uppercase-ish, prettify the rest
+                        cleaned = /^(EQ|DSP|SPATIAL|AUTO|PERFECT|RESET)/i.test(text)
+                            ? text
+                            : (text.charAt(0) + text.slice(1).toLowerCase());
+                    }
                     this.cleanText(btn, cleaned);
                 }
             });
