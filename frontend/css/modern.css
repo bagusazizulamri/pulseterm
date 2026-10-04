@@ -74,16 +74,19 @@ body.ui-mode-modern[class*="theme-"] {
     --m-on-accent: #04121d;
     --m-danger: #ff6f85;
     --m-danger-soft: rgba(255, 111, 133, 0.14);
+    --m-danger-line: rgba(255, 111, 133, 0.34);
+    --m-on-danger: #ffffff;
     /* EQ band hues — semantic, not theme colours; light themes override for contrast */
     --m-eq-bass: #4f9dff;
     --m-eq-mid: #fbbf24;
     --m-eq-vocal: #34d399;
     --m-eq-treble: #a78bfa;
-    --m-danger-line: rgba(255, 111, 133, 0.34);
-    --m-bass: #c084fc;
-    --m-mid: #4cc2ff;
-    --m-treble: #fbbf24;
-    --m-vocal: #ff6f85;
+    /* Legacy aliases — single source of truth so legend dots and
+       fader chips can never drift apart again. */
+    --m-bass: var(--m-eq-bass);
+    --m-mid: var(--m-eq-mid);
+    --m-treble: var(--m-eq-treble);
+    --m-vocal: var(--m-eq-vocal);
 
     --m-r-xs: 7px;
     --m-r-sm: 10px;
@@ -92,11 +95,22 @@ body.ui-mode-modern[class*="theme-"] {
     --m-r-xl: 24px;
     --m-pill: 999px;
 
-    --m-blur: 26px;
-    --m-blur-lg: 40px;
+    --m-blur: 22px;
+    --m-blur-lg: 32px;
     --m-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.36);
     --m-shadow-2: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
     --m-shadow-3: 0 28px 64px -14px rgba(0, 0, 0, 0.62);
+    --m-shadow-up: 0 -8px 32px -12px rgba(0, 0, 0, 0.45);
+    --m-inset: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+
+    /* Derived surfaces (resolve per theme because they reference
+       theme-overridden tokens on the same element).
+       --m-panel: floating drawers/modals — near-opaque so text
+                  stays legible over busy artwork underneath.
+       --m-card:  grid/list cards — no backdrop-filter (dozens
+                  of blurred layers was the #1 scroll cost). */
+    --m-panel: color-mix(in srgb, var(--m-surface-solid) 86%, transparent);
+    --m-card: var(--m-surface);
 
     --m-fast: 130ms;
     --m-base: 220ms;
@@ -328,7 +342,9 @@ body.ui-mode-modern.theme-softdark {
 }
 
 /* =========================================================
-   /* Light themes wash out the light EQ band hues — darken for legibility */
+   2b. SHARED LIGHT-FAMILY + GAP-FILL OVERRIDES
+   ========================================================= */
+/* Light themes wash out the light EQ band hues — darken for legibility */
 body.ui-mode-modern.theme-maclight,
 body.ui-mode-modern.theme-ytsoft,
 body.ui-mode-modern.theme-light {
@@ -336,7 +352,18 @@ body.ui-mode-modern.theme-light {
     --m-eq-mid: #a16207;
     --m-eq-vocal: #047857;
     --m-eq-treble: #6d28d9;
+    --m-shadow-up: 0 -8px 28px -14px rgba(15, 23, 42, 0.16);
+    --m-inset: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    --m-panel: color-mix(in srgb, var(--m-surface-solid) 90%, transparent);
 }
+
+/* Themes that never defined these fell back to the obsidian
+   (blue-black / teal) base values — visibly off-palette. */
+body.ui-mode-modern.theme-ytsoft { --m-ambient-3: rgba(255, 255, 255, 0.5); }
+body.ui-mode-modern.theme-cyberpunk { --m-overlay: rgba(10, 4, 22, 0.78); }
+body.ui-mode-modern.theme-nordic { --m-overlay: rgba(46, 52, 64, 0.8); }
+body.ui-mode-modern.theme-softdark { --m-overlay: rgba(20, 18, 16, 0.8); }
+body.ui-mode-modern.theme-oled { --m-panel: rgba(0, 0, 0, 0.9); }
 
 /* =========================================================
    3. CANVAS + TYPOGRAPHY PURGE
@@ -348,27 +375,23 @@ body.ui-mode-modern {
     font-family: var(--m-font) !important;
 }
 
+/* body is overflow:hidden (app shell scrolls internally), so the
+   canvas never moves — background-attachment:fixed only forced a
+   full-viewport repaint path for no visual gain. */
 body.ui-mode-modern {
     background-image:
         radial-gradient(1200px 800px at 8% -5%, var(--m-ambient-1) 0%, transparent 62%),
         radial-gradient(1000px 700px at 100% 105%, var(--m-ambient-2) 0%, transparent 60%),
         radial-gradient(900px 620px at 55% 45%, var(--m-ambient-3) 0%, transparent 70%),
         linear-gradient(175deg, var(--m-canvas-a) 0%, var(--m-canvas-b) 100%) !important;
-    background-attachment: fixed !important;
+    background-attachment: scroll !important;
 }
 
-/* Retro TUI typography leaks through inheritance on every element */
+/* Retro TUI typography leaks through inheritance on every element.
+   `*` already covers every tag; the old per-tag list only added
+   selector-matching work on each style recalc. */
 body.ui-mode-modern,
-body.ui-mode-modern *,
-body.ui-mode-modern button,
-body.ui-mode-modern input,
-body.ui-mode-modern select,
-body.ui-mode-modern textarea,
-body.ui-mode-modern label,
-body.ui-mode-modern h1, body.ui-mode-modern h2, body.ui-mode-modern h3,
-body.ui-mode-modern h4, body.ui-mode-modern h5, body.ui-mode-modern h6,
-body.ui-mode-modern p, body.ui-mode-modern span, body.ui-mode-modern div,
-body.ui-mode-modern a, body.ui-mode-modern li, body.ui-mode-modern td, body.ui-mode-modern th {
+body.ui-mode-modern * {
     font-family: var(--m-font) !important;
     letter-spacing: normal !important;
     text-transform: none !important;
@@ -466,6 +489,22 @@ body.ui-mode-modern dialog {
     border: 1px solid var(--m-border) !important;
     box-shadow: var(--m-shadow-2), inset 0 1px 0 var(--m-highlight) !important;
     color: var(--m-text) !important;
+}
+
+/* Floating layers sit over artwork, not the calm canvas — a 4.5%
+   white tint let cover art bleed through and wrecked label contrast.
+   Near-opaque panel tint keeps the glass edge but guarantees legibility. */
+body.ui-mode-modern #queue-panel,
+body.ui-mode-modern #settings-panel,
+body.ui-mode-modern #equalizer-panel,
+body.ui-mode-modern #lyrics-panel,
+body.ui-mode-modern #now-playing,
+body.ui-mode-modern #visualizer-drawer,
+body.ui-mode-modern #tune-panel,
+body.ui-mode-modern #context-menu,
+body.ui-mode-modern .drawer,
+body.ui-mode-modern dialog {
+    background: var(--m-panel) !important;
 }
 
 /* =========================================================
@@ -627,9 +666,11 @@ body.ui-mode-modern .card,
 body.ui-mode-modern .track-card,
 body.ui-mode-modern .playlist-card,
 body.ui-mode-modern .queue-card {
-    background: var(--m-surface) !important;
-    backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    /* No backdrop-filter: cards sit on the smooth canvas gradient where a
+       blur is visually identical but costs one GPU blur pass per card. */
+    background: var(--m-card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid var(--m-border) !important;
     border-radius: var(--m-r-lg) !important;
     box-shadow: var(--m-shadow-2), inset 0 1px 0 var(--m-highlight) !important;
@@ -667,7 +708,7 @@ body.ui-mode-modern .cover {
                 filter var(--m-base) var(--m-ease) !important;
 }
 
-body.ui-mode-modern .card:hover .cover-wrap img { transform: scale(1.06) !important; }
+body.ui-mode-modern .card:hover .cover-wrap img { transform: scale(1.05) !important; }
 
 body.ui-mode-modern .cover-fallback {
     background: linear-gradient(135deg, var(--m-surface-2), var(--m-surface-3)) !important;
@@ -820,7 +861,7 @@ body.ui-mode-modern .btn-danger {
 }
 body.ui-mode-modern .btn-danger:hover {
     background: var(--m-danger) !important;
-    color: #fff !important;
+    color: var(--m-on-danger) !important;
 }
 
 body.ui-mode-modern .tui-clear-btn,
@@ -863,6 +904,7 @@ body.ui-mode-modern .modern-segmented-control .modern-seg-btn {
     background: transparent !important;
     border-radius: var(--m-pill) !important;
     box-shadow: none !important;
+    white-space: nowrap !important;
 }
 body.ui-mode-modern .modern-segmented-control .modern-seg-btn.active {
     background: var(--m-accent) !important;
@@ -920,9 +962,27 @@ body.ui-mode-modern .key-badge.is-modern-icon {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 22px !important;
-    height: 22px !important;
-    padding: 0 7px !important;
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: var(--m-r-sm) !important;
+    color: var(--m-text-2) !important;
+    background: var(--m-surface-2) !important;
+}
+body.ui-mode-modern .key-badge.is-modern-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    flex: none !important;
+    display: block !important;
+}
+body.ui-mode-modern .nav-btn:hover .key-badge.is-modern-icon { color: var(--m-text) !important; }
+body.ui-mode-modern .nav-btn.active .key-badge.is-modern-icon {
+    color: var(--m-on-accent) !important;
+    background: linear-gradient(135deg, var(--m-accent), var(--m-accent-2)) !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px -4px var(--m-accent-glow) !important;
 }
 
 /* =========================================================
@@ -942,7 +1002,7 @@ body.ui-mode-modern textarea {
     color: var(--m-text) !important;
     font-size: 0.84rem !important;
     padding: 9px 13px !important;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+    box-shadow: var(--m-inset) !important;
     transition: border-color var(--m-base) var(--m-ease),
                 box-shadow var(--m-base) var(--m-ease),
                 background var(--m-base) var(--m-ease) !important;
@@ -971,7 +1031,7 @@ body.ui-mode-modern .search-bar:focus-within {
     background: var(--m-surface-2) !important;
     border-color: var(--m-accent-line) !important;
     box-shadow: 0 0 0 3px var(--m-accent-soft),
-                inset 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+                var(--m-inset) !important;
 }
 
 body.ui-mode-modern select option {
@@ -1040,14 +1100,24 @@ body.ui-mode-modern .setting-group {
     padding: 14px 16px !important;
     margin-bottom: 12px !important;
 }
-body.ui-mode-modern .setting-group > label {
+body.ui-mode-modern .setting-group > label,
+body.ui-mode-modern .modern-ui-mode-group > label {
     display: block !important;
-    font-size: 0.7rem !important;
+    font-size: 0.68rem !important;
     font-weight: 700 !important;
-    letter-spacing: 0.07em !important;
+    letter-spacing: 0.08em !important;
     color: var(--m-text-3) !important;
     text-transform: uppercase !important;
     margin-bottom: 10px !important;
+}
+/* A toggle-group inside a settings card shouldn't draw a second card. */
+body.ui-mode-modern .setting-group .toggle-group {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
 }
 /* =========================================================
    13. LISTS (tracks / queue / search results)
@@ -1190,7 +1260,7 @@ body.ui-mode-modern .theme-swatch {
     width: 20px !important;
     height: 20px !important;
     flex: 0 0 20px !important;
-    border-radius: 7px !important;
+    border-radius: var(--m-r-xs) !important;
     border: 1px solid var(--m-border-2) !important;
     box-shadow: var(--m-shadow-1) !important;
 }
@@ -1232,7 +1302,7 @@ body.ui-mode-modern .deck-spec-row .spec-val {
    ========================================================= */
 body.ui-mode-modern #player-bar {
     border-top: 1px solid var(--m-border) !important;
-    box-shadow: 0 -8px 32px -12px rgba(0, 0, 0, 0.45),
+    box-shadow: var(--m-shadow-up),
                 inset 0 1px 0 var(--m-highlight) !important;
     padding: 12px 20px !important;
 }
@@ -1598,11 +1668,8 @@ body.ui-mode-modern .lyric-line.active {
     background: var(--m-accent-soft) !important;
     border-left-color: var(--m-accent) !important;
 }
-body.ui-mode-modern .lyric-roman {
-    font-size: 0.84rem !important;
-    font-weight: 600 !important;
-    color: var(--m-text-2) !important;
-}
+/* .lyric-roman size/colour: see 23j (single definition). */
+body.ui-mode-modern .lyric-roman { font-weight: 600 !important; }
 body.ui-mode-modern .lyric-orig {
     font-size: 0.82rem !important;
     font-weight: 500 !important;
@@ -1679,9 +1746,9 @@ body.ui-mode-modern .artwork-modal-body img {
 body.ui-mode-modern .item-card {
     position: relative !important;
     cursor: pointer !important;
-    background: var(--m-surface) !important;
-    backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
+    background: var(--m-card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid var(--m-border) !important;
     border-radius: var(--m-r-lg) !important;
     box-shadow: var(--m-shadow-2), inset 0 1px 0 var(--m-highlight) !important;
@@ -1695,7 +1762,7 @@ body.ui-mode-modern .item-card {
 body.ui-mode-modern .item-card:hover {
     transform: translateY(-4px) !important;
     border-color: var(--m-accent-line) !important;
-    background: var(--m-surface) !important;
+    background: var(--m-card) !important;
     box-shadow: var(--m-shadow-3), 0 0 0 1px var(--m-accent-soft),
                 inset 0 1px 0 var(--m-highlight) !important;
 }
@@ -1709,7 +1776,9 @@ body.ui-mode-modern .item-card:hover .cover-fallback {
 body.ui-mode-modern .item-card:hover .card-title { color: var(--m-accent) !important; }
 
 /* Hover play overlay was an opaque black slab (rgba(0,0,0,.65))
-   with mono text — reads as a terminal artifact on artwork. */
+   with mono text — reads as a terminal artifact on artwork.
+   Tinted gradient instead of backdrop blur: a blur layer per card
+   (even at opacity 0) kept every grid tile on its own GPU surface. */
 body.ui-mode-modern .card-play-overlay {
     position: absolute !important;
     inset: 0 !important;
@@ -1717,9 +1786,11 @@ body.ui-mode-modern .card-play-overlay {
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    background: var(--m-overlay) !important;
-    backdrop-filter: blur(14px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+    background: linear-gradient(180deg,
+                color-mix(in srgb, var(--m-overlay) 55%, transparent) 0%,
+                var(--m-overlay) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     color: var(--m-text) !important;
     font-family: var(--m-font) !important;
     font-size: 0.66rem !important;
@@ -1751,7 +1822,7 @@ body.ui-mode-modern .item-card.keyboard-focus {
        create-playlist-modal are the same <dialog class="tui-modal">
        and were falling back to the retro dialog frame. --- */
 body.ui-mode-modern dialog.tui-modal {
-    background: var(--m-surface) !important;
+    background: var(--m-panel) !important;
     backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
     -webkit-backdrop-filter: blur(var(--m-blur)) saturate(180%) !important;
     border: 1px solid var(--m-border) !important;
@@ -1861,17 +1932,10 @@ body.ui-mode-modern .import-spinner {
 
 /* --- 23d. Settings drawer rows.
        Retro drew every group with `1px dashed var(--line)` and a
-       seal-coloured uppercase label — both read as terminal art. --- */
-body.ui-mode-modern .setting-group {
-    padding: 16px 0 !important;
-    border-bottom: 1px solid var(--m-border) !important;
-}
-
-body.ui-mode-modern .setting-group > label {
-    color: var(--m-text-3) !important;
-    font-size: 0.68rem !important;
-    letter-spacing: 0.08em !important;
-}
+       seal-coloured uppercase label — both read as terminal art.
+       Card styling for .setting-group lives in section 12 (single
+       source); a second definition here used to zero the horizontal
+       padding inside a bordered card, gluing labels to the edge. --- */
 
 body.ui-mode-modern .drawer-head {
     display: flex !important;
@@ -2314,10 +2378,10 @@ body.ui-mode-modern .tui-bitrate-badge {
 /* --- 23l. Rail nav labels + quick tag chips. --- */
 body.ui-mode-modern .nav-btn .nav-text {
     font-family: var(--m-font) !important;
-    font-size: 0.72rem !important;
+    font-size: 0.84rem !important;
     font-weight: 600 !important;
     letter-spacing: 0 !important;
-    color: var(--m-text-2) !important;
+    color: inherit !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -2553,6 +2617,31 @@ body.ui-mode-modern .header-actions {
     body.ui-mode-modern *::before,
     body.ui-mode-modern *::after {
         animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
         transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+    /* Hover lifts / slides / zooms are motion too. */
+    body.ui-mode-modern .card:hover,
+    body.ui-mode-modern .item-card:hover,
+    body.ui-mode-modern .track-card:hover,
+    body.ui-mode-modern .playlist-card:hover,
+    body.ui-mode-modern .queue-card:hover,
+    body.ui-mode-modern .list-item:hover,
+    body.ui-mode-modern .queue-item:hover,
+    body.ui-mode-modern .suggestion-item:hover,
+    body.ui-mode-modern .nav-btn:hover,
+    body.ui-mode-modern .card:hover .cover-wrap img,
+    body.ui-mode-modern .item-card:hover .cover,
+    body.ui-mode-modern .item-card:hover .cover-fallback {
+        transform: none !important;
+    }
+}
+/* Spinners are functional feedback — keep them turning slowly. */
+@media (prefers-reduced-motion: reduce) {
+    body.ui-mode-modern .import-spinner,
+    body.ui-mode-modern .lyrics-spinner {
+        animation-duration: 1.6s !important;
+        animation-iteration-count: infinite !important;
     }
 }
