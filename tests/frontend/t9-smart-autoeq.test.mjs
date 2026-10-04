@@ -21,6 +21,7 @@ describe('T9: Normal Mode Flat Verification (No Excessive Bass)', () => {
         const duration = 0.4;
         const freqs = [32, 64, 100, 125, 150, 200, 500, 1000, 4000, 16000];
 
+        const deviations = [];
         for (const freq of freqs) {
             const ctx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
             
@@ -73,9 +74,14 @@ describe('T9: Normal Mode Flat Verification (No Excessive Bass)', () => {
             const rms = Math.sqrt(sum / count);
             const inRms = 0.5 / Math.SQRT2;
             const gainDb = 20 * Math.log10(rms / inRms);
+            deviations.push({ freq, gainDb });
+        }
 
-            // Confirm true flat response without previous +6.7 dB hump (within 0.2 dB window leakage tolerance)
-            assert(Math.abs(gainDb) < 0.2, `Freq ${freq}Hz deviated from 0 dB: got ${gainDb.toFixed(3)} dB`);
+        // Confirm true flat response without previous +6.7 dB hump (within 0.2 dB window leakage tolerance)
+        const failures = deviations.filter(d => Math.abs(d.gainDb) >= 0.2);
+        if (failures.length > 0) {
+            const report = deviations.map(d => `${d.freq}Hz: ${d.gainDb.toFixed(3)} dB`).join(', ');
+            assert.fail(`Flat verification failed for ${failures.length} frequencies. Full profile: ${report}`);
         }
     });
 });

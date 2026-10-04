@@ -141,13 +141,18 @@ class TerminalEqualizer {
                         console.log('Limiter worklet loaded successfully from', workletUrl);
                         if (!this.audioCtx || this.limiterNode) return;
                         try {
-                            const limiter = new AudioWorkletNode(this.audioCtx, 'limiter-processor');
+                            const limiter = new AudioWorkletNode(this.audioCtx, 'brickwall-limiter');
                             spatial.outputNode.disconnect(this.compressor);
                             spatial.outputNode.connect(limiter);
                             limiter.connect(this.analyser);
                             this.limiterNode = limiter;
                         } catch(err) {
                             console.warn('Failed to construct limiter worklet', err);
+                            this.compressor.threshold.value = -2;
+                            this.compressor.knee.value = 0;
+                            this.compressor.ratio.value = 20;
+                            this.compressor.attack.value = 0.001;
+                            this.compressor.release.value = 0.1;
                         }
                     })
                     .catch(e => {

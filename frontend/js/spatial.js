@@ -48,9 +48,19 @@ class SpatialAudioEngine {
         this.loadState();
     }
 
-    _setParam(param, val, t, tc = 0.1) {
+    _setParam(param, val, t, tc = 0.1, immediate = false) {
         if (param && Number.isFinite(val)) {
-            param.setTargetAtTime(val, t, tc);
+            if (immediate && typeof param.setValueAtTime === 'function') {
+                const now = this.audioCtx ? this.audioCtx.currentTime : 0;
+                if (typeof param.cancelScheduledValues === 'function') {
+                    param.cancelScheduledValues(now);
+                }
+                param.setValueAtTime(val, now);
+            } else if (typeof param.setTargetAtTime === 'function') {
+                param.setTargetAtTime(val, t, tc);
+            } else if ('value' in param) {
+                param.value = val;
+            }
         } else if (!param) {
             // silent fail for missing nodes
         } else {
@@ -79,28 +89,23 @@ class SpatialAudioEngine {
             this.masterLimiter.attack.value = 0.001;
             this.masterLimiter.release.value = 0.15;
 
+            const isOff = this.mode === 'off';
+
             // Direct clean bypass node for Spatial OFF (pure 0.00 dB flat passthrough).
-            // Mode off: bypassGain=1 langsung ke outputNode (pure stereo, no limiter).
-            // Mode aktif: bypassGain=0, sinyal via chain spatial+bass+limiter.
+            // Mode off: bypassGain=1 langsung ke outputNode (pure stereo, no limiter / no coloration).
+            // Mode aktif: bypassGain=0, wetOutGain=1 via spatialSink -> masterLimiter -> wetOutGain -> outputNode.
             this.bypassGain = this.audioCtx.createGain();
-            this.bypassGain.gain.value = this.mode === 'off' ? 1.0 : 0.0;
+            this.bypassGain.gain.value = isOff ? 1.0 : 0.0;
             this.inputNode.connect(this.bypassGain);
             this.bypassGain.connect(this.outputNode);
 
-            // dry path (active mode) connect via masterLimiter supaya peak dijaga.
-            // routing: directGain + bassMonoGain → outputNode → masterLimiter → ctx.destination
-            // (test/engine consumer connect ke outputNode, dan limiter tap dari sana
-            // via outputNode.connect(masterLimiter) — limiter output ke destination).
-            // Untuk simplicity, kita biarkan dry path langsung ke outputNode dan
-            // ANDALKAN limiter di chain bawah (highShelf→makeupGain→outputNode→limiter).
-            this.directGain = this.audioCtx.createGain();
-            this.directGain.gain.value = this.mode === 'off' ? 0.0 : SPATIAL_CONFIGS[this.mode].dryMix;
-            
-            this.directGain.connect(this.outputNode);
+            // Active spatial path sink (dry + bass + wet -> masterLimiter -> wetOutGain -> outputNode)
+            this.spatialSink = this.audioCtx.createGain();
 
-            
-            
-            
+            this.directGain = this.audioCtx.createGain();
+            this.directGain.gain.value = isOff ? 0.0 : (SPATIAL_CONFIGS[this.mode]?.dryMix || 0.0);
+            this.directGain.connect(this.spatialSink);
+
             // Clean Phase Bass Management
             // spatialBusHPF keeps HRTF from muddying bass
             
@@ -127,15 +132,18 @@ class SpatialAudioEngine {
             this.bassLPF.channelCount = 1;
             this.bassLPF.channelCountMode = 'explicit';
             
+            const bassMonoDb = SPATIAL_CONFIGS[this.mode]?.bassMonoDb;
+            const bassMonoLinear = (!isOff && bassMonoDb !== undefined)
+                ? Math.pow(10, bassMonoDb / 20)
+                : 0.0;
             this.bassMonoGain = this.audioCtx.createGain();
+            this.bassMonoGain.gain.value = bassMonoLinear;
             this.inputNode.connect(this.bassLPF);
             this.bassLPF.connect(this.bassMonoGain);
-            this.bassMonoGain.connect(this.outputNode);
-
-
+            this.bassMonoGain.connect(this.spatialSink);
 
             this.spatialBus = this.audioCtx.createGain();
-            this.spatialBus.gain.value = this.mode === 'off' ? 0.0 : 1.0;
+            this.spatialBus.gain.value = isOff ? 0.0 : 1.0;
             this.inputNode.connect(this.spatialBus);
             this._isSpatialBusConnected = false; // BUG 1 FIXED
 
@@ -350,22 +358,18 @@ class SpatialAudioEngine {
             this.reverbWetGain.connect(this.highShelf);
             this.sideReverbGain.connect(this.highShelf);
 
-            // chain: highShelf → makeupGain → outputNode → masterLimiter (terminal).
-            // Limiter adalah node PALING AKHIR sebelum consumer (destination/ctx).
+            // Chain: highShelf → makeupGain → spatialSink → masterLimiter → wetOutGain → outputNode.
+            // Limiter menahan peak pada active spatial path saja. Mode OFF bypassGain
+            // terhubung langsung ke outputNode tanpa compression/coloration.
             this.highShelf.connect(this.makeupGain);
-            this.makeupGain.connect(this.outputNode);
-            // Architecture final: semua path (dry/spatial/bypass) berakhir di
-            // outputNode (internal sink). OutputNode kemudian ke masterLimiter
-            // (terminal). outputNode PUBLIK = masterLimiter, sehingga test
-            // consumer yang `engine.outputNode.connect(ctx.destination)` otomatis
-            // baca post-limiter.
-            //
-            // Untuk reassign aman, simpan referensi lama lalu swap property.
-            const internalSink = this.outputNode;
-            this.outputNode = this.masterLimiter; // shadow class property
-            // internalSink → masterLimiter (chain akhir). consumer yang memegang
-            // reference lama (constructor) akan baca post-limiter via reassign.
-            internalSink.connect(this.masterLimiter);
+            this.makeupGain.connect(this.spatialSink);
+
+            this.spatialSink.connect(this.masterLimiter);
+
+            this.wetOutGain = this.audioCtx.createGain();
+            this.wetOutGain.gain.value = isOff ? 0.0 : 1.0;
+            this.masterLimiter.connect(this.wetOutGain);
+            this.wetOutGain.connect(this.outputNode);
 
             this._connectSpatialBuses();
             this.applyMode(this.mode, true);
@@ -456,40 +460,42 @@ class SpatialAudioEngine {
         }
 
         if (this.mode === 'off') {
-            this._setParam(this.bypassGain?.gain, 1.0, t, tc);
-            this._setParam(this.spatialBus.gain, 0.0, t, tc);
-            this._setParam(this.directGain.gain, 0.0, t, tc);
-            this._setParam(this.bassMonoGain?.gain, 0.0, t, tc);
+            this._setParam(this.bypassGain?.gain, 1.0, t, tc, force);
+            this._setParam(this.wetOutGain?.gain, 0.0, t, tc, force);
+            this._setParam(this.spatialBus?.gain, 0.0, t, tc, force);
+            this._setParam(this.directGain?.gain, 0.0, t, tc, force);
+            this._setParam(this.bassMonoGain?.gain, 0.0, t, tc, force);
 
-            this._setParam(this.highShelf?.gain, 0.0, t, tc);
+            this._setParam(this.highShelf?.gain, 0.0, t, tc, force);
             
-            this._setParam(this.makeupGain?.gain, 1.0, t, tc);
-            this._setParam(this.reverbWetGain?.gain, 0.0, t, tc);
-            this._setParam(this.sideReverbGain?.gain, 0.0, t, tc);
+            this._setParam(this.makeupGain?.gain, 1.0, t, tc, force);
+            this._setParam(this.reverbWetGain?.gain, 0.0, t, tc, force);
+            this._setParam(this.sideReverbGain?.gain, 0.0, t, tc, force);
             
-            this._setParam(this.midGain?.gain, 0.5, t, tc);
-            this._setParam(this.midBodyGain?.gain, 0.0, t, tc);
-            this._setParam(this.sideLGain?.gain, 0.5, t, tc);
-            this._setParam(this.sideRGain?.gain, 0.5, t, tc);
-            this._setParam(this.sideEqL?.gain, 0.0, t, tc);
-            this._setParam(this.sideEqR?.gain, 0.0, t, tc);
-            this._setParam(this.sideAirL?.gain, 0.0, t, tc);
-            this._setParam(this.sideAirR?.gain, 0.0, t, tc);
+            this._setParam(this.midGain?.gain, 0.5, t, tc, force);
+            this._setParam(this.midBodyGain?.gain, 0.0, t, tc, force);
+            this._setParam(this.sideLGain?.gain, 0.5, t, tc, force);
+            this._setParam(this.sideRGain?.gain, 0.5, t, tc, force);
+            this._setParam(this.sideEqL?.gain, 0.0, t, tc, force);
+            this._setParam(this.sideEqR?.gain, 0.0, t, tc, force);
+            this._setParam(this.sideAirL?.gain, 0.0, t, tc, force);
+            this._setParam(this.sideAirR?.gain, 0.0, t, tc, force);
 
-            this._setParam(this.haloGainL?.gain, 0.0, t, tc);
-            this._setParam(this.haloGainR?.gain, 0.0, t, tc);
-            this._setParam(this.erMasterGain?.gain, 0.0, t, tc);
+            this._setParam(this.haloGainL?.gain, 0.0, t, tc, force);
+            this._setParam(this.haloGainR?.gain, 0.0, t, tc, force);
+            this._setParam(this.erMasterGain?.gain, 0.0, t, tc, force);
         } else {
-            this._setParam(this.bypassGain?.gain, 0.0, t, tc);
-            this._setParam(this.spatialBus.gain, 1.0, t, tc);
-            this._setParam(this.directGain.gain, cfg.dryMix, t, tc);
+            this._setParam(this.bypassGain?.gain, 0.0, t, tc, force);
+            this._setParam(this.wetOutGain?.gain, 1.0, t, tc, force);
+            this._setParam(this.spatialBus?.gain, 1.0, t, tc, force);
+            this._setParam(this.directGain?.gain, cfg.dryMix, t, tc, force);
             // Bass mono: cfg.bassMonoDb (-1.0..-3.0 dB) → linear attenuation.
             // BUG FIX: sebelumnya hard-coded -1.0 LINEAR (= negasi fasa 180°),
             // bukan -1.0 dB. Convert via Math.pow(10, db/20).
             const bassMonoLinear = cfg.bassMonoDb !== undefined
                 ? Math.pow(10, cfg.bassMonoDb / 20)
                 : Math.pow(10, -1.0 / 20);
-            this._setParam(this.bassMonoGain?.gain, bassMonoLinear, t, tc);
+            this._setParam(this.bassMonoGain?.gain, bassMonoLinear, t, tc, force);
 
 
             
@@ -545,29 +551,29 @@ class SpatialAudioEngine {
                     }
                 });
                 const erLinear = Math.pow(10, cfg.erDb / 20);
-                this._setParam(this.erMasterGain?.gain, erLinear, t, tc);
+                this._setParam(this.erMasterGain?.gain, erLinear, t, tc, force);
             }
 
-            this._setParam(this.highShelf?.gain, cfg.eqHighDb, t, tc);
+            this._setParam(this.highShelf?.gain, cfg.eqHighDb, t, tc, force);
             
             
             const dbToLinear = Math.pow(10, cfg.makeupDb / 20);
-            this._setParam(this.makeupGain?.gain, dbToLinear, t, tc);
+            this._setParam(this.makeupGain?.gain, dbToLinear, t, tc, force);
 
-            this._setParam(this.midGain?.gain, cfg.midGain, t, tc);
+            this._setParam(this.midGain?.gain, cfg.midGain, t, tc, force);
             const midBodyLinear = Math.pow(10, cfg.midBodyDb / 20);
-            this._setParam(this.midBodyGain?.gain, midBodyLinear, t, tc);
+            this._setParam(this.midBodyGain?.gain, midBodyLinear, t, tc, force);
             
-            this._setParam(this.sideLGain?.gain, cfg.sideWidth, t, tc);
-            this._setParam(this.sideRGain?.gain, cfg.sideWidth, t, tc);
-            this._setParam(this.sideEqL?.gain, cfg.sideEqPresence, t, tc);
-            this._setParam(this.sideEqR?.gain, cfg.sideEqPresence, t, tc);
-            this._setParam(this.sideAirL?.gain, cfg.sideAirDb, t, tc);
-            this._setParam(this.sideAirR?.gain, cfg.sideAirDb, t, tc);
+            this._setParam(this.sideLGain?.gain, cfg.sideWidth, t, tc, force);
+            this._setParam(this.sideRGain?.gain, cfg.sideWidth, t, tc, force);
+            this._setParam(this.sideEqL?.gain, cfg.sideEqPresence, t, tc, force);
+            this._setParam(this.sideEqR?.gain, cfg.sideEqPresence, t, tc, force);
+            this._setParam(this.sideAirL?.gain, cfg.sideAirDb, t, tc, force);
+            this._setParam(this.sideAirR?.gain, cfg.sideAirDb, t, tc, force);
             
             const haloLinear = Math.pow(10, cfg.haloDb / 20);
-            this._setParam(this.haloGainL?.gain, haloLinear, t, tc);
-            this._setParam(this.haloGainR?.gain, haloLinear, t, tc);
+            this._setParam(this.haloGainL?.gain, haloLinear, t, tc, force);
+            this._setParam(this.haloGainR?.gain, haloLinear, t, tc, force);
 
             if (this.haloDelayL && this.haloDelayL.delayTime.value !== cfg.haloDelayL) {
                 this.haloDelayL.delayTime.value = cfg.haloDelayL;
