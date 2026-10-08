@@ -1,6 +1,16 @@
 import sys, os
 import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Windows embedded Python SSL CA Bundle fix
+try:
+    import certifi
+    if not os.environ.get("SSL_CERT_FILE"):
+        os.environ["SSL_CERT_FILE"] = certifi.where()
+    if not os.environ.get("REQUESTS_CA_BUNDLE"):
+        os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+except Exception:
+    pass
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -140,6 +150,7 @@ def get_proxy_client() -> httpx.AsyncClient:
     if _proxy_client is None or _proxy_client.is_closed:
         limits = httpx.Limits(max_keepalive_connections=30, max_connections=100, keepalive_expiry=60.0)
         _proxy_client = httpx.AsyncClient(
+            verify=False,
             follow_redirects=True,
             # connect cepat; read dibiarkan None supaya stream lagu penuh tidak
             # diputus di tengah (timeout read di-handle per-chunk oleh uvicorn/client).
@@ -163,7 +174,11 @@ async def lifespan(app: FastAPI):
     os.makedirs(CACHE_DIR, exist_ok=True)
     os.makedirs(os.path.join(frontend_dir, "assets"), exist_ok=True)
     get_proxy_client()
+    # Asynchronously cleanup expired SQLite stream cache and pre-warm yt-dlp in background
+    asyncio.create_task(stream.cleanup_expired_cache())
+    asyncio.get_running_loop().run_in_executor(None, stream.prewarm_resolver)
     yield
+
     # Flush any debounced session-cache writes so the last volume/position
     # burst lands on disk before the process exits.
     try:
@@ -460,7 +475,7 @@ async def proxy_audio(video_id: str, request: Request):
 
     async def gen():
         try:
-            async for chunk in upstream.aiter_bytes(chunk_size=131072):
+            async for chunk in upstream.aiter_bytes(chunk_size=65536):
                 yield chunk
         finally:
             try:
@@ -470,6 +485,7 @@ async def proxy_audio(video_id: str, request: Request):
 
     return StreamingResponse(gen(), status_code=206 if upstream.status_code == 206 else 200,
                              media_type=ctype, headers=resp_headers)
+
 
 @app.get("/api/player/status")
 async def player_status():

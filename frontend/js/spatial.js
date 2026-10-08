@@ -621,6 +621,9 @@ class SpatialAudioEngine {
         }
         if (dashBtn) {
             dashBtn.textContent = label;
+            dashBtn.dataset.short = isActive ? '[3D:ON]' : '[3D]';
+            dashBtn.dataset.modernShort = isActive ? '3D·On' : '3D';
+            dashBtn.title = `3D Spatial Audio: ${SPATIAL_CONFIGS[this.mode].name} (X)`;
             dashBtn.classList.toggle('active', isActive);
         }
     }

@@ -825,10 +825,26 @@ function updateResponsiveZoom() {
     const scale = currentUiScale || 1.0;
     const effectiveW = window.innerWidth / scale;
     const effectiveH = window.innerHeight / scale;
-    document.documentElement.classList.toggle('layout-compact-rail', effectiveW < 1260);
-    document.documentElement.classList.toggle('layout-compact-player-bar', effectiveW < 1320);
-    document.documentElement.classList.toggle('layout-stacked-player', effectiveW < 880 || effectiveH < 560);
+    const isCompactRail = effectiveW < 1260;
+    const isCompactPlayerBar = effectiveW < 1320;
+    const isCompactTopBar = effectiveW < 1140;
+    const isStackedTopBar = effectiveW < 720;
+    const isStackedPlayer = effectiveW < 880 || effectiveH < 560;
+    const isUltraNarrow = effectiveW < 480;
+    const isShortHeight = effectiveH < 520;
+
+    const targets = [document.documentElement, document.body].filter(Boolean);
+    targets.forEach(el => {
+        el.classList.toggle('layout-compact-rail', isCompactRail);
+        el.classList.toggle('layout-compact-player-bar', isCompactPlayerBar);
+        el.classList.toggle('layout-compact-topbar', isCompactTopBar);
+        el.classList.toggle('layout-stacked-topbar', isStackedTopBar);
+        el.classList.toggle('layout-stacked-player', isStackedPlayer);
+        el.classList.toggle('layout-ultra-narrow', isUltraNarrow);
+        el.classList.toggle('layout-short-height', isShortHeight);
+    });
 }
+
 
 function setUiScale(scale, notify = true) {
     const numericScale = Math.min(1.40, Math.max(0.70, Math.round(Number(scale) * 100) / 100));
@@ -914,6 +930,29 @@ function applyThemeClass(themeName) {
     const classes = Array.from(document.body.classList).filter(c => !c.startsWith('theme-'));
     classes.push('theme-' + validTheme);
     document.body.className = classes.join(' ');
+
+    // Sync native desktop window border & titlebar color (Edge WebView2)
+    syncNativeWindowBorder(validTheme);
+}
+
+function syncNativeWindowBorder(themeName) {
+    if (typeof window.setNativeWindowTheme !== 'function') return;
+    try {
+        const themeMap = {
+            maclight:    { r: 242, g: 242, b: 247, dark: false },
+            ytsoft:      { r: 26,  g: 26,  b: 26,  dark: true },
+            oled:        { r: 0,   g: 0,   b: 0,   dark: true },
+            cyberpunk:   { r: 16,  g: 13,  b: 36,  dark: true },
+            nordic:      { r: 22,  g: 22,  b: 30,  dark: true },
+            light:       { r: 253, g: 246, b: 227, dark: false },
+            liquidglass: { r: 11,  g: 15,  b: 23,  dark: true },
+            softdark:    { r: 27,  g: 30,  b: 36,  dark: true }
+        };
+        const cfg = themeMap[themeName] || themeMap.maclight;
+        window.setNativeWindowTheme(cfg.r, cfg.g, cfg.b, cfg.dark);
+    } catch (e) {
+        // Safe fallback in web mode
+    }
 }
 
 function applySettings(d, syncInputs = true) {

@@ -587,7 +587,26 @@ body.ui-mode-modern .sidebar-footer {
 body.ui-mode-modern #top-bar {
     border-bottom: 1px solid var(--m-border) !important;
     box-shadow: var(--m-shadow-1), inset 0 1px 0 var(--m-highlight) !important;
-    padding: 14px 22px !important;
+    padding: 10px 18px !important;
+    min-height: 50px !important;
+    height: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+body.ui-mode-modern .top-bar-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+}
+
+body.ui-mode-modern .top-bar-actions::-webkit-scrollbar {
+    display: none !important;
 }
 
 body.ui-mode-modern .top-bar-actions .tui-btn,
@@ -598,8 +617,11 @@ body.ui-mode-modern .top-bar-actions .tui-badge {
     color: var(--m-text-2) !important;
     font-size: 0.74rem !important;
     font-weight: 700 !important;
-    padding: 6px 13px !important;
+    padding: 6px 12px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
+
 
 body.ui-mode-modern .top-bar-actions .tui-btn:hover,
 body.ui-mode-modern .top-bar-actions .tui-badge:hover {
@@ -2645,3 +2667,362 @@ body.ui-mode-modern .header-actions {
         animation-iteration-count: infinite !important;
     }
 }
+
+/* =========================================================
+   25. WINDOW FRAME / DESKTOP SHELL BORDER
+   ========================================================= */
+body.ui-mode-modern #app {
+    border: 1.5px solid var(--m-accent-line, var(--m-border)) !important;
+    box-shadow: 0 0 20px -4px var(--m-accent-glow, transparent),
+                inset 0 0 0 1px var(--m-border),
+                0 12px 36px rgba(0, 0, 0, 0.45) !important;
+    transition: border-color var(--m-base) var(--m-ease), box-shadow var(--m-base) var(--m-ease) !important;
+}
+
+/* =========================================================
+   26. RESPONSIVE WINDOW ADAPTATIONS (ALL RESOLUTIONS & RATIOS)
+   ========================================================= */
+
+/* A. Compact Rail / Horizontal-constrained windows */
+body.ui-mode-modern.layout-compact-rail,
+body.ui-mode-modern.layout-compact-rail #sidebar {
+    width: var(--rail) !important;
+}
+body.ui-mode-modern.layout-compact-rail .tui-brand,
+body.ui-mode-modern.layout-compact-rail .sidebar-footer,
+body.ui-mode-modern.layout-compact-rail .nav-btn .nav-text {
+    display: none !important;
+}
+body.ui-mode-modern.layout-compact-rail .nav-btn {
+    justify-content: center !important;
+    padding: 10px 0 !important;
+}
+body.ui-mode-modern.layout-compact-rail .key-badge.is-modern-icon {
+    margin: 0 !important;
+}
+
+/* Modern Top Bar in Compact Rail / Split-Screen */
+body.ui-mode-modern.layout-compact-topbar .term-prompt .prompt-full,
+body.ui-mode-modern.layout-compact-rail .term-prompt .prompt-full {
+    display: none !important;
+}
+body.ui-mode-modern.layout-compact-topbar .term-prompt .prompt-short,
+body.ui-mode-modern.layout-compact-rail .term-prompt .prompt-short {
+    display: inline !important;
+}
+
+body.ui-mode-modern.layout-compact-topbar .top-bar-action-btn,
+body.ui-mode-modern.layout-compact-rail .top-bar-action-btn,
+body.ui-mode-modern.layout-stacked-player .top-bar-action-btn {
+    font-size: 0 !important;
+    padding: 4px 8px !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+}
+body.ui-mode-modern.layout-compact-topbar .top-bar-action-btn::before,
+body.ui-mode-modern.layout-compact-rail .top-bar-action-btn::before,
+body.ui-mode-modern.layout-stacked-player .top-bar-action-btn::before {
+    content: attr(data-modern-short);
+    font-size: 0.70rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    display: inline-block !important;
+}
+
+body.ui-mode-modern.layout-compact-topbar #top-bar,
+body.ui-mode-modern.layout-compact-rail #top-bar,
+body.ui-mode-modern.layout-stacked-player #top-bar {
+    padding: 6px 12px !important;
+    gap: 8px !important;
+    min-height: 46px !important;
+}
+body.ui-mode-modern.layout-compact-topbar .top-bar-actions,
+body.ui-mode-modern.layout-compact-rail .top-bar-actions,
+body.ui-mode-modern.layout-stacked-player .top-bar-actions {
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+body.ui-mode-modern.layout-stacked-topbar #top-bar {
+    flex-wrap: wrap !important;
+    padding: 6px 10px !important;
+    gap: 6px !important;
+    min-height: 46px !important;
+    height: auto !important;
+}
+body.ui-mode-modern.layout-stacked-topbar .tui-prompt-wrap {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+body.ui-mode-modern.layout-stacked-topbar .top-bar-actions {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 1140px) {
+    body.ui-mode-modern .term-prompt .prompt-full {
+        display: none !important;
+    }
+    body.ui-mode-modern .term-prompt .prompt-short {
+        display: inline !important;
+    }
+    body.ui-mode-modern .top-bar-action-btn {
+        font-size: 0 !important;
+        padding: 4px 8px !important;
+        line-height: 1.2 !important;
+        flex-shrink: 0 !important;
+    }
+    body.ui-mode-modern .top-bar-action-btn::before {
+        content: attr(data-modern-short);
+        font-size: 0.70rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        display: inline-block !important;
+    }
+    body.ui-mode-modern #top-bar {
+        padding: 6px 12px !important;
+        gap: 8px !important;
+    }
+    body.ui-mode-modern .top-bar-actions {
+        gap: 4px !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+/* B. Stacked Player Bar (under 880px width or under 560px height) */
+body.ui-mode-modern.layout-stacked-player #player-bar,
+body.ui-mode-modern.layout-stacked-player .player-inner {
+    padding: 6px 14px !important;
+}
+
+body.ui-mode-modern.layout-stacked-player .player-inner {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+        "info right"
+        "controls controls" !important;
+    align-items: center !important;
+    row-gap: 6px !important;
+    column-gap: 10px !important;
+    height: auto !important;
+}
+body.ui-mode-modern.layout-stacked-player .player-info {
+    grid-area: info !important;
+    min-width: 0 !important;
+}
+body.ui-mode-modern.layout-stacked-player .player-right {
+    grid-area: right !important;
+    min-width: 0 !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+}
+body.ui-mode-modern.layout-stacked-player .player-controls {
+    grid-area: controls !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 6px !important;
+    margin: 0 auto !important;
+}
+
+/* C. Tablet & Mobile Handhelds (max-width: 860px) */
+@media (max-width: 860px) {
+    body.ui-mode-modern .player-inner {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        grid-template-rows: auto auto !important;
+        grid-template-areas:
+            "info right"
+            "controls controls" !important;
+        align-items: center !important;
+        row-gap: 6px !important;
+        column-gap: 10px !important;
+        height: auto !important;
+        padding: 6px 12px !important;
+    }
+    body.ui-mode-modern .player-info {
+        grid-area: info !important;
+        min-width: 0 !important;
+    }
+    body.ui-mode-modern .player-right {
+        grid-area: right !important;
+        min-width: 0 !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+    }
+    body.ui-mode-modern .player-controls {
+        grid-area: controls !important;
+        justify-content: center !important;
+        width: 100% !important;
+        gap: 6px !important;
+        margin: 0 auto !important;
+    }
+    body.ui-mode-modern #sidebar {
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        height: 48px !important;
+        padding: 4px 8px !important;
+        border-right: none !important;
+        border-top: 1px solid var(--m-border) !important;
+        z-index: 100 !important;
+    }
+    body.ui-mode-modern .tui-brand,
+    body.ui-mode-modern .sidebar-footer {
+        display: none !important;
+    }
+    body.ui-mode-modern .rail-nav {
+        flex-direction: row !important;
+        width: 100% !important;
+        justify-content: space-around !important;
+        gap: 4px !important;
+    }
+    body.ui-mode-modern .nav-btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 6px 4px !important;
+        gap: 4px !important;
+    }
+    body.ui-mode-modern .nav-btn .nav-text {
+        display: inline-block !important;
+        font-size: 0.72rem !important;
+    }
+    body.ui-mode-modern #settings-panel,
+    body.ui-mode-modern #queue-panel,
+    body.ui-mode-modern #equalizer-panel {
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: var(--player) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-left: none !important;
+        border-radius: 0 !important;
+    }
+    body.ui-mode-modern #now-playing {
+        inset: 48px 0 var(--player) 0 !important;
+        border-radius: 0 !important;
+    }
+    body.ui-mode-modern .now-playing-body {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        overflow-y: auto !important;
+    }
+    body.ui-mode-modern .now-deck-sidebar {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12px !important;
+        overflow: visible !important;
+    }
+    body.ui-mode-modern .now-cover-frame {
+        width: 110px !important;
+        height: 110px !important;
+        flex-shrink: 0 !important;
+        padding: 4px !important;
+    }
+    body.ui-mode-modern .now-cover-frame .cover-telemetry {
+        display: none !important;
+    }
+    body.ui-mode-modern #top-bar {
+        padding: 6px 10px !important;
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+        min-height: 44px !important;
+    }
+    body.ui-mode-modern .tui-prompt-wrap {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+    }
+    body.ui-mode-modern .top-bar-actions {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        gap: 4px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+    }
+    body.ui-mode-modern .top-bar-actions .tui-btn,
+    body.ui-mode-modern .top-bar-actions .tui-badge {
+        padding: 4px 8px !important;
+        font-size: 0.68rem !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+/* D. Ultra-narrow Mobile & Snapped Windows (max-width: 480px) */
+@media (max-width: 480px) {
+    body.ui-mode-modern #top-bar {
+        padding: 6px 8px !important;
+        gap: 6px !important;
+    }
+    body.ui-mode-modern .top-bar-actions {
+        gap: 4px !important;
+    }
+    body.ui-mode-modern .top-bar-actions .tui-btn,
+    body.ui-mode-modern .top-bar-actions .tui-badge {
+        padding: 3px 7px !important;
+        font-size: 0.64rem !important;
+    }
+
+    body.ui-mode-modern .item-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    body.ui-mode-modern .player-info {
+        gap: 8px !important;
+    }
+    body.ui-mode-modern .cover-frame {
+        width: 38px !important;
+        height: 38px !important;
+    }
+    body.ui-mode-modern #play-btn {
+        width: 38px !important;
+        height: 38px !important;
+        flex: 0 0 38px !important;
+        font-size: 0.85rem !important;
+    }
+    body.ui-mode-modern .ctrl-btn {
+        padding: 4px 6px !important;
+        font-size: 0.72rem !important;
+    }
+    body.ui-mode-modern #player-audio-quality {
+        display: none !important;
+    }
+}
+
+/* E. Vertical & Landscape extreme aspect ratios */
+@media (max-height: 520px) {
+    :root {
+        --player: 64px !important;
+    }
+    body.ui-mode-modern #player-bar {
+        padding: 4px 12px !important;
+    }
+    body.ui-mode-modern .player-cover {
+        width: 34px !important;
+        height: 34px !important;
+    }
+    body.ui-mode-modern #play-btn {
+        width: 34px !important;
+        height: 34px !important;
+        flex: 0 0 34px !important;
+    }
+    body.ui-mode-modern .ctrl-btn {
+        padding: 4px 6px !important;
+    }
+    body.ui-mode-modern .top-bar-actions .tui-btn,
+    body.ui-mode-modern .top-bar-actions .tui-badge {
+        padding: 3px 8px !important;
+        font-size: 0.68rem !important;
+    }
+}
+

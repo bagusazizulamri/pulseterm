@@ -505,7 +505,7 @@ const player = {
         // Warm the next tracks NOW, in parallel with the current resolve.
         this.prepareNext();
         try {
-            const result = await getStreamUrl(song.videoId);
+            const result = await getStreamUrl(song.videoId, Boolean(options?.refresh));
             if (token !== this.playToken) return;
             const url = result?.success && result.data?.url;
             if (!url) throw new Error(result?.error || 'Stream could not be resolved');

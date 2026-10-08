@@ -4,7 +4,10 @@ import re
 import logging
 from typing import Optional, List, Dict, Any
 import httpx
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,7 @@ def parse_enhanced_lrc(synced_lrc: str, lyricsfile_yaml: Optional[str] = None) -
     """
     # 1. Parse line endpoints from lyricsfile YAML if provided
     yaml_lines_map: Dict[int, Dict[str, Any]] = {}
-    if lyricsfile_yaml:
+    if lyricsfile_yaml and yaml is not None:
         try:
             data = yaml.safe_load(lyricsfile_yaml)
             if isinstance(data, dict):
@@ -143,8 +146,13 @@ async def fetch_lrclib(title: str, artist: str, duration: int = 0) -> Optional[D
         return None
 
     headers = {"User-Agent": USER_AGENT}
+    try:
+        import certifi
+        ssl_verify = certifi.where()
+    except Exception:
+        ssl_verify = True
 
-    async with httpx.AsyncClient(timeout=6.0, headers=headers) as client:
+    async with httpx.AsyncClient(timeout=6.0, headers=headers, verify=ssl_verify) as client:
         # 1. Exact match attempt
         params = {
             "track_name": clean_title,

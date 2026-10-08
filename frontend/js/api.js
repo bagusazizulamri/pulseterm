@@ -79,18 +79,47 @@ export async function getSongDetails(id) {
 
 const _streamUrlCache = new Map();
 
-export async function getStreamUrl(id) {
-    if (!id) return { success: false, data: null };
-    const hit = _streamUrlCache.get(id);
-    if (hit && hit.expires > Date.now()) {
-        return hit.result;
+// Initialize in-memory cache from localStorage on startup
+try {
+    const raw = localStorage.getItem('pt_stream_cache');
+    if (raw) {
+        const parsed = JSON.parse(raw);
+        const now = Date.now();
+        for (const [id, item] of Object.entries(parsed)) {
+            if (item && item.expires > now) {
+                _streamUrlCache.set(id, item);
+            }
+        }
     }
-    const result = await apiGet(`/api/player/stream-url/${id}`);
+} catch (_) {}
+
+function _persistStreamCache() {
+    try {
+        const obj = {};
+        const now = Date.now();
+        for (const [id, item] of _streamUrlCache.entries()) {
+            if (item && item.expires > now) obj[id] = item;
+        }
+        localStorage.setItem('pt_stream_cache', JSON.stringify(obj));
+    } catch (_) {}
+}
+
+export async function getStreamUrl(id, force = false) {
+    if (!id) return { success: false, data: null };
+    if (!force) {
+        const hit = _streamUrlCache.get(id);
+        if (hit && hit.expires > Date.now()) {
+            return hit.result;
+        }
+    }
+    const result = await apiGet(`/api/player/stream-url/${id}${force ? '?refresh=1' : ''}`);
     if (result?.success && result.data?.url) {
         _streamUrlCache.set(id, { result, expires: Date.now() + 3 * 3600 * 1000 });
+        _persistStreamCache();
     }
     return result;
 }
+
 
 export async function prepareStreams(videoIds) {
     return apiPost('/api/player/prepare', { videoIds });

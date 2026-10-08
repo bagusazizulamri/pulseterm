@@ -88,7 +88,18 @@ async def init_db():
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS stream_cache (
+                video_id TEXT PRIMARY KEY,
+                url TEXT NOT NULL,
+                expires_at REAL NOT NULL,
+                meta TEXT DEFAULT '',
+                updated_at REAL NOT NULL
+            )
+        """)
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_stream_cache_exp ON stream_cache(expires_at)")
         await db.commit()
+
 
 async def get_playlists():
     async with aiosqlite.connect(DB_PATH) as db:

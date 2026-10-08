@@ -817,12 +817,23 @@ class TerminalEqualizer {
         if (topBtn) {
             if (!this.enabled) {
                 topBtn.textContent = '[EQ: BYPASS]';
+                topBtn.dataset.short = '[EQ:0]';
+                topBtn.dataset.modernShort = 'EQ·Off';
+                topBtn.title = '10-Band DSP Equalizer: Bypassed (E)';
                 topBtn.classList.remove('active');
             } else if (this.autoMode) {
-                topBtn.textContent = `[EQ: AUTO·${this.getPresetDisplayName()}]`;
+                const name = this.getPresetDisplayName();
+                topBtn.textContent = `[EQ: AUTO·${name}]`;
+                topBtn.dataset.short = '[EQ:A]';
+                topBtn.dataset.modernShort = 'EQ·Auto';
+                topBtn.title = `10-Band DSP Equalizer: Auto (${name}) (E)`;
                 topBtn.classList.add('active');
             } else {
-                topBtn.textContent = `[EQ: ${this.getPresetDisplayName()}]`;
+                const name = this.getPresetDisplayName();
+                topBtn.textContent = `[EQ: ${name}]`;
+                topBtn.dataset.short = '[EQ]';
+                topBtn.dataset.modernShort = 'EQ';
+                topBtn.title = `10-Band DSP Equalizer: ${name} (E)`;
                 topBtn.classList.toggle('active', this.currentPreset !== 'flat');
             }
         }

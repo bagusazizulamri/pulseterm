@@ -36,3 +36,9 @@ Thumbs.db
 scratch/
 node_modules/
 package-lock.json
+
+# Build & distribution artifacts
+.cache_bundle/
+dist/
+bin/
+

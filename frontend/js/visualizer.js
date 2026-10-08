@@ -144,7 +144,13 @@ class TerminalVisualizer {
     applyCrt(enable) {
         document.body.classList.toggle('crt-active', enable);
         const btn = document.getElementById('crt-toggle-btn');
-        if (btn) btn.textContent = enable ? '[CRT: ON]' : '[CRT: OFF]';
+        if (btn) {
+            btn.textContent = enable ? '[CRT: ON]' : '[CRT: OFF]';
+            btn.dataset.short = enable ? '[CRT:1]' : '[CRT]';
+            btn.dataset.modernShort = enable ? 'CRT·On' : 'CRT';
+            btn.title = `Toggle CRT scanline raster effect: ${enable ? 'ON' : 'OFF'} (C)`;
+            btn.classList.toggle('active', enable);
+        }
     }
 
     start() {

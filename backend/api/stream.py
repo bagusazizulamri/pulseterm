@@ -8,11 +8,13 @@ processes may run at once.
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import asyncio
+import json
 import re
 import shutil
 import subprocess
 import time
 from config import CACHE_DIR
+import aiosqlite
 
 # A video id is 11 url-safe characters; anything else is treated as a query/url.
 _ID_RE = re.compile(r'^[A-Za-z0-9_-]{11}$')
@@ -23,10 +25,11 @@ OFFLINE_DIR = os.path.join(CACHE_DIR, "offline")
 _url_cache = {}       # video_id -> (url, expires_at)
 _locks = {}           # video_id -> asyncio.Lock (single flight)
 _semaphore = None     # bounds concurrent yt-dlp processes
-_stats = {"hits": 0, "misses": 0, "errors": 0, "forced": 0, "resolves": 0}
+_stats = {"hits": 0, "misses": 0, "errors": 0, "forced": 0, "resolves": 0, "db_hits": 0}
 
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
+
 
 # Audio format prioritization:
 # Priority 1: High-fidelity Opus Fullband 48kHz (itag 251, ~160kbps VBR) - transparent studio quality
@@ -178,32 +181,91 @@ def _parse_meta(data):
     }
 
 
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "music.db")
+
+async def _db_get_stream(video_id):
+    """Retrieve non-expired stream URL and metadata from SQLite L2 cache."""
+    if not video_id or not _ID_RE.match(video_id):
+        return None
+    now = time.time()
+    try:
+        async with aiosqlite.connect(DB_PATH) as db:
+            async with db.execute(
+                "SELECT url, expires_at, meta FROM stream_cache WHERE video_id = ? AND expires_at > ?",
+                (video_id, now + 60)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    url, expires_at, meta_str = row
+                    meta = None
+                    if meta_str:
+                        try:
+                            meta = json.loads(meta_str)
+                        except Exception:
+                            pass
+                    return url, expires_at, meta
+    except Exception:
+        pass
+    return None
+
+async def _db_set_stream(video_id, url, expires_at, meta=None):
+    """Save resolved stream URL and metadata to SQLite L2 cache."""
+    if not video_id or not _ID_RE.match(video_id) or not url:
+        return
+    meta_str = json.dumps(meta) if meta else ""
+    now = time.time()
+    try:
+        async with aiosqlite.connect(DB_PATH) as db:
+            await db.execute(
+                """INSERT INTO stream_cache (video_id, url, expires_at, meta, updated_at)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(video_id) DO UPDATE SET
+                   url = excluded.url,
+                   expires_at = excluded.expires_at,
+                   meta = excluded.meta,
+                   updated_at = excluded.updated_at""",
+                (video_id, url, expires_at, meta_str, now)
+            )
+            await db.commit()
+    except Exception:
+        pass
+
+async def cleanup_expired_cache():
+    """Remove expired streams from SQLite cache on startup."""
+    now = time.time()
+    try:
+        async with aiosqlite.connect(DB_PATH) as db:
+            await db.execute("DELETE FROM stream_cache WHERE expires_at <= ?", (now,))
+            await db.commit()
+    except Exception:
+        pass
+
 def _get_ydl():
     global _ydl_singleton
     if _ydl_singleton is None:
         try:
             import yt_dlp
-            from yt_dlp.extractor.youtube import YoutubeIE, YoutubeSearchIE, YoutubeTabIE
             ydl_opts = {
                 "format": YTDLP_FORMAT,
                 "quiet": True,
                 "no_warnings": True,
                 "extract_flat": False,
-                "js_runtimes": {"node": {}},
                 "socket_timeout": 8,
                 "retries": 2,
                 "nocheckcertificate": True,
             }
-            inst = yt_dlp.YoutubeDL(ydl_opts)
-            inst._ies = {
-                'Youtube': YoutubeIE(inst),
-                'YoutubeSearch': YoutubeSearchIE(inst),
-                'YoutubeTab': YoutubeTabIE(inst),
-            }
-            _ydl_singleton = inst
+            _ydl_singleton = yt_dlp.YoutubeDL(ydl_opts)
         except Exception:
             _ydl_singleton = None
     return _ydl_singleton
+
+def prewarm_resolver():
+    """Initialize yt-dlp in background during server startup to eliminate cold start."""
+    try:
+        _get_ydl()
+    except Exception:
+        pass
+
 
 
 def _extract(video_id):
@@ -269,29 +331,57 @@ def resolve_blocking(video_id):
 
 
 async def get_stream_url_async(video_id, force=False):
-    """Direct URL for video_id: cached, single-flight, and bounded in parallelism."""
+    """Direct URL for video_id: 2-layer cached (RAM + SQLite), single-flight, bounded parallelism."""
     if not video_id or not isinstance(video_id, str):
         return ""
     video_id = video_id.strip()
     if not video_id or (video_id.startswith(("PL", "VL", "RD", "OLAK", "UC", "MPREb_")) and not _ID_RE.match(video_id)):
         return ""
     now = time.time()
+
+    # Layer 1: In-memory RAM cache (< 0.1ms)
     hit = _url_cache.get(video_id)
     if hit and not force:
         if hit[1] > now:
             _stats["hits"] += 1
             return hit[0]
+
+    # Layer 2: Persistent SQLite cache (< 2ms)
+    if not force:
+        db_hit = await _db_get_stream(video_id)
+        if db_hit:
+            db_url, db_exp, db_meta = db_hit
+            _url_cache[video_id] = (db_url, db_exp)
+            if db_meta:
+                _meta_cache[video_id] = db_meta
+            _stats["hits"] += 1
+            _stats["db_hits"] += 1
+            return db_url
+
     if force:
         _stats["forced"] += 1
     else:
         _stats["misses"] += 1
 
     async with _lock(video_id):
-        # Another waiter may have filled the cache while we queued.
+        # Re-check RAM cache after acquiring lock
         hit = _url_cache.get(video_id)
         if hit and not force and hit[1] > time.time():
             _stats["hits"] += 1
             return hit[0]
+
+        # Re-check DB cache after acquiring lock
+        if not force:
+            db_hit = await _db_get_stream(video_id)
+            if db_hit:
+                db_url, db_exp, db_meta = db_hit
+                _url_cache[video_id] = (db_url, db_exp)
+                if db_meta:
+                    _meta_cache[video_id] = db_meta
+                _stats["hits"] += 1
+                _stats["db_hits"] += 1
+                return db_url
+
         try:
             async with _sem():
                 loop = asyncio.get_running_loop()
@@ -302,31 +392,41 @@ async def get_stream_url_async(video_id, force=False):
         if not url:
             _stats["errors"] += 1
             return ""
+
+        exp = expiry_of(url)
         if len(_url_cache) >= _URL_CACHE_MAX:
             now_exp = time.time()
-            expired = [k for k, (_, exp) in _url_cache.items() if exp <= now_exp]
+            expired = [k for k, (_, e) in _url_cache.items() if e <= now_exp]
             for k in expired:
                 _url_cache.pop(k, None)
             while len(_url_cache) >= _URL_CACHE_MAX:
                 _url_cache.pop(next(iter(_url_cache)), None)
-        _url_cache[video_id] = (url, expiry_of(url))
+        _url_cache[video_id] = (url, exp)
+
+        # Asynchronously persist to SQLite L2 cache
+        meta = _meta_cache.get(video_id)
+        asyncio.create_task(_db_set_stream(video_id, url, exp, meta))
+
         return url
+
 
 
 async def get_stream_info_async(video_id, force=False):
     """Resolve stream URL with audio codec, bitrate, and quality telemetry."""
     url = await get_stream_url_async(video_id, force=force)
-    meta = _meta_cache.get(video_id) or _parse_meta(None)
+    default_meta = _parse_meta(None)
+    raw_meta = _meta_cache.get(video_id)
+    meta = {**default_meta, **(raw_meta if isinstance(raw_meta, dict) else {})}
     return {
         "url": url,
         "direct": url,
-        "codec": meta["codec"],
-        "bitrate": meta["bitrate"],
-        "sampleRate": meta["sampleRate"],
-        "formatId": meta["formatId"],
-        "ext": meta["ext"],
-        "tier": meta["tier"],
-        "qualityLabel": meta["qualityLabel"]
+        "codec": meta.get("codec", "opus"),
+        "bitrate": meta.get("bitrate", 160),
+        "sampleRate": meta.get("sampleRate", 48000),
+        "formatId": meta.get("formatId", "251"),
+        "ext": meta.get("ext", "webm"),
+        "tier": meta.get("tier", "HQ"),
+        "qualityLabel": meta.get("qualityLabel", "[HQ · OPUS · 160K · 48KHZ]")
     }
 
 

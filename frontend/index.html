@@ -7,10 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <title>PulseTerm // Minimalist TUI Audio Player</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-    <link rel="stylesheet" href="/css/style.css?v=3">
-    <link rel="stylesheet" href="/css/modern.css?v=13">
+    <link rel="stylesheet" href="/css/style.css?v=14">
+    <link rel="stylesheet" href="/css/modern.css?v=14">
 </head>
-<body class="theme-dark">
+<body class="theme-maclight">
     <div id="crt-overlay" aria-hidden="true"></div>
 
     <div id="app">
@@ -75,21 +75,21 @@
         <main id="main-content">
             <header id="top-bar">
                 <div class="tui-prompt-wrap">
-                    <span class="term-prompt">user@pulseterm:~$</span>
+                    <span class="term-prompt"><span class="prompt-full">user@pulseterm:</span><span class="prompt-short">~$</span></span>
                     <div class="search-bar">
                         <input type="text" id="search-input" placeholder="find track, artist, album... [/]" aria-label="Search YouTube Music" autocomplete="off" spellcheck="false">
                         <button id="search-clear-btn" class="tui-clear-btn hidden" onclick="window.clearSearch()" aria-label="Clear search" title="Clear input">[✕]</button>
                         <span class="term-cursor" aria-hidden="true"></span>
-                        <button class="tui-btn search-go" onclick="doSearch()" aria-label="Execute search">[EXEC]</button>
+                        <button class="tui-btn search-go top-bar-action-btn" onclick="doSearch()" aria-label="Execute search" data-full="[EXEC]" data-short="[↵]" data-modern-short="↵">[EXEC]</button>
                     </div>
                 </div>
                 <div class="top-bar-actions">
-                    <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
-                    <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
-                    <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
-                    <button id="spatial-toggle-btn" onclick="spatial.cycleMode()" class="tui-badge spatial-toggle-btn" title="Toggle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
-                    <button onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
-                    <button onclick="toggleSettings()" class="tui-badge" title="Open terminal configuration">[CONFIG]</button>
+                    <button id="crt-toggle-btn" onclick="toggleCrt()" class="tui-badge top-bar-action-btn" data-full="[CRT: OFF]" data-short="[CRT]" data-modern-short="CRT" title="Toggle CRT scanline raster effect (C)">[CRT: OFF]</button>
+                    <button id="viz-toggle-btn" onclick="toggleVisualizer()" class="tui-badge top-bar-action-btn" data-full="[VIZ: CAVA]" data-short="[VIZ]" data-modern-short="Viz" title="Toggle CAVA spectrum visualizer HUD (V)">[VIZ: CAVA]</button>
+                    <button id="eq-toggle-btn" onclick="toggleEqualizer()" class="tui-badge top-bar-action-btn" data-full="[EQ: FLAT]" data-short="[EQ]" data-modern-short="EQ" title="Toggle 10-Band DSP Equalizer (E)">[EQ: FLAT]</button>
+                    <button id="spatial-toggle-btn" onclick="spatial.cycleMode()" class="tui-badge spatial-toggle-btn top-bar-action-btn" data-full="[SPATIAL: OFF]" data-short="[3D]" data-modern-short="3D" title="Toggle 3D Spatial Audio Mode (X)">[SPATIAL: OFF]</button>
+                    <button id="shortcut-help-btn" onclick="document.getElementById('shortcut-help').showModal()" class="tui-badge top-bar-action-btn" data-full="[HELP: ?]" data-short="[?]" data-modern-short="?" title="Show keyboard shortcuts (?)">[HELP: ?]</button>
+                    <button id="config-toggle-btn" onclick="toggleSettings()" class="tui-badge top-bar-action-btn" data-full="[CONFIG]" data-short="[CFG]" data-modern-short="Cfg" title="Open terminal configuration">[CONFIG]</button>
                 </div>
             </header>
 

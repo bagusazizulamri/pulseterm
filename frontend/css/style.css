@@ -295,6 +295,9 @@ body.crt-active #crt-overlay {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+  border: 1.5px solid var(--seal, var(--line));
+  box-shadow: 0 0 14px -3px var(--seal-glow, transparent), inset 0 0 0 1px var(--line);
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
 
 /* ============ SIDEBAR / RAIL ============ */
@@ -494,18 +497,22 @@ body.crt-active #crt-overlay {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  height: 50px;
-  padding: 0 var(--pad);
+  gap: 12px;
+  min-height: 48px;
+  height: auto;
+  padding: 6px var(--pad);
   border-bottom: 1px solid var(--line);
   background: var(--paper-2);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tui-prompt-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 140px;
   max-width: 680px;
 }
 
@@ -515,6 +522,10 @@ body.crt-active #crt-overlay {
   font-weight: 600;
   white-space: nowrap;
   user-select: none;
+  flex-shrink: 0;
+}
+.term-prompt .prompt-short {
+  display: none;
 }
 
 .search-bar {
@@ -522,6 +533,7 @@ body.crt-active #crt-overlay {
   align-items: center;
   gap: 6px;
   flex: 1;
+  min-width: 0;
   background: var(--paper);
   border: 1px solid var(--line);
   padding: 5px 10px;
@@ -549,6 +561,7 @@ body.crt-active #crt-overlay {
   color: var(--ink-3);
   padding: 0 4px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 .tui-clear-btn:hover { color: var(--seal); }
 .tui-clear-btn.hidden { display: none; }
@@ -559,6 +572,7 @@ body.crt-active #crt-overlay {
   height: 14px;
   background: var(--seal);
   animation: cursor-blink 1s step-end infinite;
+  flex-shrink: 0;
 }
 
 @keyframes cursor-blink { 0%, 50% { opacity: 1; } 50.1%, 100% { opacity: 0; } }
@@ -566,8 +580,18 @@ body.crt-active #crt-overlay {
 .top-bar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
+
+.top-bar-actions::-webkit-scrollbar {
+  display: none;
+}
+
 
 /* ============ BUTTONS & BADGES ============ */
 .tui-btn, .tui-badge {
@@ -2792,6 +2816,77 @@ select {
   display: none !important;
 }
 
+/* Dynamic top-bar adaptations in split-screen, snapped or narrow windows */
+.layout-compact-topbar .term-prompt .prompt-full,
+.layout-compact-rail .term-prompt .prompt-full {
+  display: none !important;
+}
+.layout-compact-topbar .term-prompt .prompt-short,
+.layout-compact-rail .term-prompt .prompt-short {
+  display: inline !important;
+}
+
+.layout-compact-topbar .top-bar-action-btn,
+.layout-compact-rail .top-bar-action-btn,
+.layout-stacked-player .top-bar-action-btn {
+  font-size: 0 !important;
+  padding: 3px 6px !important;
+  line-height: 1.2 !important;
+  flex-shrink: 0 !important;
+}
+
+.layout-compact-topbar .top-bar-action-btn::before,
+.layout-compact-rail .top-bar-action-btn::before,
+.layout-stacked-player .top-bar-action-btn::before {
+  content: attr(data-short);
+  font-size: 10px !important;
+  line-height: 1.2;
+  font-family: inherit;
+  font-weight: inherit;
+  color: inherit;
+  display: inline-block;
+}
+
+.layout-compact-topbar #top-bar,
+.layout-compact-rail #top-bar,
+.layout-stacked-player #top-bar {
+  gap: 8px;
+  padding: 4px 12px;
+  min-height: 44px;
+}
+
+.layout-compact-topbar .top-bar-actions,
+.layout-compact-rail .top-bar-actions,
+.layout-stacked-player .top-bar-actions {
+  gap: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.layout-stacked-topbar #top-bar {
+  flex-wrap: wrap !important;
+  padding: 6px 10px !important;
+  gap: 6px !important;
+  min-height: 44px !important;
+  height: auto !important;
+}
+
+.layout-stacked-topbar .tui-prompt-wrap {
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.layout-stacked-topbar .top-bar-actions {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+}
+
 .layout-stacked-player {
   --player: 108px !important;
 }
@@ -2812,6 +2907,20 @@ select {
 .layout-stacked-player .player-right { grid-area: right !important; min-width: 0 !important; justify-content: flex-end !important; gap: 8px !important; }
 .layout-stacked-player .player-controls { grid-area: controls !important; justify-content: center !important; width: 100% !important; gap: 6px !important; }
 .layout-stacked-player .tui-mini-viz { display: none !important; }
+
+
+/* Dialog responsive bounds across all screen ratios & orientations */
+dialog.tui-modal,
+dialog.artwork-modal,
+dialog.import-modal,
+dialog.create-modal,
+#shortcut-help {
+  max-width: min(560px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
 
 /* ============ RESPONSIVE BREAKPOINTS (ALL FORM FACTORS) ============ */
 
@@ -2854,6 +2963,40 @@ select {
   .player-inner {
     grid-template-columns: minmax(0, 1.1fr) auto auto;
     gap: 12px;
+  }
+  #top-bar {
+    gap: 8px;
+    padding: 4px 12px;
+  }
+  .tui-prompt-wrap {
+    max-width: 480px;
+  }
+  .term-prompt .prompt-full {
+    display: none !important;
+  }
+  .term-prompt .prompt-short {
+    display: inline !important;
+  }
+  .top-bar-action-btn {
+    font-size: 0 !important;
+    padding: 3px 6px !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+  }
+  .top-bar-action-btn::before {
+    content: attr(data-short);
+    font-size: 10px !important;
+    line-height: 1.2;
+    font-family: inherit;
+    font-weight: inherit;
+    color: inherit;
+    display: inline-block;
+  }
+  .top-bar-actions {
+    gap: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -3006,7 +3149,97 @@ select {
     right: 0;
     width: 100vw;
   }
+
+  /* Full-bleed responsive drawers on tablets/mobile */
+  #settings-panel,
+  #queue-panel,
+  #equalizer-panel {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: var(--player);
+    width: 100%;
+    max-width: 100%;
+    border-left: none;
+    box-shadow: none;
+  }
+
+  /* Full-bleed Now Playing / Lyrics on tablets/mobile */
+  #now-playing {
+    inset: 48px 0 var(--player) 0;
+  }
+
+  .now-playing-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .now-deck-sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  .now-cover-frame {
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
+    padding: 4px;
+  }
+
+  .now-cover-frame .cover-telemetry {
+    display: none;
+  }
+
+  .now-deck-telemetry {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  .now-playing-content {
+    padding: 12px var(--pad);
+  }
+
+  #top-bar {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tui-prompt-wrap {
+    gap: 6px;
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .term-prompt {
+    display: none;
+  }
+
+  .top-bar-actions {
+    gap: 4px;
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .top-bar-actions .tui-badge,
+  .top-bar-actions .tui-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
 }
+
 
 /* 5. Mobile Handhelds (max-width: 640px) */
 @media (max-width: 640px) {
@@ -3015,10 +3248,13 @@ select {
     min-height: 48px;
     padding: 6px 10px;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .tui-prompt-wrap {
     gap: 6px;
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 
   .term-prompt {
@@ -3035,18 +3271,20 @@ select {
 
   .top-bar-actions {
     gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
   }
 
-  .top-bar-actions::-webkit-scrollbar {
-    display: none;
-  }
-
-  .top-bar-actions .tui-badge {
+  .top-bar-actions .tui-badge,
+  .top-bar-actions .tui-btn {
     padding: 3px 6px;
     font-size: 10px;
+    flex-shrink: 0;
   }
 
   #settings-panel, #queue-panel, #equalizer-panel {

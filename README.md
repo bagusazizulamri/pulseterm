@@ -1,55 +1,55 @@
 # PulseTerm
 
-A browser-based music player with a retro terminal-inspired interface and a focus on local playback, keyboard control, synchronized lyrics, and real-time audio processing.
+A keyboard-centric music player with a retro terminal aesthetic and modern liquid glass modes, featuring real-time audio DSP, synchronized romanized lyrics, and portable desktop support.
+
+---
 
 ## Highlights
 
-* **Terminal-Like UI**: Browser-based player with a retro terminal-inspired interface rather than a traditional command-line TUI. Includes monospace typography, ASCII-style borders and telemetry, CRT scanlines, keyboard-first navigation, and customizable themes (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark).
-
-* **Studio Audio DSP (48 kHz Opus)**:
-
-  * **10-Band EQ**: 32 Hz–16 kHz bands with preamp control, harmonic bass enhancement, and 14 built-in presets.
-  * **SmartEQ** — a 3-stage adaptive EQ system that uses track metadata and measured audio characteristics:
-
-    1. **Metadata → Archetype**: Uses genre, vibe, and artist/title metadata to select an initial spectral profile. Matching uses word boundaries across a collection of 200+ artists and songs covering genres such as K-Pop, J-Pop, Metal, Hip-Hop, R&B, and EDM.
-    2. **Spectral Reclassification**: After approximately 1.8 seconds of playback, SmartEQ analyzes 20 FFT frames using an 8192-point FFT and compares the measured octave-band distribution with the initial profile. A different profile can be selected when the measured spectrum does not match the initial classification.
-    3. **Spectral Compensation**: Applies limited frequency boosts or cuts based on the difference between the measured spectrum and the selected target profile. Three-point smoothing and gain limits are used to reduce abrupt or excessive corrections. The UI reports the detected adjustment with hints such as `+PUNCH`, `+VOCAL`, `+AIR`, `TAME HARSH`, and `BALANCED`.
-    4. **Air Eligibility Gating**: Not every song may receive an airy boost — especially airy vocal. Before touching 8 kHz/16 kHz, SmartEQ (and Perfect Tune) checks whether the track actually has usable high-frequency content. The boost is held (`AIR HELD …`) when the track is lo-fi / noise-floor only, intentionally rolled-off (vintage/lo-fi/cassette), already harsh or sibilant at 8 kHz, or has no vocal presence at 2 kHz (drops/instrumentals). Even when eligible, the 16 kHz boost is capped per archetype (e.g. ballad/metal ≈ +1.0 dB, pop/EDM up to +3.0 dB).
-  * **Perfect Tune**: Performs an 8192-point FFT analysis before EQ processing and uses a reference spectral curve with a -4.5 dB/oct target tilt to determine initial gain adjustments.
-  * **Binaural Spatial Audio**: Uses Mid/Side processing, HRTF-based panning, synthetic stereo convolution reverb, and RMS-based loudness matching. Available modes are `OFF`, `STUDIO`, `WIDE`, and `CONCERT`.
-  * **Lookahead Limiter**: AudioWorklet-based limiter with approximately 5 ms lookahead and a -1.0 dBFS ceiling. A compressor-based fallback is available for processing paths where the limiter is not used.
-
-* **Synced Multi-Script Lyrics**: Timed lyrics with automatic secondary-script conversion for supported languages:
-
-  * Japanese → Romaji
-  * Korean → Romaja
-  * Chinese → Pinyin
-  * Cyrillic → Latin transliteration
-
-* **Local & Lightweight**: Designed for personal/local use with no external CDN dependencies. Uses SQLite in WAL mode for local application data and is intended to keep resource usage low during normal playback.
+* **Terminal & Modern Dual UI**: Monospace typography, ASCII-style telemetry, CRT scanlines, and high-contrast colorways (MAC Light, YouTube Soft, OLED, Cyberpunk, Nordic, Liquid Glass, Soft Dark). Fully responsive across all desktop resolutions, split-screen snap layouts, and narrow aspect ratios.
+* **Studio Audio DSP**:
+  * **10-Band EQ & SmartEQ**: 32 Hz–16 kHz equalizer with preamp control, adaptive archetype matching, and dynamic spectral compensation.
+  * **Perfect Tune**: Reference-curve spectral adjustment based on real-time FFT measurement.
+  * **Spatial Audio & Limiter**: Binaural M/S processing, HRTF panning, synthetic convolution reverb, and lookahead limiter protection.
+* **Synchronized & Romanized Lyrics**: Timed line-by-line lyrics (LRCLIB & YouTube) with secondary script transliteration (Japanese Romaji, Korean Romaja, Chinese Pinyin, Cyrillic) and translation fallback.
+* **Windows Portable Edition**: Zero-install standalone desktop application powered by Microsoft Edge WebView2 with bundled Python runtime, automatic background service lifecycle, dynamic DWM window border/titlebar theme synchronization, and high-DPI PerMonitorV2 support.
+* **Fast & Self-Contained**: Multi-layer stream caching (RAM L1 + persistent SQLite L2), continuous streaming audio proxy, SQLite WAL storage, and zero CDN dependencies.
 
 ---
 
 ## Quick Start
 
+### Option A: Windows Portable (Pre-bundled)
+1. Download or extract `PulseTerm-Windows-Portable.zip`.
+2. Run `PulseTerm.exe`. The backend service and WebView2 desktop window start and stop automatically with no installation required.
+
+### Option B: Linux / macOS / Manual Run
 ```bash
 # Clone repository
 git clone https://github.com/bagusazizulamri/pulseterm.git
 cd pulseterm
 
-# Setup & install
+# Setup & install dependencies
 chmod +x setup.sh manage.sh
 ./setup.sh
 
 # Start service
 ./manage.sh start
 ```
-
 Open **http://localhost:3000** in your browser.
 
+Service controls:
 ```bash
 ./manage.sh [start | stop | restart | status]
 ```
+
+### Building the Windows Portable App
+From Linux/WSL with Go and Python installed:
+```bash
+chmod +x scripts/build_windows_portable.sh
+./scripts/build_windows_portable.sh
+```
+Output will be generated in `dist/PulseTerm-Portable/` and packaged as `dist/PulseTerm-Windows-Portable.zip`.
 
 ---
 
@@ -69,16 +69,16 @@ Open **http://localhost:3000** in your browser.
 | `1`–`4`   | Switch tab            | `Esc` | Close active panel / modal |
 | `?`       | Show help             |       |                            |
 
-> `p` controls Previous Track outside the EQ panel and Perfect Tune while the EQ panel is active.
+> `p` controls Previous Track outside the EQ panel and triggers Perfect Tune while the EQ panel is active.
 
 ---
 
 ## Tech Stack
 
-* **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite + aiosqlite (WAL mode), ytmusicapi, yt-dlp.
-* **Audio**: Web Audio API — BiquadFilter, AudioWorklet, ConvolverNode, and HRTF Panner.
-* **Frontend**: Vanilla ES6 Modules + CSS.
-* **Build**: No frontend build step, npm, or JavaScript framework required.
+* **Desktop Shell**: Go native launcher, Microsoft Edge WebView2, Windows DWM theme integration, embedded PE32+ resource manifest and multi-resolution icon.
+* **Backend**: Python 3.12, FastAPI, Uvicorn, SQLite + aiosqlite (WAL mode), ytmusicapi, yt-dlp, LRCLIB.
+* **Audio Engine**: Web Audio API — BiquadFilter, AudioWorklet, ConvolverNode, and HRTF Panner.
+* **Frontend**: Vanilla ES6 Modules + CSS (no node build step or JS framework required).
 
 ---
 
